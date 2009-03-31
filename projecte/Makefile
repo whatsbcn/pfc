@@ -13,4 +13,4 @@ projecte.pdf: projecte.tex
 #	makeindex 'inscripcio.glo' -s 'inscripcio.ist' -t 'inscripcio.glg' -o 'inscripcio.gls'
 	
 clean:
-	rm -f *.aux *.dvi *.log *.toc *.glo *.idx *.ist *.out *.pdf
+	rm -f *.aux *.dvi *.log *.toc *.glo *.idx *.ist *.out *.pdf *.nlo

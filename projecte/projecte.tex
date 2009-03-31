@@ -1,5 +1,5 @@
 % Tipus de document
-\documentclass[a4paper]{article}
+\documentclass[a4paper]{report}
 % Extres de LaTex
 \usepackage{latexsym}
 % Text en utf8
@@ -12,138 +12,77 @@
 % Que mostri la capçalera a tots els fulls
 \pagestyle{headings}
 % Pel glossari
-\usepackage{nomencl}
-\makenomenclature
-
-
+%\usepackage{nomencl}
+%\makenomenclature
 
 % Autor
 \author{Albert Sellarès}
 % Títol de l'article
 \title{skd: Rootkit per sistemes operatius UNIX}
 
-%\usepackage{syntonly}
-%\syntaxonly
-%\usepackage[style=list,toc=true]{glossary}
-%\makeglossary
-%\newacronym[PURL]{PURL}{persistent uniform resource locator}{description={A means of creating persistent links to 
-%networked resources through the use of an intermediate resolution service.  The PURLs used in this thesis are 
-%provided by the Online Computer Library Center (\url{http://purl.org}).}}
-%\newacronym[PURL2]{GNU}{GNU s Not Unix}{description={A computer operating system composed entirely of free software.}}
-%\newacronym{linux}{Linux}{description={Any Unix-like computer operating system that uses the Linux kernel.}}
-%\newacronym{BSD}{Berkeley Software Distribution}{description={Sistema operatiu de la universitat de Berkeley. Sistema basat en UNIX.}}
-%\newacronym{virus}{Virus}{description={Un virus informático es un malware que té per objectiu alterar el funcionament de la màquina.}}
-%\newacronym{cavall de troia}{Cavall de troia}{description={}}
-%\newacronym{malware}{Malware}{description={Peça de software que té un objectiu maliciós.}}
-%\newacronym{rootkit}{Rootkit}{description={Èina o grup d'èines que té com a finalitat 
-%amagar-se a ella mateixa, i amagar altres programaes, processos, arxius, directoris, ports, etc., 
-%per tal que permeti a un intrús accedir al sistema principalment remotament, així com extreure informació.}}
-%\makeindex
-
 % Millora el pdf. Ha de ser l'últim del preàmbul
 \usepackage[pdftex,bookmarks,colorlinks,pdfnewwindow]{hyperref}
+% Descomentar-ho per imprimir sense colors
 %\hypersetup{linkcolor=black}
 
 \begin{document}
 
 % Portada
-\maketitle
-\newpage
+\include{portada}
 
 % Índex
-\tableofcontents
-\newpage
+\include{index}
 
-\section{Introducció}
+% Introdicció
+\include{introduction}
 
-Un rootkit és una aplicació pensada per a ser utilitzada com a porta del darrere per tal de
-poder accedir i controlar un sistema, i que a més, s'amaga per a no ser descobert.
-És sabut que existeixen programes fets amb aquesta finalitat, però la majoria d'ells són
-per sistemes Windows i no estan públics a la xarxa, o estan desfasats i ja no poden ser
-usats en els sistemes operatius actuals.
-A més, els nuclis de sistemes operatius actuals, implementen cada vegada més
-proteccions per tal d'evitar que programes com aquests els controlin.
-Aquest projecte tracta d'intentar crear una prova de concepte del què seria un rootkit
-avançat per sistemes basats en UNIX, tenint gran pes en ell tota la part de recerca i
-investigació.
+% Planificació
+\include{planning}
 
-\section{Motivació del projecte}
+% Definició del problema o requeriments
+\include{definition}
 
-Avui en dia ens veiem immersos en la societat de la informació, un moment en què la
-majoria de les empreses i persones intentem adaptar-nos a les noves tecnologies,
-moment en què s'intenta digitalitzar tot el què es pot.
-Qui més qui menys veu que en uns anys tot es veurà gestionat a través de sistemes
-d'informació, tot estarà interconnectat entre sí, i s'ha de poder garantir que tots aquests
-sistemes, comptin amb un mínim de seguretat.
-Des de els inicis de la història els sistemes operatius UNIX han estat al capdavant en els
-entorns de servidors, i des de llavors que les grans empreses els utilitzen per a confiar-hi
-les seves dades. Avui, i gràcies al boom que ha fet el GNU/Linux (tothom qui més qui
-menys té una idea del què és), administradors de sistemes no experimentats acaben
-utilitzant sistemes basats en UNIX en el seu lloc de treball.
-Les implicacions que té estar infectat per un virus estan canviant. Els virus (i en particular
-els cavalls de troya) ja no es fan per molestar a l'usuari, al contrari, un alt percentatge dels
-virus tenen com a objectiu principal, passar desapercebuts per tal de permetre l'infectant
-controlar la nostre màquina, podent fer qualsevol cosa en ella com per exemple, apoderar-
-se de la nostra compta bancària.
-Parem-nos a pensar per un moment què pot passar si en comptes de què l'infecció estigui
-a la nostre màquina, aquesta estigui als servidors on es fan les nostres nòmines, als dels
-nostre banc, o a les de qualsevol pàgina de venta d'articles per internet. El perill i la
-criticitat, es disparen exponencialment.
-Són moltes les empreses que utilitzen sistemes operatius basats en UNIX (com poden ser
-GNU/Linux o BSD) per als seus servidors, i són moltes les què s'acaben despreocupant
+% Funcionalitats
+\include{functionality}
 
-de la seguretat dels servidors donant com a excusa que un sistema basat amb UNIX és
-més segur, i que a més, no hi han virus. A la practica, molta gent que es dedica a
-administrar aquestes màquines, no està qualificada, o no compta amb el temps necessari
-per a fer-ho del tot bé, i com que les coses aparentment funcionen, es segueix així.
-I aquí és on vull arribar, avui en dia una persona amb suficients ganes, temps i
-coneixements, pot guanyar accés a la majoria de servidors, on un cop accedit, la seva
-preocupació principal, és mantenir-ne l'accés.
-Amb aquest projecte, intento posar de manifest creant una prova del concepte, lo difícil
-que pot arribar a ser per un administrador de sistemes adonar-se que ha estat infectat per
-un rootkit, lo perillós per a la seguretat del sistema, i lo crua que és la realitat ja que un
-intrús pot tenir-ho molt fàcil per a controlar el nostre servidor.
+% Idea conceptual per solventar el problema
+\include{idea}
 
-\section{Objectiu del projecte}
+% Disseny de la sol.lució
+\include{design_solution}
 
-L'objectiu del projecte, és implementar un rootkit per a sistemes basats en UNIX. La idea
-és potenciar al màxim les seves característiques que com a tot rootkit, són les seves
-següents:
+% Sol.lució desenvolupada finalment
+\include{solution}
 
-Ocultació. El rootkit ha de passar el màxim desapercebut en el sistema que ha
-estat instal·lat. Per un administrador ha de ser molt difícil d'adonar-se que el
-sistema ha estat compromès. El rootkit ha d'intentar ocultar al màxim les tasques
-que executa.
-Permetre accés. El rootkit ha de permetre l'accés a la màquina a la persona que
-l'ha instal·lat. Normalment i per comoditat, aquest accés és remot a través
-d'internet, havent d'evitar les diferents barreres que hi puguin haver.
-Administració remota de la màquina. El rootkit ha de permetre realitzar tot tipus
-d'accions a la màquina com si d'un usuari vàlid es tractés. Accions com executar
-tasques, editar fitxers, pujar o descarregar-ne, són funcionalitats bàsiques.
-Permanència. Les màquines s'actualitzen, es paren i s'engeguen. El rootkit ha
-d'intentar no veure's afectat per aquests canvis.
-Augment de privilegis. Ha de ajudar tant com pugui, a la obtenció de nous
-privilegis.
+% Estudi econòmic
+\include{economics}
 
-%\gls{linux} % displays name field of the linux entry (in this case "Linux")
-%\useGlosentry{linux}{GNU/Linux} % displays "GNU/Linux"
-%\GNU % displays "GNU's Not Unix (GNU)" the first time this is used
-%\GNU % displays "GNU" all subsequent times
-% NB: remember to use \GNU\ if want to retain the space after the acronym
+% Conclussions
+\include{conclusions}
 
-%\section{Glossary}
-%\printglossaries
-%\printglossary
-%\addcontentsline{toc}{chapter}{Glossary} % remove this line if you don't want a table of contents entry for the glossary
-%\newpage
+% Apendix: 
+\appendix
 
-%\appendix
-%test
-%ae
-%ts
-%et
-%sdt
-%Bibliografia wikipedia
-%\include{filename}
+% Glossari
+\include{glossary}
+
+% Bibliografia
+\include{bibliography}
+
+% Manual d'usuari
+\include{user_manual}
+
+\section{ACTA}
+
+- Caldrà informació extra de tema seguretat. Caldrà definir-ho tot abans
+(per exemple, " comprometre un sistema" ), "permanencia", ...
+
+- Propera reunió 7-04-09
+- Idea conceptual.
+- Disseny de la part client/servidor i una primera beta
+- I finalment, el capítol que explica el com s'ha fet.
+
+
+
 
 \end{document}
