@@ -3,7 +3,7 @@
 
 pdf: projecte.pdf
 
-projecte.pdf: projecte.tex
+projecte.pdf: *.tex
 	pdflatex projecte.tex 	
 
 #inscripcio.glo inscripcio.ist: inscripcio.tex
