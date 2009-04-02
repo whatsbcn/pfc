@@ -1,8 +1,9 @@
 DIET = "$(ls bin-*/diet)"
 
+all: dietlibc
 
 
-
+dietlibc: dietlibc/bin/diet
 
 dietlibc/bin/diet:
 	cd dietlibc; make
