@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<project name="" company="" manager="" phase="" project-start="20090323T000000Z" mrproject-version="2" calendar="1">
+  <properties/>
+  <phases/>
+  <calendars>
+    <day-types>
+      <day-type id="0" name="Laborable" description="Un dia laborable predeterminat"/>
+      <day-type id="1" name="Festiu" description="Un dia festiu predeterminat"/>
+      <day-type id="2" name="Fes servir la base" description="Fes servir un dia del calendari base"/>
+    </day-types>
+    <calendar id="1" name="Predeterminat">
+      <default-week mon="0" tue="0" wed="0" thu="0" fri="0" sat="1" sun="1"/>
+      <overridden-day-types>
+        <overridden-day-type id="0">
+          <interval start="0800" end="1200"/>
+          <interval start="1300" end="1700"/>
+        </overridden-day-type>
+      </overridden-day-types>
+      <days/>
+    </calendar>
+  </calendars>
+  <tasks>
+    <task id="1" name="Inici del projecte" note="" work="720000" start="20090323T000000Z" end="20090327T170000Z" work-start="20090323T080000Z" percent-complete="1" priority="0" type="normal" scheduling="fixed-work">
+      <constraint type="must-start-on" time="20080204T000000Z"/>
+      <task id="2" name="Estructura i disseny" note="" work="144000" start="20090323T000000Z" end="20090327T170000Z" work-start="20090323T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="3" name="Sondeig general de funcionalitats" note="" work="144000" start="20090323T000000Z" end="20090327T170000Z" work-start="20090323T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="4" name="Estructura part client" note="" work="144000" start="20090323T000000Z" end="20090327T170000Z" work-start="20090323T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="5" name="Estructura part launcher" note="" work="144000" start="20090323T000000Z" end="20090327T170000Z" work-start="20090323T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="6" name="Estructura documentaci&#xF3;" note="" work="144000" start="20090323T000000Z" end="20090327T170000Z" work-start="20090323T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+    </task>
+    <task id="7" name="Implementaci&#xF3; b&#xE0;sica (primera beta)" note="" work="8640000" start="20090327T170000Z" end="20090508T170000Z" work-start="20090330T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+      <predecessors>
+        <predecessor id="1" predecessor-id="1" type="FS"/>
+      </predecessors>
+      <task id="8" name="Recerca i implementaci&#xF3; funcionalitats b&#xE0;siques" note="" work="7776000" start="20090327T170000Z" end="20090508T170000Z" work-start="20090330T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+        <task id="9" name="ELF est&#xE0;tic" note="" work="864000" start="20090327T170000Z" end="20090508T170000Z" work-start="20090330T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="10" name="RAW socket" note="" work="864000" start="20090327T170000Z" end="20090508T170000Z" work-start="20090330T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="11" name="Shell amb tty" note="" work="864000" start="20090327T170000Z" end="20090508T170000Z" work-start="20090330T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="12" name="Connexi&#xF3; directa" note="" work="864000" start="20090327T170000Z" end="20090508T170000Z" work-start="20090330T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="13" name="Connexi&#xF3; inversa" note="" work="864000" start="20090327T170000Z" end="20090508T170000Z" work-start="20090330T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="14" name="Multiplataforma i multiarquitectura" note="" work="864000" start="20090327T170000Z" end="20090508T170000Z" work-start="20090330T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="15" name="Transfer&#xE8;ncia de fitxers" note="" work="864000" start="20090327T170000Z" end="20090508T170000Z" work-start="20090330T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="16" name="Mode comanda i mode servei" note="" work="864000" start="20090327T170000Z" end="20090508T170000Z" work-start="20090330T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="17" name="Profile integrat" note="" work="864000" start="20090327T170000Z" end="20090508T170000Z" work-start="20090330T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      </task>
+      <task id="18" name="Documentaci&#xF3;" note="" work="864000" start="20090327T170000Z" end="20090508T170000Z" work-start="20090330T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+    </task>
+    <task id="19" name="Implementaci&#xF3; funcions avan&#xE7;ades (segona beta)" note="" work="6336000" start="20090508T170000Z" end="20090605T170000Z" work-start="20090511T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+      <predecessors>
+        <predecessor id="1" predecessor-id="7" type="FS"/>
+      </predecessors>
+      <task id="20" name="Recerca i implementaci&#xF3; funcionalitats avan&#xE7;ades" note="" work="5760000" start="20090508T170000Z" end="20090605T170000Z" work-start="20090511T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+        <task id="21" name="Comunicaci&#xF3; xifrada" note="" work="576000" start="20090508T170000Z" end="20090605T170000Z" work-start="20090511T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="22" name="Protecci&#xF3; de l'executable" note="" work="1728000" start="20090508T170000Z" end="20090605T170000Z" work-start="20090511T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+          <task id="23" name="Anti desensamblat" note="" work="576000" start="20090508T170000Z" end="20090605T170000Z" work-start="20090511T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+          <task id="24" name="Anti debug" note="" work="576000" start="20090508T170000Z" end="20090605T170000Z" work-start="20090511T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+          <task id="25" name="Xifratge de l'executable" note="" work="576000" start="20090508T170000Z" end="20090605T170000Z" work-start="20090511T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        </task>
+        <task id="26" name="No permetre multiples execucions" note="" work="576000" start="20090508T170000Z" end="20090605T170000Z" work-start="20090511T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="27" name="Incorporaci&#xF3; tasques programades" note="" work="576000" start="20090508T170000Z" end="20090605T170000Z" work-start="20090511T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="28" name="Ocultaci&#xF3; del servei" note="" work="576000" start="20090508T170000Z" end="20090605T170000Z" work-start="20090511T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="29" name="Sistema tipus heardbeat" note="" work="576000" start="20090508T170000Z" end="20090605T170000Z" work-start="20090511T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="30" name="Keylogger i Keylogger de pts" note="" work="576000" start="20090508T170000Z" end="20090605T170000Z" work-start="20090511T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="31" name="Independ&#xE8;ncia de la shell" note="" work="576000" start="20090508T170000Z" end="20090605T170000Z" work-start="20090511T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      </task>
+      <task id="32" name="Documentaci&#xF3;" note="" work="576000" start="20090508T170000Z" end="20090605T170000Z" work-start="20090511T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+    </task>
+    <task id="33" name="Injecci&#xF3; de codi en mem&#xF2;ria de kernel" note="" work="2880000" start="20090605T170000Z" end="20090710T170000Z" work-start="20090608T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+      <predecessors>
+        <predecessor id="1" predecessor-id="19" type="FS"/>
+      </predecessors>
+      <task id="34" name="Injecci&#xF3; del proc&#xE9;s via /dev/kmem" note="" work="720000" start="20090605T170000Z" end="20090710T170000Z" work-start="20090608T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="35" name="Injecci&#xF3; del proc&#xE9;s via /dev/mem" note="" work="720000" start="20090605T170000Z" end="20090710T170000Z" work-start="20090608T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="36" name="Fer-ho independent de la versi&#xF3; del kernel" note="" work="720000" start="20090605T170000Z" end="20090710T170000Z" work-start="20090608T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="37" name="Documentaci&#xF3;" note="" work="720000" start="20090605T170000Z" end="20090710T170000Z" work-start="20090608T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+    </task>
+    <task id="38" name="Analisi general del qu&#xE8; s'ha aconseguit" note="" work="1209600" start="20090710T170000Z" end="20090721T170000Z" work-start="20090713T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+      <predecessors>
+        <predecessor id="1" predecessor-id="33" type="FS"/>
+      </predecessors>
+      <task id="39" name="Implicacions" note="" work="201600" start="20090710T170000Z" end="20090721T170000Z" work-start="20090713T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="40" name="Qu&#xE8; es pot millorar" note="" work="201600" start="20090710T170000Z" end="20090721T170000Z" work-start="20090713T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="41" name="Detecci&#xF3;" note="" work="201600" start="20090710T170000Z" end="20090721T170000Z" work-start="20090713T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="42" name="Rendiment" note="" work="201600" start="20090710T170000Z" end="20090721T170000Z" work-start="20090713T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="43" name="Ultims retocs" note="" work="201600" start="20090710T170000Z" end="20090721T170000Z" work-start="20090713T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="44" name="Documentaci&#xF3;" note="" work="201600" start="20090710T170000Z" end="20090721T170000Z" work-start="20090713T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+    </task>
+  </tasks>
+  <resource-groups/>
+  <resources/>
+  <allocations/>
+</project>
