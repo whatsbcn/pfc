@@ -8,18 +8,22 @@
 \usepackage{ucs}
 \usepackage[utf8x]{inputenc}
 % Text generat automàticament en català i partició per síl·labes
-%\usepackage[catalan]{babel}
+\usepackage[catalan]{babel}
 % Pel glossari
 %\usepackage[style=list]{glossary} 
 \usepackage{nomencl} 
 % Que mostri la capçalera a tots els fulls
 %\pagestyle{headings}
 % Pel glossari
-%\usepackage{nomencl}
-%\makenomenclature
+\usepackage{nomencl}
+\makenomenclature
 
 % Autor
-\author{Albert Sellarès}
+\author{Albert Sellarès Torra \texttt{<whats@wekk.net>}\\
+		Facultat d'Informàtica de Barcelona,\\
+		UPC\\}
+%\date{2009}
+		
 % Títol de l'article
 \title{skd: Rootkit per sistemes operatius UNIX}
 
@@ -66,11 +70,11 @@
 % Apendix: 
 \appendix
 
-% Glossari
-\include{glossary}
-
 % Bibliografia
 \include{bibliography}
+
+% Glossari
+\include{glossary}
 
 % Manual d'usuari
 \include{user_manual}

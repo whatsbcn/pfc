@@ -3,7 +3,10 @@
 
 pdf: projecte.pdf
 
-projecte.pdf: *.tex
+#projecte.pdf: *.tex
+projecte.pdf: *tex
+	pdflatex projecte.tex 	
+	makeindex projecte.nlo -s nomencl.ist -o projecte.nls
 	pdflatex projecte.tex 	
 
 #inscripcio.glo inscripcio.ist: inscripcio.tex
