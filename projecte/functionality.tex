@@ -94,7 +94,9 @@ Com tot malware, l'objectiu principal és l'ocultació, per tant el nostre rootk
 Ens interessa que el rootkit ens estigui dient "constantment" que està actiu. D'aquesta manera podrem tenir un control de les diferents
 màquines que tenim infectades, i si en algun moment, en perdem alguna d'elles.
 
-
+\subsection{Independència de la shell}
+Per tal de tenir el mateix interpret de comandes independentment del sistema, i evitar algun sistema de loggeig que acostumen a 
+incorporar per defecte, ens interessa incorporar dintre el propi rootkit la shell.
 
 \section{Mode administrador}
 \subsection{Utilització d'un RAW socket}
@@ -107,23 +109,17 @@ total per a connectar-nos a una màquina on tinguem el nostre rootkit instal·la
 serveis existents en aquesta màquina per tal de comunicar-nos amb el rootkit.
 
 \subsection{Keylogger}
-Molts
+Molts dels cops que obtinguem accés de root, provablement serà a través d'algun bug. És per aquest motiu, que ens pot interessar molt
+obtenir el password de root o d'altres usuaris vàlids del sistema. Aquests passwords els podrem obtenir en el moment que algun usuari
+els escrigui en un teclat físic, o a través d'un pty.
+
+\subsection{Injecció de codi en memòria del nucli}
+Com s'ha comentat abans, els usuaris administradors, acostumen a tenir accés total a la màquina, i a poder realitzar gairebé qualsevol tasca.
+Una de les coses que pot fer l'usuari administrador en un sistema Linux, és llegir i escrire directament a una posició de la
+memòria del sistema, d'aquesta manera es pot arribar a modificar la part de memòria que utilitzar el sistema operatiu per funcionar,
+obtenint així un control total sobre què mostar al sistema operatiu i podent ocultar tant com es vulgui el nostre rootkit.
+Ens interessa que el nostre rootkit injecti codi en memòria del nucli per ocultar-se el màxim possible.
 
 
-
-
-
-
-
-
-
-
-
-
-GLOSSARI: portable
-
-
-En sistemes UNIX, l'usuari del sistema amb perfil administrador, s'anomena \emph{root}, i és d'aquí d'on bé 
-el nom de rootkit.
 
 
