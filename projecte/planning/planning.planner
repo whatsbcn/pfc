@@ -4,9 +4,9 @@
   <phases/>
   <calendars>
     <day-types>
-      <day-type id="0" name="Laborable" description="Un dia laborable predeterminat"/>
-      <day-type id="1" name="Festiu" description="Un dia festiu predeterminat"/>
-      <day-type id="2" name="Fes servir la base" description="Fes servir un dia del calendari base"/>
+      <day-type id="0" name="Working" description="A default working day"/>
+      <day-type id="1" name="Nonworking" description="A default non working day"/>
+      <day-type id="2" name="Use base" description="Use day from base calendar"/>
     </day-types>
     <calendar id="1" name="Predeterminat">
       <default-week mon="0" tue="0" wed="0" thu="0" fri="0" sat="1" sun="1"/>

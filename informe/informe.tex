@@ -13,7 +13,11 @@
 \usepackage{graphicx}
 
 % Autor
-\author{Albert Sellarès}
+\author{Albert Sellarès Torra \texttt{<whats@wekk.net>}\\
+        Facultat d'Informàtica de Barcelona,\\
+        UPC\\}
+%\date{2009}
+
 % Títol de l'article
 \title{skd: Rootkit per sistemes operatius UNIX}
 
@@ -45,35 +49,36 @@ proteccions per tal d'evitar que programes com aquests els controlin.
 
 Avui en dia ens veiem immersos en la societat de la informació, un moment en què la
 majoria de les empreses i persones intentem adaptar-nos a les noves tecnologies,
-moment en què s'intenta digitalitzar tot el què es pot.\\
-Qui més qui menys veu que en uns anys tot es veurà gestionat a través de sistemes
+moment en què s'intenta digitalitzar tot el què es pot. Qui més qui menys veu que en uns anys tot es veurà gestionat a través de sistemes
 d'informació, tot estarà interconnectat entre sí, i s'ha de poder garantir que tots aquests
 sistemes, comptin amb un mínim de seguretat.\\
-Des de els inicis de la història els sistemes operatius UNIX han estat al capdavant en els
-entorns de servidors, i des de llavors que les grans empreses els utilitzen per a confiar-hi
-les seves dades. Avui, i gràcies al boom que ha fet el GNU/Linux (tothom qui més qui
-menys té una idea del què és), administradors de sistemes no experimentats acaben
-utilitzant sistemes basats en UNIX en el seu lloc de treball.
 
 
 Les implicacions que té estar infectat per un virus estan canviant. Els virus (i en particular
 els cavalls de Troia) ja no es fan per molestar a l'usuari, al contrari, un alt percentatge dels
-virus tenen com a objectiu principal, passar desapercebuts per tal de permetre l'infectant
-controlar la nostre màquina, podent fer qualsevol cosa en ella com per exemple, apoderar-
+virus tenen com a objectiu principal ocultar-se. Passant desapercebuts, permeten a l'infectant
+controlar la nostre màquina podent fer qualsevol cosa en ella com per exemple, apoderar-
 se de la nostra compta bancària.\\
-Parem-nos a pensar per un moment què pot passar si en comptes de què l'infecció estigui
-a la nostre màquina, aquesta estigui als servidors on es fan les nostres nòmines, als dels
+Parem-nos a pensar per un moment què passaria si en comptes de què l'infecció estigués
+a la nostre màquina, aquesta estigués als servidors on es fan les nostres nòmines, als dels
 nostre banc, o a les de qualsevol pàgina de venta d'articles per internet. El perill i la
 criticitat, es disparen exponencialment.\\
-Són moltes les empreses que utilitzen sistemes operatius basats en UNIX (com poden ser
-GNU/Linux o BSD) per als seus servidors, i són moltes les què s'acaben despreocupant
+
+
+Des de els inicis de la història els sistemes operatius UNIX han estat al capdavant en els
+entorns de servidors, i des de llavors que les grans empreses els utilitzen per a confiar-hi
+les seves dades. Avui, i gràcies al boom que ha fet el GNU/Linux i en general el software lliure(tothom qui més qui
+menys té una idea del què és), administradors de sistemes no experimentats acaben
+utilitzant sistemes basats en UNIX en el seu lloc de treball. \\
+Per tant, són moltes les empreses que utilitzen aquests sistemes operatius (com poden ser
+GNU/Linux, BSD, Solaris, etc) per als seus servidors, i són moltes les què s'acaben despreocupant
 de la seguretat dels servidors donant com a excusa que un sistema basat amb UNIX és
 més segur, i que a més, no hi han virus. A la practica, molta gent que es dedica a
 administrar aquestes màquines, no està qualificada, o no compta amb el temps necessari
 per a fer-ho del tot bé, i com que les coses aparentment funcionen, es segueix així.
-I aquí és on vull arribar, avui en dia una persona amb suficients ganes, temps i
+I aquí és on vull arribar. Avui, una persona amb suficients ganes, temps i
 coneixements, pot guanyar accés a la majoria de servidors, on un cop accedit, la seva
-preocupació principal, és mantenir-ne l'accés.
+preocupació principal, és mantenir-ne l'accés.\\
 
 
 Amb aquest projecte, intento posar de manifest creant una prova del concepte, lo difícil
