@@ -9,7 +9,8 @@
 \usepackage[utf8x]{inputenc}
 % Text generat automàticament en català i partició per síl·labes
 \usepackage[catalan]{babel}
-
+% Per afegir imatges
+\usepackage{graphicx}
 
 % Autor
 \author{Albert Sellarès}
@@ -30,7 +31,7 @@
 \section{Introducció}
 
 Aquest projecte tracta d'implementar una prova de concepte del què seria un rootkit\footnote{rootkit:
-Èina o conjunt d'èines que té com a finalitat amagar-se a i amagar altres programes, processos, arxius, 
+Eina o conjunt d'eines que té com a finalitat amagar-se a i amagar altres programes, processos, arxius, 
 directoris, ports, etc., per tal que permeti a un intrús accedir al sistema (normalment remotament), 
 així com extreure informació.} per a sistemes operatius actuals basats en UNIX.\\ 
 Un rootkit és una aplicació pensada per a ser utilitzada com a porta del darrere per tal de
@@ -56,7 +57,7 @@ utilitzant sistemes basats en UNIX en el seu lloc de treball.
 
 
 Les implicacions que té estar infectat per un virus estan canviant. Els virus (i en particular
-els cavalls de troya) ja no es fan per molestar a l'usuari, al contrari, un alt percentatge dels
+els cavalls de Troia) ja no es fan per molestar a l'usuari, al contrari, un alt percentatge dels
 virus tenen com a objectiu principal, passar desapercebuts per tal de permetre l'infectant
 controlar la nostre màquina, podent fer qualsevol cosa en ella com per exemple, apoderar-
 se de la nostra compta bancària.\\
@@ -80,35 +81,38 @@ que pot arribar a ser per un administrador de sistemes adonar-se que ha estat in
 un rootkit, lo perillós per a la seguretat del sistema, i lo crua que és la realitat ja que un
 intrús pot tenir-ho molt fàcil per a controlar el nostre servidor.
 
-\section{Objectiu del projecte}
+\section{Objectiu}
 
-L'objectiu del projecte, és implementar un rootkit per a sistemes basats en UNIX. La idea
-és potenciar al màxim les seves característiques que com a tot rootkit, són les seves
-següents:
+L'objectiu del projecte, és implementar un rootkit per a sistemes basats en UNIX. Tot seguit
+es descriu en forma de resum, les principals característiques que ha de potenciar. En la
+memòria del projecte estaran descrites amb molt més detall, però de tota manera, podeu contactar
+amb mi per a aclarir qualsevol dubte. Les característiques del rootkit són les següents:
 
-\\
-CAL EXPLICAR AIXÒ MILLOR!
-\\
-\\
-
-
-
-\begin{itemize}
-\item Ocultació. El rootkit ha de passar el màxim desapercebut en el sistema que ha
-estat instal·lat. Per un administrador ha de ser molt difícil d'adonar-se que el
+\begin{description}
+\item[Ocultació] Ha de passar el màxim desapercebut en el sistema que ha
+estat instal·lat. Per un administrador, ha de ser molt difícil d'adonar-se que el
 sistema ha estat compromès. El rootkit ha d'intentar ocultar al màxim les tasques
 que executa.
-\item Permetre accés. El rootkit ha de permetre l'accés a la màquina a la persona que
+\item[Accés] Ha de permetre l'accés a la persona que
 l'ha instal·lat. Normalment i per comoditat, aquest accés és remot a través
-d'internet, havent d'evitar les diferents barreres que hi puguin haver.
-\item Administració remota de la màquina. El rootkit ha de permetre realitzar tot tipus
+d'internet. El rootkit ha de facilitar al màxim aquest accés, havent d'evitar les diferents 
+barreres que hi puguin haver (firewalls, ACLs, etc).
+\item[Administració]. Ha de permetre realitzar tot tipus
 d'accions a la màquina com si d'un usuari vàlid es tractés. Accions com executar
 tasques, editar fitxers, pujar o descarregar-ne, són funcionalitats bàsiques.
-\item Permanència. Les màquines s'actualitzen, es paren i s'engeguen. El rootkit ha
+\item[Permanència] Les màquines s'actualitzen, es paren i s'engeguen. El rootkit ha
 d'intentar no veure's afectat per aquests canvis.
-\item Augment de privilegis. Ha de ajudar tant com pugui, a la obtenció de nous
-privilegis.
-\end{itemize}
+\item[Augment de privilegis] Ha de ajudar tant com pugui, a la obtenció de nous
+privilegis. Altres comptes d'usuari, comptes d'altres màquines, comptes de bases de dades, etc.
+\end{description}
 
+
+\section{Planificació}
+La planificació del projecte, és la següent: \\
+\newline
+\includegraphics[width=\textwidth,keepaspectratio]{gantt.png}
+
+
+\section{Què portem fet i què falta?}
 
 \end{document}

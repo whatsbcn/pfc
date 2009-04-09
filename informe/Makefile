@@ -1,5 +1,5 @@
 pdf: 
-	pdflatex inscripcio.tex 	
+	pdflatex informe.tex 	
 	
 clean:
 	rm -f *.aux *.dvi *.log *.toc *.glo *.idx *.ist *.out *.pdf
