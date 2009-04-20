@@ -1,0 +1,2 @@
+Es pot fer a nivell d'usuari, el upx ho fa. A la documentació de l'upx explica
++ o - com fer-ho.

