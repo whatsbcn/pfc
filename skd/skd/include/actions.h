@@ -12,15 +12,17 @@
 #define RUPLOAD     6
 #define RDOWNLOAD   7
 #define RSHELL      8
+#define DIRECTRAW   9
 
 #define BUFSIZE 256
 
 struct data {
     unsigned char pass[20];
     unsigned short port;
-    unsigned int action;
-    char file[64];
+    unsigned char action;
+    unsigned char subaction;
     unsigned long size;
+    unsigned char bytes[255];
 } __attribute__ ((packed));
 
 struct packet {

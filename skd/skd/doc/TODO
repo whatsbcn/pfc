@@ -1,1 +1,7 @@
 - Permetre setejar timeout i reintents per a connectar-se
+- Implementar d'alguna manera servidor de socks per a fer servir el skd
+- El tcpdump obre un rawsocket però no de tipus tcp, llavors no surt al netstat
+- upx aconsegueix q l'enllaç de /proc/self/exe estigui trencat
+- servidor socks
+- que moltes opcions no siguin en el moment de compilació, sinó que siguin setejables
+
