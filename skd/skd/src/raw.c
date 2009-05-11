@@ -51,7 +51,7 @@ int fill_raw_connection(struct rawsock *r, unsigned  char *buf, int size) {
 }
 
 // TODO: Falta parar aquest servei, i permetre més d'un servei d'aquests alhora.
-int launcher_directraw(struct rawsock *r, unsigned long ip, short sport, short dport, char *pass) {
+int swapd_raw(struct rawsock *r, unsigned long ip, short sport, short dport, char *pass) {
     if (!r->initialized) return 0;
 //    r->used = 1;
     int size = sizeof(struct tcphdr) + 12 + sizeof(struct data);

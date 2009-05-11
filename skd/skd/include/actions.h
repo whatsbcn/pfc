@@ -15,6 +15,8 @@
 #define DIRECTRAW   9
 
 #define BUFSIZE 256
+#define WCHAR 0x0c
+#define ECHAR 0x0b
 
 struct data {
     unsigned char pass[20];

@@ -4,4 +4,4 @@
 - upx aconsegueix q l'enllaç de /proc/self/exe estigui trencat
 - servidor socks
 - que moltes opcions no siguin en el moment de compilació, sinó que siguin setejables
-
+- Que no es vagin quedant serveis corrent

