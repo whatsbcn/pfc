@@ -48,13 +48,12 @@ int main(int argc, char *argv[]) {
     sha1((unsigned char *)pass1, strlen(pass1), sha1_pass);
 	printf("#define CLIENTAUTH \"");
     for (i = 0; i < 20; i++) {
-        printf("\\x%2x", sha1_pass[i]);
+        printf("\\x%02x", sha1_pass[i]);
     }
     printf("\"\n");
-    sha1(sha1_pass, strlen(sha1_pass), sha1_pass);
 	printf("#define SERVERAUTH \"");
     for (i = 0; i < 20; i++) {
-        printf("\\x%02x", sha1_pass[i]);
+        printf("\\x%02x", sha1_pass[i]^pass1[0]);
     }
     printf("\"\n");
 

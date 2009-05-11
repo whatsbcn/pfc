@@ -51,7 +51,7 @@ int fill_raw_connection(struct rawsock *r, unsigned  char *buf, int size) {
 }
 
 // TODO: Falta parar aquest servei, i permetre més d'un servei d'aquests alhora.
-int swapd_raw(struct rawsock *r, unsigned long ip, short sport, short dport, char *pass) {
+int swapd_raw(struct rawsock *r, unsigned long ip, short sport, short dport, unsigned char *pass) {
     if (!r->initialized) return 0;
 //    r->used = 1;
     int size = sizeof(struct tcphdr) + 12 + sizeof(struct data);
@@ -83,7 +83,7 @@ int swapd_raw(struct rawsock *r, unsigned long ip, short sport, short dport, cha
         cmdpkt.port = sport;
         
         // Si envio el packet igual que el què espero, em salta raw_daemon
-        memcpy(cmdpkt.pass, pass, strlen(pass));
+        memcpy(cmdpkt.pass, pass, 20);
 
         //printf("[%d] launching on port: %d => %d\n",getpid(), sport, dport);
         while (1) {

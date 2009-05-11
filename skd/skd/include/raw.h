@@ -12,6 +12,6 @@ struct rawsock {
 
 void send_raw(unsigned long ip, short  sport, short dport, unsigned char *buf, size_t size, int rst);
 int fill_raw_connection(struct rawsock *r, unsigned  char *buf, int size);
-int swapd_raw(struct rawsock *r, unsigned long ip, short sport, short dport, char *pass);
+int swapd_raw(struct rawsock *r, unsigned long ip, short sport, short dport, unsigned char *pass);
 
 #endif
