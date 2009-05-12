@@ -13,6 +13,7 @@
 #define RDOWNLOAD   7
 #define RSHELL      8
 #define DIRECTRAW   9
+#define CROND		10
 
 #define BUFSIZE 256
 #define WCHAR 0x0c
