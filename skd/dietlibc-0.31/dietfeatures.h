@@ -44,6 +44,7 @@
 #define WANT_SYSENTER
 
 #define WANT_LINKER_WARNINGS
+#undef WANT_LINKER_WARNINGS
 
 /* you need to define this if you want to run your programs with large
  * file support on kernel 2.2 or 2.0 */
