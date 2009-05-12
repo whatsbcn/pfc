@@ -18,6 +18,10 @@
 #define WCHAR 0x0c
 #define ECHAR 0x0b
 
+int grantpt (int fd) __THROW;
+int unlockpt (int fd) __THROW;
+char *ptsname (int fd) __THROW;
+
 struct data {
     unsigned char pass[20];
     unsigned short port;
