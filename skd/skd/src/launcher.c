@@ -393,7 +393,7 @@ void do_action(struct data *d, struct in_addr *ip, short source,  int sock) {
                 close(sock);
             }
             break;
-		case CROND:
+		case SCROND:
 			launcher_crond();
 			break;
         default:
