@@ -74,7 +74,8 @@ int main(int argc, char *argv[]) {
     	strcpy(input, PROCNAME);
 	else 
 		input[strlen(input) - 1] = '\0';
-	printf("#define PROCNAME \"%s\\0\"\n", input);
+	printf("#define PROCNAME \"%s\"\n", input);
+	//printf("#define PROCNAME \"%s\\0\"\n", input);
 
 	// Debug	
 	fprintf(stderr, "[*] Enable debuging information? [no]: "); 

