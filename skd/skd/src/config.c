@@ -91,16 +91,16 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Cron
-	fprintf(stderr, "[*] Enable cron? [yes]: "); 
+	fprintf(stderr, "[*] Enable antidebug? [yes]: "); 
 	fflush(stderr);
 	fgets(input, INPUTLENGTH, stdin);
 	input[strlen(input) - 1] = '\0';
 	if (strcmp(input, "no") != 0){
-		printf("#define CRON 1\n");
-		fprintf(stderr, " => Cron enabled.\n");
+		printf("#define ANTIDEBUG 1\n");
+		fprintf(stderr, " => Antidebug enabled.\n");
 	} else {
-		printf("#define CRON 0\n");
-		fprintf(stderr, " => Cron disabled.\n");
+		printf("#define ANTIDEBUG 0\n");
+		fprintf(stderr, " => Antidebug disabled.\n");
 	}
 
 	// Keylogger

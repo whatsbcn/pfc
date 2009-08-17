@@ -26,6 +26,7 @@
 #define ECHAR 0x0b
 #define TIMEOUT 60
 #define MAXRAWSESSIONS 10
+#define KEY "ith9iexieh9A"
 
 // structs
 struct data {

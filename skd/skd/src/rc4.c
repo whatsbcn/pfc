@@ -3,11 +3,7 @@
  */
 
 #include <string.h>
-
-typedef struct {
-	unsigned char   state[256];
-	unsigned char   x, y;
-} rc4_ctx;
+#include "rc4.h"
 
 void xchg(unsigned char *a, unsigned char *b) {
 	unsigned char	c = *a;
