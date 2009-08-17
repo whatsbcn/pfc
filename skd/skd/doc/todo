@@ -1,0 +1,12 @@
+- Implementar d'alguna manera servidor de socks per a fer servir el skd
+- upx aconsegueix q l'enllaç de /proc/self/exe estigui trencat: ho fa borrant-se? seria possible?
+- Fills defunc, i shell /bin/sh --noprofile --norc -i amb ptrace
+- Timeout per si password erroni
+- encriptació dels packets
+- mooolt debug i testeix (cron )
+- keylogger
+- tecniques de debug
+- tecniques de xifratge del binary (elfuck?)
+- evitar multiples execucions
+- infecció de capçaleres elf
+- 
