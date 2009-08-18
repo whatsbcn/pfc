@@ -9,8 +9,11 @@ upx: upx/upx
 
 skd: skd/bin/launcher upx dietlibc
 
-upx/upx: 
-	cd upx; make all
+ucl/src/libucl.la:
+	cd ucl; make
+
+upx/upx: ucl/src/libucl.la
+	cd upx; UPX_UCLDIR=$(shell pwd)/ucl make all
 	cd upx; ln -s src/upx.out upx
 
 dietlibc/bin/diet:
@@ -32,3 +35,4 @@ clean:
 	cd upx; make clean
 	cd upx; rm -f upx
 	cd skd; make clean
+	cd ucl; make clean

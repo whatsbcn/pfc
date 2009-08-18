@@ -4,9 +4,13 @@
 
 #include <signal.h>
 #include <sys/ptrace.h>
+#include <sys/wait.h>
+#include <stdlib.h>
 #include <errno.h>
+#include <unistd.h>
 
-#include "../include/config.h"
+#include "config.h"
+#include "common.h"
 
 
 __inline__ void antidebug1() {
@@ -16,10 +20,11 @@ __inline__ void antidebug1() {
         debug("Antidebug1 reached!\n");
         exit(0);
     }
-    waitpid(-1, &status);
+    waitpid(-1, &status,0);
 #endif
 }
 
+#if 0
 void handler(int n)
 {
 }
@@ -31,6 +36,7 @@ __inline__ void antidebug2() {
     signal(SIG_DFL, SIGTRAP);
 #endif
 }
+#endif
 
 __inline__ void antidebug3() {
     __asm__("jmp antidebug3_1 + 2\n"
