@@ -10,6 +10,7 @@ upx: upx/upx
 skd: skd/bin/launcher upx dietlibc
 
 ucl/src/libucl.la:
+	cd ucl; ./configure
 	cd ucl; make
 
 upx/upx: ucl/src/libucl.la
@@ -36,3 +37,4 @@ clean:
 	cd upx; rm -f upx
 	cd skd; make clean
 	cd ucl; make clean
+	rm -f pdflush skd-client
