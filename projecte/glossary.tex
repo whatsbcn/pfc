@@ -1,21 +1,115 @@
 \chapter{Glossari}
 
-\nomenclature[GNU]{GNU s Not Unix}{A computer operating system composed entirely of free software.}
-\nomenclature[linux]{Linux}{Any Unix-like computer operating system that uses the Linux kernel.}
-\nomenclature[BSD]{Berkeley Software Distribution}{Sistema operatiu de la universitat de Berkeley. Sistema basat en UNIX.}
-\nomenclature[malware]{Malware}{Peça de software que té un objectiu maliciós.}
-\nomenclature[virus]{Virus}{Un virus informático es un malware que té per objectiu alterar el funcionament de la màquina.}
-\nomenclature[cavall de troia]{Cavall de troia}{}
 \nomenclature[rootkit]{Rootkit}{Èina o grup d'èines que té com a finalitat 
-amagar-se a ella mateixa, i amagar altres programaes, processos, arxius, directoris, ports, etc., 
-per tal que permeti a un intrús accedir al sistema principalment remotament, així com extreure informació.}
-\nomenclature[TTY]{TTY}{Un tty, és una utilitat de UNIX que ens permet sessions molt més interactives a un terminal.}
-\nomenclature[ELF]{Executable and Linking Format}{Aquest és el format per defecte dels fitxers executables i llibreries.}
-\nomenclature[socket]{socket}{Interfície del sistema utilitzada principalment per a les comunicacions a través de la xarxa.}
-\nomenclature[POSIX]{POSIX}{}
-\nomenclature[keylogger]{Keylogger}{}
-\nomenclature[pty]{pseudotty}{}
-\nomenclature[shell]{shell}{}
-\nomenclature[portable]{Codi/aplicació portable}{}
+    amagar-se a ella mateixa, i amagar altres programaes, processos, arxius, directoris, ports, etc., 
+    per tal que permeti a un intrús accedir al sistema principalment remotament, així com extreure informació.}
+
+\nomenclature[porta del darrere]{Porta del darrere}{És un mètode per sobrepassar el sistema d'autenticació normal d'una 
+    màquina remota. La funció de porta del darrere la pot fer tant un software afegit a la màquina, com la modificació
+    d'un software existent. En anglès s'anomena backdoor}
+
+\nomenclature[nucli de sistema operatiu]{Nucli del sistema operatiu}{El núcli del sistema operatiu o kernel, és el component
+    central dels sistemes operatius. La seva principal responsabilitat és la gestió dels recursos del sistema de manera 
+    justa i segura.}
+
+\nomenclature[kernel]{Kernel}{El kernel, és el nucli del sistema operatiu.}
+
+\nomenclature[virus]{Virus}{Un virus informàtic que té per objectiu alterar el funcionament de la màquina per a realitzar
+    tasques que el propietari de la màquina no ha sol·licitat, ni vol.}
+
+\nomenclature[cavall de troia]{Cavall de Troia}{Tipus de virus informàtic que permet que externament es pugui accedir a les 
+    dades del sistema.}
+
+\nomenclature[UNIX]{Unix}{Sistema operatiu creat el 1969 per l'empresa AT\&T Bell a partir del qual molts altres sistemes 
+    operatius, van basar-se en la seva arquitectura i principis.}
+
+\nomenclature[malware]{Malware}{Peça de software que té un objectiu maliciós.}
+
+\nomenclature[programari lliure]{Programari Lliure}{El programari lliure (en anglès free software) és el programari que pot 
+    ser usat, estudiat i modificat sense restriccions, i que pot ser copiat i redistribuït bé en una versió modificada o 
+    sense modificar sense cap restricció, o bé amb unes restriccions mínimes per garantir que els futurs destinataris també 
+    tindran aquests drets.}
+
+\nomenclature[GNU]{GNU s Not Unix}{Projecte que va néixer amb l'objectiu de crear un sistema operatiu del tot lliure.}
+
+\nomenclature[linux]{Linux}{Nucli del sistema operatiu GNU/Linux. Aquest està basat en Minix, i utilitza una llicència lliure
+    per distribuir-se}
+
+\nomenclature[BSD]{Berkeley Software Distribution}{Sistema operatiu de la universitat de Berkeley inicialment basat en UNIX.}
+
+\nomenclature[solaris]{Solaris}{Solaris és un sistema operatiu de l'empresa Sun Microsystems inicialment basat en el sistema UNIX.}
+
+\nomenclature[hacker]{Hacker}{Persona entusiasta amb el què fa, que té una gran passió en adquirir més coneixement per entendre
+    en detall com funcionen les coses, i en definitiva per aprendre. Aquest terme és utilitzat principalment en temes de seguretat informàtica.}
+
+\nomenclature[cracker]{Cracker}{Persona que té per objectiu realitzar accions perjudicials per algú. En la majoria de mitjans de comunicació 
+    quan s'utilitza la paraula hacker en realitat hauria d'utilitzar-se cracker.}
+
+\nomenclature[hackejar]{Hackejar un sistema}{El fet de introduir-se a un sistema anomenat d'una manera més col·loquial. També
+    s'anomena així el fet d'estudiar a fons un sistema.}
+
+\nomenclature[intrusio]{Intrusió}{Una intrusió, és l'accés il·legal a una màquina.}
+
+\nomenclature[crawler]{Crawler}{És un programa que navega per el World Wide Web en busca d'alguna cosa.}
+
+\nomenclature[botnet]{Botnet}{Una botnet és una xarxa de màquines que treballa de forma automatitzada i autònoma. Aquesta pot 
+    ser controlada o totalment automàtica.}
+
+\nomenclature[dos]{DoS}{Tipus d'atac anomenat Denegació de Servei, que té per objectiu denegar l'ús d'un servei per a la majoria
+    dels seus usuaris.}
+
+\nomenclature[exploit]{exploit}{Peça de software que s'ha desenvolupat per tal d'explotar alguna vulnerabilitat.}
+
+\nomenclature[script kiddie]{Script Kiddie}{Persona que en el mon de la seguretat informàtica, només es dedica a descarregar i
+    executar exploits desenvolupats per tercers per tal d'atacar a sistemes. Són usuaris amb uns coneixements molt limitats.}
+
+\nomenclature[newbie]{NewBie}{És tota persona que està aprenent alguna cosa. S'anomenen així els ``Aprenents de hacker''.}
+
+\nomenclature[shellcode]{Shellcode}{Conjunt de bytes que interpretat per un processador, són executats com a operacions vàlides.
+    Molts exploits acostumen a incorporar un shellcode que és el codi que s'executarà un cop s'hagi compromès la màquina.}
+
+\nomenclature[shell]{Shell}{Una shell és un intèrpret de comandes del món UNIX.}
+
+\nomenclature[shell remota]{Shell Remota}{És un intèrpret de comandes però que pot ser usat remotament (a través d'una xarxa o internet)}
+
+\nomenclature[log]{Log}{Fitxer de registre on es van registrant diferents missatges per tal de tenir constància dels diferents events que 
+    va llançant un servei en concret.}
+
+\nomenclature[firewall]{Firewall}{Software o hardware que es dedica a filtrar els paquets de xarxa per tal de modificar-los, permetre'ls 
+    o denegar-los.}
+
+\nomenclature[resolucio DNS]{Resolució DNS}{Fet de seguir el protocol DNS per tal d'obtenir una direcció IP a partir d'un nom.}
+
+\nomenclature[HTTP]{HTTP}{HyperText Transfer Protocol. Protocol utilitzat en el món web per tal de transferir la informació entre client i servidor.}
+
+\nomenclature[IRC]{IRC}{Internet Relay Chat. Protocol utilitzat per a la comunicació de persones a través del què s'anomenen sales de Xat.)}
+
+\nomenclature[selinux]{SELinux}{Security-Enhanced Linux. És una funcionalitat de les versions més recents de linux que permet definir
+    una sèrie de polítiques per tal d'enfortir els sistemes.}
+
+\nomenclature[gcc]{Gcc}{Gnu C Compiler. Compilador de C de GNU. Un dels projectes més importants de GNU}
+
+\nomenclature[randomitzacio de memoria]{Randomització de memòria}{Tècnica utilitzada en els sistemes operatius actuals que tracta 
+    de generar les direccions de memòria de forma aleatòria en cada execució per tel de fer-ne més difícil la seva explotació en cas d'errada.}
+
+\nomenclature[antidebug]{Antidebug}{Les tècniques antidebug, són totes aquelles tècniques utilitzades per tal de fer més difícil la depuració 
+    i anàlisis d'un executable.}
+
+\nomenclature[portable]{Codi/aplicació portable}{Aquell/a que permet ser portat/compilat/executat en més d'un tipus de sistema, sense requerir
+    de canvis.}
+
+\nomenclature[root]{Root}{Usuari administrador dels sistemes Unix.}
+
+\nomenclature[TTY]{TTY}{Un tty, és una utilitat de UNIX que ens permet emular sessions interactives a un terminal.}
+
+\nomenclature[ELF]{Executable and Linking Format}{Aquest és el format per defecte dels fitxers executables i llibreries en els sistemes Unix actuals.}
+
+\nomenclature[socket]{Socket}{Interfície del sistema utilitzada principalment per a les comunicacions a través de la xarxa.}
+
+\nomenclature[POSIX]{POSIX}{Portable Operating System Interface. Interfície que estandaritza l'API de sistema dels sistemes Unix.}
+
+\nomenclature[keylogger]{Keylogger}{Utilitat que té per objectiu capturar els caracters escrits per l'usuari, normalment amb l'afany d'aconseguir 
+    contrasenyes o dades secretes.}
+
 \printnomenclature
 

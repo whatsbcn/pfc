@@ -1,6 +1,163 @@
 \chapter{Definició del problema}
 
-        - Després de l'introducció, cal explicar una mica
-        més el problema i desglossar el objectiu principal
-        en objectius tangibles que siguin assolibles
-        durant la realització del PFC.
+Per tal de poder entendre la necessitat de les diferents funcionalitats que ens ha d'oferir el rootkit,
+és important que primer de tot, tinguem una idea de com es realitzen avui en dia la gran majoria
+d'intrusions\footnote{una intrusió, és l'accés il·legal a una màquina. El fet de introduir-se a una màquina
+en temes de seguretat informàtica, també s'acostuma a dir (en un llenguatge més informal) ``hackejar una màquina''},
+i què fan els diferents administradors per protegir-se. Cal tenir en compte que aquests procediments són 
+utilitzats alhora d'atacar servidors, en cas de voler atacar pc's, les tècniques utilitzades solen ser diferents.
+
+\section{Intrusions}
+
+Una intrusió és el fet d'aconseguir accés a una màquina normalment remota. D'una manera més tècnica, es podria dir
+que l'objectiu d'una intrusió és poder arribar a executar codi a la màquina víctima. \\
+
+La intrusió és el primer pas necessari per tal de poder comprometre del tot una màquina. El conjunt de passos a 
+realitzar alhora d'accedir a una màquina, són els següents:
+
+\begin{itemize}
+\item Intrusió a la màquina per tal de poder executar comandes de sistema.
+\item Augment de privilegis per tal de poder eliminar les limitacions actuals.
+\item Instal·lació d'un backdoor.
+\item Eliminació de proves.
+\end{itemize}
+
+Aquests són els passos a realitzar en una ``bona'' intrusió, tot i que a la majoria de les intrusions que es produeixen
+avui en dia, són processos automatitzats que només realitzen el primer i tercer punt.
+
+\subsection{Intrusions automatitzades} 
+
+Avui en dia, la majoria d'intrusions que pateixen els servidors, són intrusions automatitzades causades per cucs o 
+programes que exploten un bug o mala configuració en un software en concret. Aquestes intrusions automatitzen les 
+tasques a executar un cop aconsegueixen l'accés a una màquina. Per tal de trobar possibles víctimes, aquests programes
+es dediquen a escanejar diferents rangs d'IPs en busqueda de màquines que tinguin el servei en qüestió actiu, o 
+fan de crawler per tal de trobar noves URLs que indiquin l'ús del software web vulnerable. \\
+
+A una màquina víctima d'una intrusió com aquesta, se li instal·la un tipus de rootkit que permet controlar 
+la màquina (un backdoor). Fins fa poc, la majoria de backdoors d'aquest tipus,  es connectaven a canals de IRC, on 
+processaven les comandes que algun altre usuari, llançava. D'aquesta manera, el propietari del backdoor, podia controlar 
+d'una forma fàcil, moltes màquines alhora. L'únic que havia de fer aquest, era connectar-se al canal en qüestió, i 
+enviar un missatge de text, que seria interpretat per totes les màquines que tinguessin el seu backdoor instal·lat. 
+Recentment tot això ha començat a canviar una mica, ja que els propietaris d'aquests backdoors estan millorant força la tècnica. \\
+
+El conjunt de màquines infectades per aquest tipus de backdoors, i que poden ser controlades totes alhora, s'anomena
+botnets. Aquestes botnets s'utilitzen principalment per fer atacs massius de tipus DoS contra altres màquines. 
+Una dada interessant, és el fet que hi ha gent que s'hi guanya la vida, poden arribar a pagar per una xarxa d'unes
+10.000 màquines, quantitats entre 15.000 USD a 20.000 USD. \\
+
+Aquests últims canvis que estan incorporant aquests backdoors, és que estan canviant el protocol IRC per el HTTP,
+tot implementant tècniques de xifratge sobre els diferents missatges amb l'objectiu de passar més desapercebuts. 
+\footnote{Un exemple d'això, és la recent notícia de que el servei web \href{http://twitter.com/}{Twitter} estava sent 
+utilitzat per a controlar una botnet \url{http://asert.arbornetworks.com/2009/08/twitter-based-botnet-command-channel/}} \\
+
+Aquestes intrusions acostumen a ser provocades per persones que realment no tenen molts coneixements tècnics, sinó que 
+agafen algun exploit que s'hagi publicat recentment, i l'intenten modificar per tal de poder fer-ne un atac massiu. El
+software utilitzat per gestionar la màquina, no està fet per ells sinó que el descarreguen d'Internet i el configuren. \\
+
+Evitar una intrusió d'aquest tipus, acostuma a ser fàcil (tot i que molts cops difícil de portar a terme), ja que 
+acostuma a ser suficient en mantenir tot el software de la màquina actualitzat. \\
+
+Detectar-la, tampoc acostuma a ser molt difícil, ja que acostuma a ser suficient en buscar en el directori /tmp i /var/tmp
+per l'existència de directoris o fitxers estranys (ocults, amb espais, etc). També acostuma a ser interessant comprovar 
+les connexions de xarxa per detectar si la màquina està registrada en alguna botnet. \\
+
+\subsection{Intrusions manuals}
+
+Les intrusions manuals, depenen molt més de la persona que hi ha darrere la intrusió. \\
+
+La menys perillosa, és aquella que és realitzada per un script kiddie o newbie (el què pretén ser un hacker novell) que 
+el què farà serà semblant al propietari de la botnet, però de forma manual. Si la intrusió és satisfactòria, probablement
+l'atacant intentarà augmentar els seus privilegis, i deixar algun backdoor per tal de poder mantenir l'accés que ha aconseguit
+sense haver de tornar a explotar la vulnerabilitat. Cal tenir en compte que aquestes intrusions acostumen a formar part
+de l'aprenentatge de la persona. \\
+
+La intrusió realment perillosa, és la que pot realitzar una persona amb una base tècnica forta. En aquest cas, utilitzar
+versions de software en les que no ha estat publicada cap vulnerabilitat, no és suficient, ja que poden haver-hi vulnerabilitats
+no conegudes (almenys públicament). En aquestes intrusions, l'objectiu sol estar més clar que en els anteriors (ja que 
+l'esforç per realitzar-les és molt superior) i pot anar dirigit tant a aplicacions comunes, com a aplicacions fetes a mida. \\
+
+En aquestes intrusions, i depenent de l'objectiu de l'atacant, molt probablement es realitzaran tots els punts comentats anteriorment
+per tal de mantenir l'accés i passar desapercebut.  \\
+
+En les intrusions manuals, l'usuari que hi ha efectuant l'atac, en tot moment intentarà treballar al màxim de còmode.
+Això vol dir que si és capaç d'executar shellcode a la màquina que està atacant, no es dedicarà a crear el shellcode
+necessari per a cada comanda que vulgui executar al sistema, sinó que tant aviat com pugui, anirà a la recerca
+d'aconseguir una shell remota que li permeti d'una manera més o menys còmode llançar comandes una darrere l'altre. \\
+
+En aquesta intrusió, probablement serà en la què l'atacant un cop hagi acabat, intentarà borrar les dades que demostren que
+ell ha aconseguit l'accés, ja sigui línies de log o qualsevol altre pista.
+
+\section{Mesures de protecció}
+
+Les principals mesures de protecció que es porten a terme per part dels administradors de sistema, per tal d'evitar
+intrusions, són les següents:
+
+\begin{description}
+    \item[Actualitzacions de seguretat] La principal mesura que ajuda a mantenir els sistemes segurs, és
+        realitzar les actualitzacions de seguretat, ja que aquestes corregeixen, totes les vulnerabilitats
+        conegudes del software instal·lat a través dels gestors de paquets del sistema operatiu. Cal tenir 
+        en compte, que totes les aplicacions instal·lades manualment, requereixen de una actualització i 
+        comprovació manual. El fet de instal·lar software manualment, acostuma a portar forces problemes 
+        a la llarga, ja que si l'administrador no està molt al corrent del programari que instal·la,
+        quan apareixen vulnerabilitats, li passen desapercebudes i a la màquina hi acaba quedant un software 
+        vulnerable i mig oblidat.
+    \item[Firewall d'entrada] La segona mesura que s'acostuma a aplicar a la vida real, és el fet de configurar
+        un firewall que només permeti accedir als serveis que realment s'estan oferint a la màquina, de manera
+        que si algun servei que està instal·lat a la màquina no ha de ser accessible des de fora, el firewall
+        no hi permet l'accés. Això evita en el cas d'una intrusió, el poder deixar un servei escoltant a un port
+        de la màquina de tal manera que més endavant es pugui accedir a ella.
+    \item[Firewall de sortida] Un firewall de sortida, ja no és una pràctica tant comuna. Només els ISPs més 
+        professionals (i en definitiva, els més conscienciats amb la seguretat) són els què acostumen a aplicar 
+        polítiques de denegació del trànsit de sortida. El fet d'aplicar aquest tipus de polítiques, realment
+        evita moltes possibles intrusions. Per exemple, un ISP amb aquestes polítiques però amb aplicacions 
+        vulnerables instal·lades, probablement evitaria el que un possible propietari d'una botnet que utilitzés
+        el IRC per controlar les màquines, s'apoderés de les seves. En aquest exemple, l'exploit explotaria 
+        correctament l'aplicació vulnerable, però a l'hora de intentar connectar-se al canal de IRC per tal
+        d'anunciar que està infectada, i esperar ordres, mai ho arribaria a aconseguir ja que la connexió 
+        seria denegada per el firewall. En els casos on s'utilitza un firewall de sortida, aquest no acostuma
+        a denegar tot el transit, sinó que permet resolucions DNS, trànsit local, etc, i molts cops trànsit web. 
+        És per aquest motiu, que les botnets estan canviant a passar utilitzar el protocol HTTP per a controlar 
+        les seves màquines en comptes IRC que era el més utilitzat fins ara.
+    \item[Restriccions de sistema operatiu] A part dels punts comentats anteriorment, existeixen peces de 
+        software que intenten restringir la pròpia explotació de vulnerabilitats tot endurint la seguretat que 
+        envolta les aplicacions. Programari com SELinux, opcions de compilació del gcc, randomització del kernel, 
+        etc, són altres tècniques que s'acostumen a utilitzar, però d'una manera més involuntària ja que és 
+        el propi SO el què et proveeix d'aquestes funcionalitats, i en cas de no fer-ho, és molt rara la vegada
+        que una protecció d'aquestes és afegida a un sistema que no la porta ja incorporada.
+    \item[Scripts personalitzats de comprovació] Una altre mesura també utilitzada, és la creació d'algun script per tal de 
+        comprovar si hi ha algun procés o fitxer sospitós. Aquesta mesura no és tant de protecció, sinó que 
+        permet a l'administrador rebre una alarma en un cas concret. D'aquesta manera, l'administrador és possible
+        que pugui actuar més o menys a temps. Un script típic, és el què busca execucions d'una shell que pengen
+        d'un procés de servidor web.
+\end{description}
+
+\section{Plans de contingència}
+
+A part d'aquestes mesures de seguretat que permeten evitar molts incidents, els administradors de sistemes un cop
+sospiten que han patit alguna intrusió, intentaran descobrir fins a on ha arribat la intrusió, què han instal·lat 
+per a mantenir l'accés, i què han fet exactament. Per fer això, existeixen diferents utilitats que busquen si en 
+el sistema hi han aplicacions sospitoses instal·lades, però normalment es basen en la detecció de rootkits existents.
+Exemples d'aquestes utilitats serien rkthunter, checkrootkit, etc. \\
+
+En cas que aquestes utilitats no detectin res (serien com una espècie d'antivirus), poden causar a l'administrador
+una falsa sensació de seguretat. Si tot i això l'administrador detecta el rootkit, ell mateix intentarà descobrir 
+què és el que fa. És en aquest punt on igual  que els virus, les tècniques d'ocultació i antidebug, prenen sentit.
+Si l'administrador no és capaç de descobrir el què fa el rootkit, és molt possible que no el pugui eliminar de cap
+altre manera que no sigui reinstal·lant la màquina. \\
+
+\section{Objectiu}
+
+Un cop tenim una visió més clara del què vol un atacant en el moment que realitza una intrusió, podem entendre 
+més fàcilment els objectius a grans trets que tindrà aquest rootkit, que principalment seran:
+
+\begin{itemize}
+    \item Permetre l'accés i el nivell de privilegis a la màquina
+    \item Ocultar-se
+    \item Oferir un entorn el màxim de còmode
+    \item Evitar que el depurin i descobreixin el seu funcionament
+    \item Compatible amb la majoria de màquines
+\end{itemize}
+
+En el nostre projecte, comencem a treballar a partir del moment en què ja hem aconseguit l'accés a la
+màquina. En el moment en què ja som capaços d'executar codi, és quan el nostre rootkit, volem que ens 
+comenci a ser útil. \\
