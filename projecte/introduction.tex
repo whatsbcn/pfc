@@ -38,13 +38,13 @@ entorns de servidors, i des de llavors que les grans empreses els utilitzen per 
 les seves dades. Avui, i gràcies al boom que ha fet el GNU/Linux i en general el programari lliure(tothom qui més qui
 menys té una idea del què és), administradors de sistemes no experimentats acaben
 utilitzant sistemes basats en UNIX en el seu lloc de treball. \\
-Per tant, són moltes les empreses que utilitzen aquests sistemes operatius (com poden ser
+El fet és que actualment moltes empreses utilitzen aquests sistemes operatius (com poden ser
 GNU/Linux, BSD, Solaris, etc) per als seus servidors, i són moltes les què s'acaben despreocupant
 de la seguretat dels servidors donant com a excusa que un sistema basat amb UNIX és
 més segur, i que a més, no hi han virus. A la practica, molta gent que es dedica a
 administrar aquestes màquines, no està qualificada, o no compta amb el temps necessari
 per a fer-ho del tot bé, i com que les coses aparentment funcionen, es segueix així.
-I aquí és on vull arribar. Avui, una persona amb suficients ganes, temps i
+Aquest és el punt on vull arribar. Avui, una persona amb suficients ganes, temps i
 coneixements, pot guanyar accés a la majoria de servidors, on un cop accedit, la seva
 preocupació principal, és mantenir-ne l'accés.\\
 
@@ -57,11 +57,11 @@ intrús pot tenir-ho molt fàcil per a controlar el nostre servidor.
 \section{Objectiu}
 
 L'objectiu del projecte, és implementar un rootkit per a sistemes basats en UNIX. Tot seguit
-es descriu en forma de resum, les principals característiques que ha de potenciar. 
+es descriu en forma de resum, les característiques en un caire general que el rootkit ha de potenciar. 
 
 \begin{description}
-    \item[Ocultació] Ha de passar el màxim desapercebut en el sistema que ha
-    estat instal·lat. Per un administrador, ha de ser molt difícil d'adonar-se que el
+    \item[Ocultació] Ha de passar el màxim desapercebut en el sistema on estigui
+    instal·lat. Per un administrador, ha de ser molt difícil d'adonar-se que el
     sistema ha estat compromès. El rootkit ha d'intentar ocultar al màxim les tasques
     que executa.
 
@@ -72,7 +72,8 @@ es descriu en forma de resum, les principals característiques que ha de potenci
 
     \item[Administració] Ha de permetre realitzar tot tipus
     d'accions a la màquina com si d'un usuari vàlid es tractés. Accions com executar
-    tasques, editar fitxers, pujar o descarregar-ne, són funcionalitats bàsiques.
+    tasques, editar fitxers, pujar o descarregar-ne, són funcionalitats bàsiques que ens
+    ha de permetre efectuar.
 
     \item[Permanència] Les màquines s'actualitzen, es paren i s'engeguen. El rootkit ha
     d'intentar no veure's afectat per aquests canvis.

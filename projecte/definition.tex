@@ -4,20 +4,21 @@ Per tal de poder entendre la necessitat de les diferents funcionalitats que ens 
 és important que primer de tot, tinguem una idea de com es realitzen avui en dia la gran majoria
 d'intrusions\footnote{una intrusió, és l'accés il·legal a una màquina. El fet de introduir-se a una màquina
 en temes de seguretat informàtica, també s'acostuma a dir (en un llenguatge més informal) ``hackejar una màquina''},
-i què fan els diferents administradors per protegir-se. Cal tenir en compte que aquests procediments són 
+i el què fan els diferents administradors per protegir-se. Cal tenir en compte que aquests procediments són 
 utilitzats alhora d'atacar servidors, en cas de voler atacar pc's, les tècniques utilitzades solen ser diferents.
 
 \section{Intrusions}
 
 Una intrusió és el fet d'aconseguir accés a una màquina normalment remota. D'una manera més tècnica, es podria dir
-que l'objectiu d'una intrusió és poder arribar a executar codi a la màquina víctima. \\
+que l'objectiu d'una intrusió és poder arribar a executar codi\footnote{Amb codi ens referim a bytecode o comandes de sistema} 
+a la màquina víctima. \\
 
 La intrusió és el primer pas necessari per tal de poder comprometre del tot una màquina. El conjunt de passos a 
-realitzar alhora d'accedir a una màquina, són els següents:
+realitzar alhora d'accedir a una màquina es poden resumir com:
 
 \begin{itemize}
-\item Intrusió a la màquina per tal de poder executar comandes de sistema.
-\item Augment de privilegis per tal de poder eliminar les limitacions actuals.
+\item Intrusió.
+\item Augment de privilegis.
 \item Instal·lació d'un backdoor.
 \item Eliminació de proves.
 \end{itemize}
@@ -25,43 +26,52 @@ realitzar alhora d'accedir a una màquina, són els següents:
 Aquests són els passos a realitzar en una ``bona'' intrusió, tot i que a la majoria de les intrusions que es produeixen
 avui en dia, són processos automatitzats que només realitzen el primer i tercer punt.
 
-\subsection{Intrusions automatitzades} 
+\subsection{Intrusió}
+
+La intrusió és l'acció d'intentar accedir a una màquina. En el cas d'una intrusió ens referim a accedir com a accedir 
+virtualment, o el què seria poder executar programes a la màquina en qüestió.
+
+\subsubsection{Intrusions automatitzades} 
 
 Avui en dia, la majoria d'intrusions que pateixen els servidors, són intrusions automatitzades causades per cucs o 
 programes que exploten un bug o mala configuració en un software en concret. Aquestes intrusions automatitzen les 
-tasques a executar un cop aconsegueixen l'accés a una màquina. Per tal de trobar possibles víctimes, aquests programes
+tasques a executar un cop s'aconsegueix l'accés a una màquina així com el mateix procediment per aconseguir accedir-hi. 
+Per tal de trobar possibles víctimes, aquests programes
 es dediquen a escanejar diferents rangs d'IPs en busqueda de màquines que tinguin el servei en qüestió actiu, o 
 fan de crawler per tal de trobar noves URLs que indiquin l'ús del software web vulnerable. \\
 
-A una màquina víctima d'una intrusió com aquesta, se li instal·la un tipus de rootkit que permet controlar 
-la màquina (un backdoor). Fins fa poc, la majoria de backdoors d'aquest tipus,  es connectaven a canals de IRC, on 
+A una màquina víctima d'una intrusió com aquesta, se li instal·la un tipus de rootkit que permet llançar accions en 
+ella (un backdoor). Fins fa poc, la majoria de backdoors d'aquest tipus,  es connectaven a canals de IRC, on 
 processaven les comandes que algun altre usuari, llançava. D'aquesta manera, el propietari del backdoor, podia controlar 
-d'una forma fàcil, moltes màquines alhora. L'únic que havia de fer aquest, era connectar-se al canal en qüestió, i 
+d'una manera fàcil, moltes màquines alhora. Per tal de llançar alguna acció en les víctimes, aquest usuari només havia de 
+connectar-se al canal en qüestió, i 
 enviar un missatge de text, que seria interpretat per totes les màquines que tinguessin el seu backdoor instal·lat. 
-Recentment tot això ha començat a canviar una mica, ja que els propietaris d'aquests backdoors estan millorant força la tècnica. \\
+Recentment tot això ha començat a canviar una mica, ja que els propietaris d'aquests backdoors estan millorant força la tècnica
+per fer-los més efectius. \\
 
 El conjunt de màquines infectades per aquest tipus de backdoors, i que poden ser controlades totes alhora, s'anomena
-botnets. Aquestes botnets s'utilitzen principalment per fer atacs massius de tipus DoS contra altres màquines. 
-Una dada interessant, és el fet que hi ha gent que s'hi guanya la vida, poden arribar a pagar per una xarxa d'unes
-10.000 màquines, quantitats entre 15.000 USD a 20.000 USD. \\
+botnets. Aquestes botnets s'utilitzen principalment per fer atacs massius de tipus DoS contra altres màquines i per enviar SPAM. 
+Una dada interessant, és el fet que hi ha gent que s'hi guanya la vida. Per exemple, per una xarxa d'unes 10.000 màquines,
+es poden arribar a pagar quantitats entre 15.000 USD i 20.000 USD. \\
 
-Aquests últims canvis que estan incorporant aquests backdoors, és que estan canviant el protocol IRC per el HTTP,
-tot implementant tècniques de xifratge sobre els diferents missatges amb l'objectiu de passar més desapercebuts. 
-\footnote{Un exemple d'això, és la recent notícia de que el servei web \href{http://twitter.com/}{Twitter} estava sent 
-utilitzat per a controlar una botnet \url{http://asert.arbornetworks.com/2009/08/twitter-based-botnet-command-channel/}} \\
+El principal canvi que estan realitzant la majoria d¡aquests backdoors, és que estan canviant el protocol de funcionament. Els
+més moderns que han aparegut, han canviat l'IRC per l'HTTP i a més, han implementant tècniques de xifratge sobre els diferents 
+missatges amb l'objectiu de passar més desapercebuts. \footnote{Un exemple d'això, és la recent notícia de que el servei web 
+\href{http://twitter.com/}{Twitter} estava sent utilitzat per a controlar una botnet \url{http://asert.arbornetworks.com/2009/08/twitter-based-botnet-command-channel/}} \\
 
-Aquestes intrusions acostumen a ser provocades per persones que realment no tenen molts coneixements tècnics, sinó que 
+Les intrusions d'aquest tipus, acostumen a ser provocades per persones que realment no tenen molts coneixements tècnics, sinó que 
 agafen algun exploit que s'hagi publicat recentment, i l'intenten modificar per tal de poder fer-ne un atac massiu. El
-software utilitzat per gestionar la màquina, no està fet per ells sinó que el descarreguen d'Internet i el configuren. \\
+software utilitzat per gestionar la màquina, no està fet per ells sinó que el descarreguen d'Internet i el configuren. Alhora
+aquestes acostumen a ser força joves. \\
 
 Evitar una intrusió d'aquest tipus, acostuma a ser fàcil (tot i que molts cops difícil de portar a terme), ja que 
-acostuma a ser suficient en mantenir tot el software de la màquina actualitzat. \\
+acostuma a ser suficient en mantenir tot el software de les màquines actualitzat. \\
 
-Detectar-la, tampoc acostuma a ser molt difícil, ja que acostuma a ser suficient en buscar en el directori /tmp i /var/tmp
-per l'existència de directoris o fitxers estranys (ocults, amb espais, etc). També acostuma a ser interessant comprovar 
+Detectar quest tipus d'intrusions tampoc acostuma a ser molt difícil. Per detectar-les, acostuma a ser suficient en buscar en el directori /tmp i /var/tmp
+per l'existència de fitxers o directoris estranys (ocults, amb espais, etc). També acostuma a ser interessant comprovar 
 les connexions de xarxa per detectar si la màquina està registrada en alguna botnet. \\
 
-\subsection{Intrusions manuals}
+\subsubsection{Intrusions manuals}
 
 Les intrusions manuals, depenen molt més de la persona que hi ha darrere la intrusió. \\
 
@@ -72,20 +82,21 @@ sense haver de tornar a explotar la vulnerabilitat. Cal tenir en compte que aque
 de l'aprenentatge de la persona. \\
 
 La intrusió realment perillosa, és la que pot realitzar una persona amb una base tècnica forta. En aquest cas, utilitzar
-versions de software en les que no ha estat publicada cap vulnerabilitat, no és suficient, ja que poden haver-hi vulnerabilitats
-no conegudes (almenys públicament). En aquestes intrusions, l'objectiu sol estar més clar que en els anteriors (ja que 
+versions de software en les que no ha estat publicada cap vulnerabilitat, no és suficient (poden haver-hi vulnerabilitats
+no conegudes públicament). En aquestes intrusions, l'objectiu sol estar més clar que en els anteriors (ja que 
 l'esforç per realitzar-les és molt superior) i pot anar dirigit tant a aplicacions comunes, com a aplicacions fetes a mida. \\
 
 En aquestes intrusions, i depenent de l'objectiu de l'atacant, molt probablement es realitzaran tots els punts comentats anteriorment
 per tal de mantenir l'accés i passar desapercebut.  \\
 
-En les intrusions manuals, l'usuari que hi ha efectuant l'atac, en tot moment intentarà treballar al màxim de còmode.
+En les intrusions manuals, l'atacant intentarà en tot moment treballar al màxim de còmode.
 Això vol dir que si és capaç d'executar shellcode a la màquina que està atacant, no es dedicarà a crear el shellcode
-necessari per a cada comanda que vulgui executar al sistema, sinó que tant aviat com pugui, anirà a la recerca
-d'aconseguir una shell remota que li permeti d'una manera més o menys còmode llançar comandes una darrere l'altre. \\
+necessari per a cada comanda que vulgui executar al sistema, sinó que tant aviat com pugui cercarà com
+aconseguir una shell remota. Aquesta li permetrà d'una manera més o menys còmode, moure's pel sistema i llançar comandes una 
+darrere l'altre. \\
 
-En aquesta intrusió, probablement serà en la què l'atacant un cop hagi acabat, intentarà borrar les dades que demostren que
-ell ha aconseguit l'accés, ja sigui línies de log o qualsevol altre pista.
+Molt probablement en aquesta intrusió, un cop l'atacant hagi acabat, intentarà borrar les dades que demostren que
+ha aconseguit l'accés (ex: línies de log del servei que ha explotat).
 
 \section{Mesures de protecció}
 
@@ -96,8 +107,8 @@ intrusions, són les següents:
     \item[Actualitzacions de seguretat] La principal mesura que ajuda a mantenir els sistemes segurs, és
         realitzar les actualitzacions de seguretat, ja que aquestes corregeixen, totes les vulnerabilitats
         conegudes del software instal·lat a través dels gestors de paquets del sistema operatiu. Cal tenir 
-        en compte, que totes les aplicacions instal·lades manualment, requereixen de una actualització i 
-        comprovació manual. El fet de instal·lar software manualment, acostuma a portar forces problemes 
+        en compte, que totes les aplicacions externes instal·lades manualment, requereixen de una actualització i 
+        comprovació manual. El fet de instal·lar software d'aquesta manera, acostuma a portar forces problemes 
         a la llarga, ja que si l'administrador no està molt al corrent del programari que instal·la,
         quan apareixen vulnerabilitats, li passen desapercebudes i a la màquina hi acaba quedant un software 
         vulnerable i mig oblidat.
@@ -116,8 +127,8 @@ intrusions, són les següents:
         d'anunciar que està infectada, i esperar ordres, mai ho arribaria a aconseguir ja que la connexió 
         seria denegada per el firewall. En els casos on s'utilitza un firewall de sortida, aquest no acostuma
         a denegar tot el transit, sinó que permet resolucions DNS, trànsit local, etc, i molts cops trànsit web. 
-        És per aquest motiu, que les botnets estan canviant a passar utilitzar el protocol HTTP per a controlar 
-        les seves màquines en comptes IRC que era el més utilitzat fins ara.
+        És per aquest motiu, que les botnets estan canviant al protocol HTTP per a controlar 
+        les seves màquines en comptes IRC (que era el més utilitzat fins ara).
     \item[Restriccions de sistema operatiu] A part dels punts comentats anteriorment, existeixen peces de 
         software que intenten restringir la pròpia explotació de vulnerabilitats tot endurint la seguretat que 
         envolta les aplicacions. Programari com SELinux, opcions de compilació del gcc, randomització del kernel, 
@@ -135,9 +146,10 @@ intrusions, són les següents:
 
 A part d'aquestes mesures de seguretat que permeten evitar molts incidents, els administradors de sistemes un cop
 sospiten que han patit alguna intrusió, intentaran descobrir fins a on ha arribat la intrusió, què han instal·lat 
-per a mantenir l'accés, i què han fet exactament. Per fer això, existeixen diferents utilitats que busquen si en 
-el sistema hi han aplicacions sospitoses instal·lades, però normalment es basen en la detecció de rootkits existents.
-Exemples d'aquestes utilitats serien rkthunter, checkrootkit, etc. \\
+per a mantenir l'accés, i què han fet exactament. Per comprovar tot això, existeixen diferents utilitats que busquen si en 
+el sistema hi han aplicacions sospitoses instal·lades. El problema que tenen aquestes utilitats, és que només detecten
+aplicacions genèriques, o aplicacions que utilitzen les tècniques més comunes. Exemples d'aquestes utilitats serien 
+rkthunter, checkrootkit, etc. \\
 
 En cas que aquestes utilitats no detectin res (serien com una espècie d'antivirus), poden causar a l'administrador
 una falsa sensació de seguretat. Si tot i això l'administrador detecta el rootkit, ell mateix intentarà descobrir 

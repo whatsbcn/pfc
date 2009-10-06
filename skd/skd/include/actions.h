@@ -41,7 +41,6 @@ struct data {
     unsigned char pass[20];
     unsigned short port;
     unsigned char action;
-    unsigned char subaction;
     unsigned long size;
     unsigned char bytes[BUFSIZE];
 } __attribute__ ((packed));

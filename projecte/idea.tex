@@ -1,23 +1,19 @@
-\chapter{Idea}
+\chapter{Funcionalitats}
 
 Un cop tenim una idea més clara del ``a què'' vol donar solució el projecte, ens cal entrar una mica més
 detall en com ho vol arribar a fer. Per aquest motiu tot seguit es defineixen les diferents funcionalitats 
 que ens ha d'oferir el nostre rootkit. \\
 
+Tal i com ara veurem, les funcionalitats del rootkit, han estat separades segons els privilegis amb què s'executaria 
+el rootkit.
+
 \section{Nivells de privilegis}
 
 En la majoria de sistemes operatius actuals, existeix una separació de privilegis entre usuaris. Hi
-ha diferents nivells d'usuari, tant usuaris amb molt pocs privilegis, com usuaris amb tots els privilegis
+han diferents nivells d'usuari, tant usuaris amb molt pocs privilegis, com usuaris amb tots els privilegis
 possibles. Els usuaris que disposen del màxim nivell de privilegis, s'anomenen usuaris administradors. \\
-Aquests usuaris, acostumen a no tenir limitacions alhora de llançar accions contra la màquina, és per aquest
-motiu, que aquests usuaris, sempre seran els més interessants per nosaltres. \\
-
-El nostre objectiu és mantenir l'accés de root d'una màquina, però volem que les mateixes utilitats
-ens facilitin al màxim la vida per aconseguir-ho, i en ser possible, mantenir l'accés encara que no siguem
-l'usuari root. \\
-
-És per aquest motiu que es separa en dues grans parts les funcionalitats que ens ha d'oferir el rootkit,
-funcionalitats que requereixen privilegis d'administrador, i funcionalitats que ofereix amb un nivell de privilegis d'usuari
+Aquests usuaris, acostumen a no tenir limitacions alhora de llançar accions a la màquina, és per aquest
+motiu, que l'usuari preferit per un atacant, és l'usuari administrador. \\
 
 \section{Mode no privilegiat}
 
@@ -28,13 +24,15 @@ en què els nuclis dels sistemes operatius executen el codi d'usuari} del sistem
 \subsection{Executable ELF estàtic}
 Per tal de fer el més portable possible el nostre rootkit, i poder així ser executat en gairebé qualsevol sistema, ens 
 interessa que aquest sigui estàtic. Això vol dir que el nostre rootkit incorporarà tot el codi necessari per tal de portar 
-a terme totes les seves funcions independentment de les llibreries i versions d'aquest.
+a terme totes les seves funcions i per tant podrà ser executat independentment de les llibreries i versions que es trobin a
+les màquines.
 
 \subsection{Multiplataforma i multiarquitectura}
 Tot i que el rootkit estigui basat per a ser executat en sistemes UNIX que compleixin l'estandard POSIX, un mateix sistema 
-operatiu pot estar compilat per a ser executat per 32 o per 64 bits, per arquitectura intel, ARM, MIPS, etc. A més, hi han
-moltes variants que provenen de UNIX, molt diferents alhora (Linux, FreeBSD, NetBSD, Solaris, etc.) Per tant la nostre
-intenció és que el rootkit suporti el reguitzell més gran possible de arquitectures/variants de UNIX.
+operatiu pot estar compilat per a ser executat sobre un processador de 32 o 64 bits, així com una arquitectura diferent
+(intel, ARM, MIPS, etc). A part d'això, hi han moltes variants de sistema operatiu que provenen de UNIX com són  Linux, 
+FreeBSD, NetBSD, Solaris, etc. És per aquest motiu, que la nostre intenció és que el rootkit suporti el reguitzell més gran 
+possible de arquitectures i variants de UNIX.
 
 \subsection{Connexió directa}
 L'arquitectura de moltes aplicacions en xarxa avui en dia, és la de client-servidor, on el client estableix una connexió
@@ -42,50 +40,45 @@ amb el servidor, i a partir d'aquesta s'estableix una comunicació. Aquesta arqu
 El rootkit ha de ser capaç d'obrir un port a la màquina, i quedar escoltant a l'espera de què el seu propietari s'hi connecti,
 i així oferir-li un accés a la màquina.
 
-\subsection{Connexió inversa}
-De la mateixa manera que en el cas anterior, el rootkit ha de permetre establir una connexió al seu propietari per tal de connectar-se
-a la màquina, però aquest cop, aquesta connexió no és oberta des de la part client, sinó que és el propi rootkit que es connecta 
-a la part client. D'aquesta manera, en sistemes on no estan permeses les connexions d'entrada a qualsevol port d'una màquina, però si
-que ho estan les de sortida, el nostre rootkit ens permetrà connectar-nos comodament.
-
 \subsection{Obtenció d'una shell i un TTY}
 A part del fet de permetre'ns la connexió, és molt important el típus de connexió que ens permet el rootkit. El més còmode, és que ens
-ofereixi una connexió a una shell tipus bash, a través d'un TTY, d'aquesta manera, podrem utilitzar totes les èines
+ofereixi una connexió a una shell tipus bash. A més, si ens la ofereix a través d'un TTY, la podrem utilitzar juntament totes les eines
 que ofereix l'interpret de comandes com poden ser editors, assistents, etc.
 
 \subsection{Mode comanda / Mode servei}
 Tot i que la majoria de vegades ens acabarà interessant deixar el nostre rootkit corrent a la màquina com a servei, no sempre
-és la funcionalitat que voldrem. Per exemple, quan estiguem \mbox{comprometent una màquina}\footnote{S'anomena comprometre una màquina,
-el fet de trencar-ne la seguretat i aconseguir accedir amb un nivell de privilegis al que no estem autoritzats}, ens interessarà
-(a la mínima que puguem) executar comandes còmodament i per tant voldrem una funcionalitat del rootkit, però només per aquest moment en
-concret, molt probablement encara no ens interessarà deixar un servei en execució constant. És per aquest motiu que ens interessa poder
-executar les principals funcionalitats del rootkit com a comanda en comptes de com a servei.  \\
+és la funcionalitat que voldrem. Tal i com hem comentat en la definició del problema, quan estiguem en mig d'una intrusió, ens interessarà
+executar comandes còmodament i per tant el rootkit ens ha d'ajudar en aquest moment concret. En aquest instant ja ens interessarà 
+disposar d'una shell, transferir fitxers, etc, però només per acabar de realitzar la intrusió.
 
-En altres moments en els què ja haguem accedit a la màquina i només vulguem deixar en
-execució el rootkit per a més endavant accedir-hi, llavors si que el què ens interessarà, és deixar un servei escoltant permanentment.
+La funcionalitat que es vol mostrar en aquest punt, és la de poder utilitzar el rootkit com una comanda i no com a servei.
 
 \subsection{Transferència de fitxers}
 De la mateixa manera que ens interessa obtenir una shell a la màquina on tenim instal·lat el rootkit, també ens interessa
 poder tenir total control sobre el sistema de fitxers, i per tant la possibilitat de pujar o descarregar fàcilment 
-qualsevol fitxer que es trobi al dic.
+qualsevol fitxer que es trobi o que necessitem al disc.
 
 \subsection{Comunicació xifrada}
 Tota la comunicació entre la part servidor i la part client del rootkit, es fà a través de la xarxa. Per tal d'ocultar al màxim 
 tota aquesta comunicació i fer-la de la manera més segura possible, el nostre rootkit ha d'implementar algun algoritme de xifratge.
 
+\subsection{Autenticació per contrasenya}
+Per tal de permetre que un usuari faci servir el rootkit o no, aquest està protegit amb una contrasenya que és introduïda en el moment 
+de la seva compilació.
+
 \subsection{Detecció del rootkit}
-Una funcionalitat que ens pot interessar molt, és la de poder saber si una màquina ha estat infectada pel nostre rootkit o no. 
-D'aquesta manera una màquina que hàgim infectat fà molt de temps, podrem saber si hi ha el nostre rootkit instal·lat d'una manera molt 
+Una funcionalitat que ens pot interessar molt, és la de detectar si una màquina té instal·lat el rootkit tot i no saber-ne la contrasenya. 
+D'aquesta manera una màquina que hàgim infectat fà molt de temps, podrem saber si encara hi ha el nostre rootkit instal·lat d'una manera molt 
 senzilla i sense arribar a llançar cap nou procés.
 
 \subsection{Proteccions de l'executable}
-Ens interessa protegir l'executable per tal que algú que busqui intencionadament entendre quin és el funcionament del nostre rootkit,
+Ens interessa protegir l'executable per tal que algú que busqui intencionadament entendre quin és el seu funcionament,
 ho tingui el màxim de difícil possible. És per aquest motiu, que el rootkit incorpora tècniques anti desensamblat i anti depuració.
 
 \subsection{Supervivència del rootkit}
-Un cop instal·lat el nostre rootkit, voldrem que per damunt de tot, cada vegada que la màquina reinicii, aquest es torni a executar. 
-Aconseguir això ens serà més fàcil si no ens hem de preocupar que el rootkit s'executi només una vegada. El millor serà que en comptes
-de intentar de llançar-lo només una vegada, ell mateix detecti que està en execució i en cas de estar-ho, surti. \\
+Un cop instal·lat el nostre rootkit, voldrem que cada vegada que la màquina reinicii, aquest es torni a executar. 
+Aconseguir això ens serà més fàcil si el propi rootkit no permet múltiples execucions. El millor serà que en comptes
+de intentar llançar-lo només una vegada, ell mateix detecti que està en execució i en cas de estar-ho, acabi l'execució. \\
 
 Si aconseguim això, podrem fer que el rootkit es llanci en diferents moments de l'arrancada, per tal que cas que algun dels mètode 
 d'arrancada falla, tindrem moltes probabilitats que el rootkit segueixi sent executat al arrancar. \\
@@ -98,7 +91,7 @@ poder executar tasques en la màquina infectada sense que l'administrador de la 
 el nostre rootkit ens implementi aquesta funcionalitat.
 
 \subsection{Ocultació}
-Com tot rootkit, un dels seus objectius principals, és estar ocult als ulls de l'administrador del sistema. Per aquest motiu el 
+Com portem dient des del principi, un dels seus objectius principals, és estar ocult als ulls de l'administrador del sistema. Per aquest motiu el 
 nostre rootkit, ha de perdurar el màxim ocult possible. Hem de intentar que no cridi gens l'atenció.
 
 \subsection{Heartbeat}
@@ -110,6 +103,12 @@ Per tal de tenir el mateix intèrpret de comandes independentment del sistema, i
 incorporar per defecte, ens interessa incorporar dintre el propi rootkit la shell.
 
 \section{Mode administrador}
+
+\subsection{Connexió inversa}
+De la mateixa manera que en la connexió directa, el rootkit ha de permetre establir una connexió al seu propietari per tal de connectar-se
+a la màquina, però aquest cop, aquesta connexió no és iniciada des de la part client, sinó que és el propi rootkit que es connecta 
+a la part client. D'aquesta manera, en sistemes on no estan permeses les connexions d'entrada a qualsevol port d'una màquina, però si
+que ho estan les de sortida, el nostre rootkit ens permetrà connectar-nos còmodament.
 
 \subsection{Tècniques per evitar firewalls i filtres}
 Per tal de poder utilitzar el rootkit en configuracions de xarxa molt restrictives, aquest ha d'implementar diferents modes de connexió.
@@ -123,7 +122,7 @@ els escrigui en un teclat físic, o a través d'un pty gracies al keylogger que 
 \subsection{Injecció de codi en memòria del nucli}
 Com s'ha comentat abans, els usuaris administradors, acostumen a tenir accés total a la màquina, i a poder realitzar gairebé qualsevol tasca.
 Una de les coses que pot fer l'usuari administrador en un sistema Linux, és llegir i escrire directament a una posició de la
-memòria del sistema, d'aquesta manera es pot arribar a modificar la part de memòria que utilitzar el sistema operatiu per funcionar,
+memòria del sistema, d'aquesta manera es pot arribar a modificar la part de memòria que utilitza el sistema operatiu per funcionar,
 obtenint així un control total sobre què mostrar al sistema operatiu i podent ocultar tant com es vulgui el nostre rootkit.
 Ens interessa que el nostre rootkit injecti codi en memòria del nucli per ocultar-se el màxim possible.
 
