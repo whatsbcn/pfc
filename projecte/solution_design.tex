@@ -74,39 +74,77 @@ el launcher, com per el client.
 \subsection{keylogger}
 
 És el mòdul que ens permet capturar passwords introduits en diferents serveis com poden ser ssh, ftp, mysql, etc.
-\section{Modes de funcionament}
+\section{Modes de comunicació}
 
 Tal i com hem vist en el capítol funcionalitats, aquestes varien segons els permisos que tinguem a la màquina 
-i segons les nostres necessitats en cada moment. Per tal de poder escollir el comportament del rootkit,
-s'han creat el què s'anomenen ``modes de funcionament''. 
-Aquests modes defineixen les funcionalitats que podrem utilitzar i el com es podran utilitzar. Més endavant 
-veurem que molt lligat a els modes de funcionament, tenim els modes de comunicació. Aquests també ens
-permetran utilitzar unes funcionalitats o unes altres, sempre depenent dels permisos que disposarem. \\
+i segons les nostres necessitats en cada moment. De la mateixa manera, podrem utilitzar unes tècniques per a
+comunicar-nos o unes altres segons els mateixos privilegis. Aquestes tècniques són les què anomenarem modes
+de comunicació, i dependran principalment dels privilegis alhora d'executar el rootkit.\\
 
-El mode d'execució del rootkit, ve definit pel nombre de paràmetres que se li passen en el moment de ser
-executat. Cal tenir en compte que en cap moment el launcher ens mostrarà una ajuda de quins paràmetres 
-es poden utilitzar, ni cap missatge d'error. D'aquesta manera es garanteix que si mai és descobert i analitzat, 
-aquest no ofereix cap pista als possibles analitzadors. \\
-
-En total el launcher pot ser executat en tres modes: 
+En total tenim quatre modes de comunicació. \\
 
 \begin{enumerate}
-    \item Mode client
-    \item Mode servidor no privilegiat
-    \item Mode servidor privilegiat
+    \item LISTEN
+    \item TCP
+    \item REV
+    \item RAW
 \end{enumerate}
 
-\subsection{Mode client} 
+La taula de la figura  \ref{fig:tableModesRelation} ens mostra una relació dels modes de comunicació que podem utilitzar
+en un entorn privilegiat i amb un entorn no privilegiat.
 
-El mode client és un mode de funcionament en que per a ser utilitzat no és necessari cap permís especial. 
-La idea d'aquest mode de funcionament, és llançar el rootkit, sense la intenció de tenir un servei corrent
-a la màquina, sinó amb la intenció de disposar d'una funcionalitat en un moment concret. \\
+\begin{figure}[htp]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+         & \textbf{LISTEN} & \textbf{TCP} & \textbf{REV} & \textbf{RAW} \\ \hline
+         \textbf{Entorn no privilegiat} & \textcolor{Green}{Si} & \textcolor{Green}{Si} & \textcolor{Red}{No} & \textcolor{Red}{No} \\ \hline
+         \textbf{Entorn privilegiat} & \textcolor{Red}{No} & \textcolor{Red}{No} & \textcolor{Green}{Si} & \textcolor{Green}{Si} \\ \hline
+    \end{tabular}
+    \caption{Modes de comunicació disponibles segons el mode d'execució.}
+    \label{fig:tableModesRelation}
+\end{figure}
+
+Cal dir que el fet de què en el entorn privilegiat no es puguin utilitzar els modes de comunicació LISTEN ni TCP, és degut
+a que això no té sentit. Els dos modes disponibles en el mode privilegiat, són millors que els dos oferts en mode no
+privilegiat. A continuació es detallen les diferencies entre aquests modes de comunicació:
+
+\subsection{Mode no privilegiat}
+
+Tal i com mostra la taula de la figura \ref{fig:tableModesRelation}, en un entorn no privilegiat, podem utilitzar dos modes de
+comunicació. Per seleccionar entre aquests dos modes, haurem d'executar el launcher amb un o dos paràmetres. Si el nombre de
+paràmetres és un, aquest l'utilitzarà per a obrir un port TCP i enganxar-se per a esperar connexions. Si el nombre de paràmetres
+és dos, aquest es connectarà a la ip passada com a primer paràmetre al port passat com a segon paràmetre. \\
+
+En cas de ser executat en aquest mode sense cap paràmetre, o en cas que els paràmetres siguin incorrectes, el launcher sortirà
+sense dir res. D'aquesta manera es garanteix que si mai és descobert i analitzat, aquest no ofereix cap pista als possibles analitzadors. \\
+
+\subsubsection{LISTEN}
+La idea d'aquest mode, és la de llançar el rootkit, sense la intenció de tenir un servei corrent
+a la màquina, sinó amb la intenció de disposar d'una funcionalitat en un moment concret. És a dir, fer-lo servir
+com una comanda.\\
 
 En aquest mode, el launcher establirà una connexió TCP cap al client a la ip i port especificats per la línia
 de comandes. Un cop establerta la comunicació, el client (que ha d'estar esperant la connexió del launcher), 
 li transmetrà l'acció a executar, i aquest la portarà a terme. Un cop acabada l'acció, el launcher acabarà
 i es desconnectarà del client. \\
 
+Com veiem, en aquest mode el launcher i el client es canvien els papers, sent el launcher qui inicia una connexió 
+cap al client. El client, l'únic que ha de fer, és escoltar a un port i esperar que el launcher li estableixi
+una connexió. El fet de què el client només es queda escoltant a un port, és el què li dona el nom al mode de
+comunicació.
+
+Aquest mode de comunicació ens interessarà especialment en el moment de la intrusió quan ja som capaços d'executar
+comandes a la màquina. Evidentment per a poder fer ús d'aquest mode, cal que el launxer estigui físicament
+a la màquina en qüestió. \\
+
+Un establerta la comunicació, el rootkit ens permetrà obtenir una shell (enganxada a un TTY per tal de poder treballar 
+còmodament), fer servir la màquina remota com a proxy SOCKS, així com pujar o baixar fitxers. El fet de no executar el 
+launcher com a un servei implica que un cop acabi la connexió amb el client, el launcher haurà de tornar a ser llançat 
+per a poder executar una altre tasca. \\
+
+La figura \ref{fig:modeClient} ens mostra l'esquema d'ús d'aquest mode: \\
+\\
 \begin{figure}[htp]
     \centering
     \includegraphics[scale=1,keepaspectratio]{diagrames/solutionDesignClientMode.pdf} \\
@@ -114,23 +152,22 @@ i es desconnectarà del client. \\
     \label{fig:modeClient}
 \end{figure}
 
-Com veiem, en aquest mode el launcher i el client es canvien els papers, sent el launcher qui inicia una connexió 
-cap al client. Aquest fet és el què li dona el nom al mode de funcionament. \\
+En la figura podem veureu representada el què seria la màquina de l'atacant (el què utilitza la part client del rootkit),
+i la màquina servidor (la ``victima'' que és on s'executa el launcher).
 
-Aquest mode de funcionament és molt interessant per el moment de la intrusió quan ja som capaços d'executar
-comandes a la màquina. Evidentment per a poder fer ús d'aquest mode, cal que prèviament deixem el launxer 
-a la màquina en qüestió. \\
+El funcionament seria el següent:
+\begin{enumerate}
+    \item Prèviament al què es veu a la figura, s'ha de col·locar el launcher en la màquina servidor.
+    \item S'executa el client en mode LISTEN a la màquina de l'atacant.
+    \item S'executa el launcher en el servidor tot passant per paràmetre l'adreça ip de la màquina i el port on està escoltat
+        el client.
+    \item El launcher inicia una connexió cap al client.
+    \item Un cop establerta, el client pot realitzar l'acció que ha sol·licitat.
+    \item Un cop acaba de fer-ne ús, aquest tanca la connexió, i amb aquest acaba el procés launcher en el servidor.
+\end{enumerate}
 
-Un cop fem això, el rootkit ens permetrà obtenir una shell enganxada a un TTY per tal de poder treballar 
-còmodament, fer servir la màquina remota com a proxy SOCKS, així com pujar o baixar fitxers. Tenint en compte
-que un cop acabi la connexió amb el rootkit, aquest haurà de tornar a ser llançat per a poder executar una següent
-tasca. \\
-
-\subsection{Mode servidor no privilegiat}
-
-Aquest mode de funcionament no requereix de més privilegis que el mode client, però en aquest cas, si que
-tindrem un servei executant-se a la màquina. \\
-
+\subsubsection{TCP}
+La idea d'aquest mode de comunicació, és la de tenir un servei que permeti executar 
 El fet de disposar d'un servei en constant execució o no, és la principal diferència entre el mode servidor
 no privilegiat, i el mode client. En aquest mode, tindrem el launcher escoltant a un port TCP esperant que
 el client es connecti per a sol·licitar una acció. \\
@@ -145,7 +182,23 @@ servirà de res ja que les connexions cap al port del nostre launcher, molt prob
     \label{fig:modeUnprivilegedServer}
 \end{figure}
 
-\subsection{Mode servidor privilegiat}
+
+Aquest mode de comunicació, és utilitzat només en el cas en què el client vulgui connectar-se a un launcher que
+s'ha executat en mode servidor no privilegiat. \\
+
+El protocol de comunicació (figura \ref{fig:modeUnprivilegedServer}) en aquest cas és: \\
+
+\begin{enumerate}
+    \item El client estableix una connexió TCP amb a la màquina i port on està escoltant el launcher
+    \item El client envia un paquet autenticat cap al launcher, especificant-li l'acció a portar a terme
+    \item El launcher efectua l'acció, utilitzant la mateixa connexió ja establerta per a comunicar-se
+\end{enumerate}
+
+\subsection{Mode privilegiat}
+
+A diferència del mode no privilegiat, aquest cop els dos modes de comunicació poden ser utilitzats sense cap requeriment de com
+el launcher és executat. \\
+
 
 El mode servidor privilegiat, és el mode que requereix de permisos d'administrador, i que alhora ens permetrà
 fer ús de les característiques mes avançades del rootkit. \\
@@ -162,56 +215,8 @@ El funcionament del rootkit quan s'està executant en mode privilegiat, varia de
 que prefereix realitzar el client en aquell moment. Més endavant quan s'expliquen els modes de comunicació disponibles
 en aquest mode (figures \ref{fig:modePrivilegedServerREV} i \ref{fig:modePrivilegedServerREV}), es detalla el seu funcionament. \\
 
-\section{Modes de comunicació}
 
-Tal i com hem comentat anteriorment, els modes de comunicació depenen directament dels permisos que tindrem 
-a la màquina. Principalment per aquest motiu, s'han fet dependre dels modes de funcionament, és a dir, segons el
-mode de funcionament, podrem utilitzar uns modes de comunicació o uns altres. \\
-
-El rootkit implementa diferents modes de comunicació, alguns ens permeten establir connexions totalment
-ocultes i arribar a sobrepassar configuracions de xarxa molt restrictives. Poder utilitzar un protocol de 
-comunicació o un altre, dependrà del mode de funcionament en què hàgim arrancat el rootkit. És per aquest
-motiu, que el mode de comunicació anirà molt lligat al mode de funcionament. \\
-
-En total tenim quatre modes de comunicació. \\
-
-\begin{enumerate}
-    \item TCP
-    \item REV
-    \item RAW
-    \item LISTEN
-\end{enumerate}
-
-La següent taula mostra quins modes de comunicació es poden utilitzar en cada mode de funcionament:
-
-\begin{figure}[htp]
-    \centering
-    \begin{tabular}{|c|c|c|c|}
-        \hline
-               & \textbf{Client} & \textbf{Servidor no privilegiat} & \textbf{Servidor privilegiat} \\ \hline
-        TCP    & \textcolor{Red}{No}   & \textcolor{Green}{Si} & \textcolor{Red}{No}  \\ \hline
-        REV    & \textcolor{Red}{No}   & \textcolor{Red}{No}   & \textcolor{Green}{Si}  \\ \hline
-        RAW    & \textcolor{Red}{No}   & \textcolor{Red}{No}   & \textcolor{Green}{Si}  \\ \hline
-        LISTEN & \textcolor{Green}{Si} & \textcolor{Red}{No}   & \textcolor{Red}{No}    \\ \hline
-    \end{tabular}
-    \caption{Modes de comunicació disponibles segons el mode d'execució.}
-    \label{fig:tableModesRelation}
-\end{figure}
-
-\subsection{TCP}
-
-Aquest mode de comunicació, és utilitzat només en el cas en què el client vulgui connectar-se a un launcher que
-s'ha executat en mode servidor no privilegiat. \\
-
-El protocol de comunicació (figura \ref{fig:modeUnprivilegedServer}) en aquest cas és: \\
-
-\begin{enumerate}
-    \item El client estableix una connexió TCP amb a la màquina i port on està escoltant el launcher
-    \item El client envia un paquet autenticat cap al launcher, especificant-li l'acció a portar a terme
-    \item El launcher efectua l'acció, utilitzant la mateixa connexió ja establerta per a comunicar-se
-\end{enumerate}
-
-\subsection{REV}
+\subsubsection{REV}
 
 Aquest mode de comunicació, es pot utilitzar només en el cas d'haver llançat el launcher en mode privilegiat.
 El nom de REV, prové de la idea principal del mode de comunicació que és l'ús d'una comunicació reversa on 
@@ -264,7 +269,7 @@ la xarxa local. En configuracions personals com una línia ADSL amb router, cald
 on l'executés el client, tingués un ``port obert'' (un port amb DNAT) per tal que el rootkit es pogués 
 connectar a ell. Aquest requisit també existeix en els següents modes de comunicació (RAW i LISTEN). \\
 
-\subsection{RAW}
+\subsubsection{RAW}
 
 Igual que en el cas anterior, aquest mode de comunicació només pot ser utilitzat en cas d'haver llançat el launcher
 en mode privilegiat. \\
@@ -304,19 +309,6 @@ i el seu funcionament és el següent: \\
     \item En el moment que el client rep una resposta del launcher, comença a processar l'acció tenint
         ja la connexió establerta.
 \end{enumerate}
-
-\subsection{LISTEN}
-
-Aquest mode de comunicació és el què s'utilitza amb el mode de funcionament client, i no requereix de permisos
-especials per tal de ser utilitzat. En aquest cas, el client obre un servei per tal d'esperar la connexió del 
-launcher.  \\
-
-Es pot veure l'esquema en la figura \ref{fig:modeClient} \\
-
-En el moment en què el client rep la connexió del launcher, aquest li sol·licita una acció en concret a executar
-i passa a utilitzar la connexió establerta per a efectuar l'acció. \\
-
-\section{Protocol de comunicació RAW}
 
 L'objectiu de crear un protocol propi de comunicació, era aconseguir comunicar el client i el launcher per
 internet sense que les utilitats del sistema operatiu per visualitzar les connexions de xarxa establertes
