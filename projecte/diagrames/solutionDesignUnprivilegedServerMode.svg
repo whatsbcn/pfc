@@ -8,8 +8,8 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="527.89148"
-   height="262.69376"
+   width="473.89148"
+   height="261.19376"
    id="svg2"
    sodipodi:version="0.32"
    inkscape:version="0.46"
@@ -145,7 +145,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="2"
-     inkscape:cx="295.40986"
+     inkscape:cx="198.15986"
      inkscape:cy="81.804723"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
@@ -170,7 +170,7 @@
      inkscape:label="Capa 1"
      inkscape:groupmode="layer"
      id="capa1"
-     transform="translate(-35.499201,17.476359)">
+     transform="translate(-35.499201,15.976359)">
     <g
        id="layer1"
        inkscape:label="Layer 1"
@@ -180,8 +180,8 @@
          id="rect10679"
          width="162.9631"
          height="202.21878"
-         x="396.72601"
-         y="-60.318413"
+         x="342.72601"
+         y="-60.818413"
          rx="18.567226"
          ry="15.407146" />
       <text
@@ -228,26 +228,26 @@
       <text
          xml:space="preserve"
          style="font-size:11px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#63777f;fill-opacity:1;stroke:none;stroke-width:3;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;font-family:Sans;-inkscape-font-specification:Sans"
-         x="455.71951"
-         y="-65.889977"
+         x="401.71951"
+         y="-66.389977"
          id="text10577"><tspan
            sodipodi:role="line"
            id="tspan10579"
-           x="455.71951"
-           y="-65.889977">Atacant</tspan></text>
+           x="401.71951"
+           y="-66.389977">Atacant</tspan></text>
       <path
          style="opacity:0.30194804;color:#000000;fill:#63777f;fill-opacity:1;fill-rule:evenodd;stroke:#63777f;stroke-width:2.89162779;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:8.67488339, 2.89162779;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
-         d="M 299.01241,-80.302012 L 299.01241,159.39464"
+         d="M 271.01241,-80.302012 L 271.01241,159.39464"
          id="path10629" />
       <text
          xml:space="preserve"
          style="font-size:12px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;opacity:0.30194804;fill:#63777f;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Sans;-inkscape-font-specification:Sans"
-         x="267.38455"
+         x="239.38455"
          y="-91.60527"
          id="text10631"><tspan
            sodipodi:role="line"
            id="tspan10633"
-           x="267.38455"
+           x="239.38455"
            y="-91.60527">INTERNET</tspan></text>
       <path
          style="opacity:1;color:#000000;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
@@ -260,7 +260,7 @@
          id="path10659" />
       <path
          style="opacity:1;color:#000000;fill:#ff0300;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.88942784px;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
-         d="M 428.1417,-38.081019 L 428.1417,98.966939"
+         d="M 374.1417,-38.581019 L 374.1417,98.466939"
          id="path10661" />
       <text
          xml:space="preserve"
@@ -282,20 +282,20 @@
          id="path10675"
          transform="translate(33.219517,-102.56043)" />
       <path
-         style="opacity:1;color:#000000;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.99546385;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:url(#Arrow2Lstart);marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:2.98639146, 0.99546382;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
-         d="M 66.075972,-12.329648 L 426.73071,-12.329648"
+         style="opacity:1;color:#000000;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.925;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:url(#Arrow2Lstart);marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:3.7,3.7;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+         d="M 65.920996,-12.329807 L 374.26613,-12.329807"
          id="path10703" />
       <path
-         style="opacity:1;color:#000000;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.95385462px;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:url(#Arrow2Lstart);marker-mid:none;marker-end:url(#Arrow2Lend);stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
-         d="M 97.730019,25.164632 L 427.11995,25.164632"
+         style="opacity:1;color:#000000;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.87789071px;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:url(#Arrow2Lstart);marker-mid:none;marker-end:url(#Arrow2Lend);stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+         d="M 97.564549,25.164632 L 373.78542,25.164632"
          id="path11745" />
       <path
-         style="opacity:1;color:#000000;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.95376533;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:url(#Arrow2Lstart);marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:2.86129601, 0.95376534;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
-         d="M 97.967034,65.80556 L 427.28349,65.80556"
+         style="opacity:1;color:#000000;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.87687814;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:url(#Arrow2Lstart);marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:3.50751257,3.50751257;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+         d="M 97.799356,65.805388 L 373.32193,65.805388"
          id="path13871" />
       <g
          id="g18772"
-         transform="translate(0,-6)">
+         transform="translate(-54,-6.5)">
         <path
            id="path13895"
            d="M 418.617,99.371426 L 438.36744,110.72874"
@@ -324,43 +324,43 @@
       <text
          xml:space="preserve"
          style="font-size:8px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Sans;-inkscape-font-specification:Sans"
-         x="257.37234"
+         x="229.37234"
          y="-16.572289"
          id="text13903"><tspan
            sodipodi:role="line"
            id="tspan13905"
-           x="257.37234"
+           x="229.37234"
            y="-16.572289">Inici connexió TCP</tspan></text>
       <text
          xml:space="preserve"
          style="font-size:8px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Sans;-inkscape-font-specification:Sans"
-         x="239.6947"
+         x="211.6947"
          y="20.904366"
          id="text13907"><tspan
            sodipodi:role="line"
            id="tspan13909"
-           x="239.6947"
+           x="211.6947"
            y="20.904366">Connexió TCP establerta</tspan></text>
       <text
          xml:space="preserve"
          style="font-size:8px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Sans;-inkscape-font-specification:Sans"
-         x="236.15916"
+         x="208.15916"
          y="61.916557"
          id="text13911"><tspan
            sodipodi:role="line"
            id="tspan13913"
-           x="236.15916"
+           x="208.15916"
            y="61.916557">Finalització de la connexió</tspan></text>
       <text
          xml:space="preserve"
          style="font-size:9px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Sans;-inkscape-font-specification:Sans"
-         x="406.21951"
-         y="-44.203709"
+         x="352.21951"
+         y="-44.703709"
          id="text13915"><tspan
            sodipodi:role="line"
            id="tspan13917"
-           x="406.21951"
-           y="-44.203709">client - mode  tcp</tspan></text>
+           x="352.21951"
+           y="-44.703709">client - mode  tcp</tspan></text>
       <g
          id="g16031">
         <path
@@ -379,7 +379,7 @@
       </g>
       <g
          id="g13927"
-         transform="translate(-1,-28.5)">
+         transform="translate(-55,-29)">
         <path
            id="path13923"
            d="M 453.89616,6.182092 C 453.89616,6.257041 453.89616,6.331988 453.89616,6.182092 z M 429.43441,5.957255 L 453.65397,5.957255"
@@ -397,13 +397,13 @@
       <text
          xml:space="preserve"
          style="font-size:6px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Sans;-inkscape-font-specification:Sans"
-         x="462.66437"
-         y="-20.678276"
+         x="408.66437"
+         y="-21.178276"
          id="text10693"><tspan
            sodipodi:role="line"
            id="tspan10695"
-           x="462.66437"
-           y="-20.678276">Execució</tspan></text>
+           x="408.66437"
+           y="-21.178276">Execució</tspan></text>
       <text
          xml:space="preserve"
          style="font-size:6px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Sans;-inkscape-font-specification:Sans"
@@ -416,7 +416,7 @@
            y="-22.514374">Obertura d'un port</tspan></text>
       <g
          id="g14464"
-         transform="translate(-0.500007,40.5)">
+         transform="translate(-54.500007,40)">
         <path
            id="path14466"
            d="M 453.89616,6.182092 C 453.89616,6.257041 453.89616,6.331988 453.89616,6.182092 z M 429.43441,5.957255 L 453.65397,5.957255"
@@ -434,13 +434,13 @@
       <text
          xml:space="preserve"
          style="font-size:6px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Sans;-inkscape-font-specification:Sans"
-         x="461.21951"
-         y="48.796291"
+         x="407.21951"
+         y="48.296291"
          id="text14470"><tspan
            sodipodi:role="line"
            id="tspan14472"
-           x="461.21951"
-           y="48.796291">Utilització</tspan></text>
+           x="407.21951"
+           y="48.296291">Utilització</tspan></text>
       <g
          transform="translate(11.876597,31.100959)"
          id="g16035">

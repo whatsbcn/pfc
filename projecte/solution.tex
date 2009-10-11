@@ -1,36 +1,12 @@
 \chapter{Sol·lució}
-NOTA: ENTRAR MÉS EN DETALL EN ALGUNS PUNTS.
 
 En aquest apartat es mostra en detall com s'han aconseguit les diferents funcionalitats que ens havíem plantejat de bon principi.
-Cada funcionalitat requereix un nivell de privilegi diferent de manera que segons el nostre nivell de privilegi, podrem utilitzar-ne unes o unes altres.
+Com hem anat veient, les funcionalitats estan disponibles depenent del nivell de privilegis de què disposem. \\
 
-Si surgeix qualsevol dubte sobre l'objectiu d'alguna funcionalitat, es pot anar a la secció FUNCIONALITATS per tal de recordar amb més detall el perquè d'una funcionalitat concreta.
+Si sorgeix qualsevol dubte sobre l'objectiu d'alguna funcionalitat, es pot anar a la secció FUNCIONALITATS per tal de recordar amb més 
+detall el perquè d'una funcionalitat concreta. \\
 
-Durant la resta del document, faré referència a l'executable ``servidor'' com a l'executable que està físicament a la màquina
-infectada, i a l'executable client, com a l'executable que ens permet utilitzar els serveis que ens ofereix el rootkit en la part ``servidor´´.
-
-\section{Opcions a nivell de compilació}
-Per tal d'aconseguir tenir un rootkit del menor tamany possible (OBJECTIU NUMX) i així poder instal·lar-lo de manera més fàcil, he utilitzat la opció del compilador gcc -Os. Aquesta opció aplica totes les optimitzacions possibles per tal d'aconseguir un menor tamany del codi. \\
-
-Per tal que l'executable final sigui estàtic i no depengui de cap llibreria del sistema, i que alhora no augmentem molt el tamany del fitxer final, també hem utilitzat les opcions 
-
-Comentar les diferents opcions que s'utilitzen a nivell de compilació, quan preparem el rootkit
-- Sistema operatiu
-- Password
-- nom del procés
-- etc..
-
-\section{Arquitectura del rootkit}
-Comentar els dos fitxers: servidor i client i el funcionament entre ells. Acompanyar-ho de gràfics i més endavant acompanyar de grafics
-cada una de les funcionalitats que es vagin comentant que impliquin un mode de funcionament diferent.
-
-\section{Mètode de funcionament del rootkit}
-
-\section{Funcionalitats en mode no privilegiat}
-
-Totes aquestes funcionalitats són aquelles que no requereixen de tenir un accés d'administrador per tal de fer-les servir. En cas
-de tenir-lo, moltes d'aquestes funcionalitats existeixen igualment però permeten algun detall més, o simplement són més 
-sigiloses. 
+\section{Entorn no privilegiat}
 
 \subsection{Executable ELF estàtic}
 
@@ -86,17 +62,6 @@ a partir d'aquest moment la shell llegeix les dades del tty, i hi escriu la sort
 Un cop fet això, només li falta lligar la connexió amb l'altre extrem del tty, de tal manera que les dades que es vagin rebent per la xarxa,
 les transmeti cap al tty per fer-les arribar a la shell, i les que envia la shell com a sortida, enviar-les de tornada a través de la xarxa.
 
-\subsection{Transferència de fitxers}
-
-Per a transferir fitxers entre client i servidor, es segueix gairebé el mateix procediment, independentment de si és un enviament o una recepció.
-
-Un cop la connexió ha estat establerta, com que tant el client com el servidor saben si es tracta de una pujada o una descàrrega, comença la transmissió
-del fitxer. \\
-
-En cas de ser una descàrrega, el servidor sap que ha de llegir el fitxer especificat en el disc local, i començar a enviar-lo a través de la connexió. 
-De la mateixa manera, el client sap que ha de crear un fitxer en local, i li ha de començar a volcar tot el contingut que vagi rebent a través de
-la connexió de xarxa. Un cop no rep més dades, el client tanca la connexió, i el fitxer ja és apunt de ser utilitzat.
-
 \subsection{Mode comanda / Mode servei}
 
 Depenent de la situació en que ens trobem, i provablement sempre en mode no privilegiat, ens pot interessar utilitzar el rootkit en mode comanda o
@@ -112,7 +77,20 @@ que si el client està escoltant a l'altre banda, aquest acabi obtenint la shell
 una connexió amb el servidor per obtenir una shell, però que en aquest cas, el servidor no està en execució, sinó que és una sola comanda que al acabar
 retorna sense deixar cap procés en execució.
 
+\subsection{Transferència de fitxers}
+
+Per a transferir fitxers entre client i servidor, es segueix gairebé el mateix procediment, independentment de si és un enviament o una recepció.
+
+Un cop la connexió ha estat establerta, com que tant el client com el servidor saben si es tracta de una pujada o una descàrrega, comença la transmissió
+del fitxer. \\
+
+En cas de ser una descàrrega, el servidor sap que ha de llegir el fitxer especificat en el disc local, i començar a enviar-lo a través de la connexió. 
+De la mateixa manera, el client sap que ha de crear un fitxer en local, i li ha de començar a volcar tot el contingut que vagi rebent a través de
+la connexió de xarxa. Un cop no rep més dades, el client tanca la connexió, i el fitxer ja és apunt de ser utilitzat.
+
 \subsection{Comunicació xifrada}
+asdfasdf
+\subsection{Autenticació per contrasenya}
 \subsection{Detecció del rootkit}
 Per tal d'evitar la detecció del rootkit, he implementat diferents tècniques:
 \begin{enumerate}
@@ -133,7 +111,10 @@ intencionada, que és el què està viatjant per la xarxa.
 \end{enumerate} 
 
 \subsection{Proteccions de l'executable}
-\subsection{Multiples execucions}
+asdfasdf
+\subsection{Supervivència del rootkit}
+sadfasfsdff
+
 \subsection{Tasques programades}
 Per tal de portar a terme les tasques programades, el rootkit llança un script anomenat .daily, .weekly, o .monthly amb la periodicitat que el propì
 nom de l'arxiu ens diu. 
@@ -143,10 +124,19 @@ de l'script.
 
 Aquests scripts els busca en el directory arrel del home del rootkit (també demanat en el moment de la configuració)
 
+\subsection{Ocultació}
+asdfasd
 \subsection{Heard beat}
+asdfasdf
 \subsection{Independència de la shell}
-\section{Funcionalitats en mode administrador}
-\subsection{Utilització d'un RAW socket}
+afsdfasdf
+
+\subsection{Proxy socks}
+
+\section{Entorn privilegiat}
+\subsection{Connexió inversa}
+\subsection{Tècniques per evitar firewalls i filtres}
+CANVIAR AQUEST NOM AQUÍ I A FUNCIONALITATS, SI ES RAWSOCKET POSAR UNA ALTRE COSA
 Per tal de permetre la comunicació a través de ports ja oberts i utilitzats per altres programes, així com per ports tancats però accessibles, s'han
 implementat dos modes de treball que utilitzen un RAW socket.
 
@@ -182,4 +172,23 @@ MOSTRAR GRÀFIC DE ARQUITECTURA
 \subsection{Injecció de codi en memòria del nucli}
 
 
+
+
+\section{No se on va}
+\subsection{Opcions a nivell de compilació}
+Per tal d'aconseguir tenir un rootkit del menor tamany possible (OBJECTIU NUMX) i així poder instal·lar-lo de manera més fàcil, he utilitzat la opció del compilador gcc -Os. Aquesta opció aplica totes les optimitzacions possibles per tal d'aconseguir un menor tamany del codi. \\
+
+Per tal que l'executable final sigui estàtic i no depengui de cap llibreria del sistema, i que alhora no augmentem molt el tamany del fitxer final, també hem utilitzat les opcions 
+
+Comentar les diferents opcions que s'utilitzen a nivell de compilació, quan preparem el rootkit
+- Sistema operatiu
+- Password
+- nom del procés
+- etc..
+
+\subsection{Arquitectura del rootkit}
+Comentar els dos fitxers: servidor i client i el funcionament entre ells. Acompanyar-ho de gràfics i més endavant acompanyar de grafics
+cada una de les funcionalitats que es vagin comentant que impliquin un mode de funcionament diferent.
+
+\subsection{Mètode de funcionament del rootkit}
 

@@ -28,6 +28,8 @@ nostre disseny. \\
     \label{fig:rootkitModules}
 \end{figure}
 
+A la figura \ref{fig:rootkitModules} podem veure l'esquema d'utilització dels diferents mòduls 
+del rootkit. En ella s'aprecia que el launcher i el client utilitzen gairebé els mateixos recursos.\\
 \subsection{config}
 
 En moment de compilació, el rootkit ens demana una sèrie de preguntes per tal de configurar-se a gust
@@ -42,7 +44,9 @@ de la part que s'instal·la a la màquina de la víctima.
 
 \subsection{common}
 
-Com el seu nom indica, és la part comuna entre mòduls, launcher i client.
+Com el seu nom indica, és la part on es troben les funcions comunes entre els mòduls, el launcher 
+i el client. En aquest mòdul podem trobar funcions com les de resoldre un domini, establir una connexió
+tcp, wrapper per el debug, etc.
 
 \subsection{rc4}
 
@@ -81,14 +85,7 @@ i segons les nostres necessitats en cada moment. De la mateixa manera, podrem ut
 comunicar-nos o unes altres segons els mateixos privilegis. Aquestes tècniques són les què anomenarem modes
 de comunicació, i dependran principalment dels privilegis alhora d'executar el rootkit.\\
 
-En total tenim quatre modes de comunicació. \\
-
-\begin{enumerate}
-    \item LISTEN
-    \item TCP
-    \item REV
-    \item RAW
-\end{enumerate}
+En total tenim quatre modes de comunicació: LISTEN, TCP, REV i RAW. \\
 
 La taula de la figura  \ref{fig:tableModesRelation} ens mostra una relació dels modes de comunicació que podem utilitzar
 en un entorn privilegiat i amb un entorn no privilegiat.
@@ -109,7 +106,7 @@ Cal dir que el fet de què en el entorn privilegiat no es puguin utilitzar els m
 a que això no té sentit. Els dos modes disponibles en el mode privilegiat, són millors que els dos oferts en mode no
 privilegiat. A continuació es detallen les diferencies entre aquests modes de comunicació:
 
-\subsection{Mode no privilegiat}
+\subsection{Entorn no privilegiat}
 
 Tal i com mostra la taula de la figura \ref{fig:tableModesRelation}, en un entorn no privilegiat, podem utilitzar dos modes de
 comunicació. Per seleccionar entre aquests dos modes, haurem d'executar el launcher amb un o dos paràmetres. Si el nombre de
@@ -138,72 +135,65 @@ Aquest mode de comunicació ens interessarà especialment en el moment de la int
 comandes a la màquina. Evidentment per a poder fer ús d'aquest mode, cal que el launxer estigui físicament
 a la màquina en qüestió. \\
 
-Un establerta la comunicació, el rootkit ens permetrà obtenir una shell (enganxada a un TTY per tal de poder treballar 
+Un cop establerta la comunicació, el rootkit ens permetrà obtenir una shell (enganxada a un TTY per tal de poder treballar 
 còmodament), fer servir la màquina remota com a proxy SOCKS, així com pujar o baixar fitxers. El fet de no executar el 
 launcher com a un servei implica que un cop acabi la connexió amb el client, el launcher haurà de tornar a ser llançat 
 per a poder executar una altre tasca. \\
 
-La figura \ref{fig:modeClient} ens mostra l'esquema d'ús d'aquest mode: \\
-\\
 \begin{figure}[htp]
     \centering
-    \includegraphics[scale=1,keepaspectratio]{diagrames/solutionDesignClientMode.pdf} \\
+    \includegraphics[scale=1.2,keepaspectratio]{diagrames/solutionDesignClientMode.pdf} \\
     \caption{Esquema del mode client}
     \label{fig:modeClient}
 \end{figure}
 
-En la figura podem veureu representada el què seria la màquina de l'atacant (el què utilitza la part client del rootkit),
+En la figura \ref{fig:modeClient} podem veure representada el què seria la màquina de l'atacant (que utilitza la part client del rootkit),
 i la màquina servidor (la ``victima'' que és on s'executa el launcher).
 
 El funcionament seria el següent:
 \begin{enumerate}
     \item Prèviament al què es veu a la figura, s'ha de col·locar el launcher en la màquina servidor.
-    \item S'executa el client en mode LISTEN a la màquina de l'atacant.
+    \item S'executa el client especificant que volem utilitzar el mode LISTEN a la màquina de l'atacant.
     \item S'executa el launcher en el servidor tot passant per paràmetre l'adreça ip de la màquina i el port on està escoltat
         el client.
     \item El launcher inicia una connexió cap al client.
-    \item Un cop establerta, el client pot realitzar l'acció que ha sol·licitat.
-    \item Un cop acaba de fer-ne ús, aquest tanca la connexió, i amb aquest acaba el procés launcher en el servidor.
+    \item Un cop establerta, el client pot realitzar l'acció que ha sol·licitat (el què en l'esquema anomenem utilització).
+    \item Quan el client acaba de fer-ne ús, aquest tanca la connexió, i amb aquest acaba el procés launcher en el servidor.
 \end{enumerate}
 
 \subsubsection{TCP}
-La idea d'aquest mode de comunicació, és la de tenir un servei que permeti executar 
-El fet de disposar d'un servei en constant execució o no, és la principal diferència entre el mode servidor
-no privilegiat, i el mode client. En aquest mode, tindrem el launcher escoltant a un port TCP esperant que
-el client es connecti per a sol·licitar una acció. \\
+La idea d'aquest mode de comunicació, és la de tenir un servei en constant execució a la màquina, que ens permeti
+fer ús de les funcionalitats del nostre rootkit, en qualsevol moment. Podem dir que el fet de disposar d'un servei en constant 
+execució o no, és la principal diferència entre el mode de comunicació TCP i el LISTEN. En aquest mode, tindrem el launcher 
+escoltant a un port TCP esperant que el client es connecti per a sol·licitar una acció. \\
 
 Aquest mode té l'inconvenient que en un entorn en què tinguem algun firewall, molt probablement, no ens 
-servirà de res ja que les connexions cap al port del nostre launcher, molt probablement no estaran permeses. \\
+servirà de res ja que les connexions cap al port del nostre launcher, no estaran permeses. A més, per un bon administrador, el 
+fet de tenir un port obert escoltant a la màquina, és un indicador molt gran que la màquina ha pogut patir una intrusió. \\
 
 \begin{figure}[htp]
     \centering
-    \includegraphics[scale=1,keepaspectratio]{diagrames/solutionDesignUnprivilegedServerMode.pdf} \\
+    \includegraphics[scale=1.2,keepaspectratio]{diagrames/solutionDesignUnprivilegedServerMode.pdf} \\
     \caption{Esquema del mode servidor no privilegiat}
     \label{fig:modeUnprivilegedServer}
 \end{figure}
 
-
-Aquest mode de comunicació, és utilitzat només en el cas en què el client vulgui connectar-se a un launcher que
-s'ha executat en mode servidor no privilegiat. \\
-
 El protocol de comunicació (figura \ref{fig:modeUnprivilegedServer}) en aquest cas és: \\
 
 \begin{enumerate}
-    \item El client estableix una connexió TCP amb a la màquina i port on està escoltant el launcher
-    \item El client envia un paquet autenticat cap al launcher, especificant-li l'acció a portar a terme
-    \item El launcher efectua l'acció, utilitzant la mateixa connexió ja establerta per a comunicar-se
+    \item El client estableix una connexió TCP amb a la ip i port on està escoltant el launcher (màquina servidor).
+    \item El client envia un paquet autenticat cap al launcher, especificant-li l'acció que vol portar a terme.
+    \item El launcher efectua l'acció, utilitzant la mateixa connexió ja establerta per a comunicar-se.
+    \item Un cop el client acaba de realitzar l'acció, aquest finalitza la connexió. Un cop finalitzada, el client acabarà el 
+        procés, però en canvi el launcher seguirà executant-se el procés del servei.
 \end{enumerate}
 
-\subsection{Mode privilegiat}
+\subsection{Entorn privilegiat}
 
-A diferència del mode no privilegiat, aquest cop els dos modes de comunicació poden ser utilitzats sense cap requeriment de com
-el launcher és executat. \\
+A diferència del mode no privilegiat, els dos modes de comunicació disponibles en el mode privilegiat, poden ser 
+utilitzats sense cap requeriment de com el launcher sigui executat. \\
 
-
-El mode servidor privilegiat, és el mode que requereix de permisos d'administrador, i que alhora ens permetrà
-fer ús de les característiques mes avançades del rootkit. \\
-
-La principal diferència entre aquest mode de funcionament, és que al disposar de permisos d'administrador a
+Al disposar de permisos d'administrador a
 la màquina, podem realitzar tasques molt més avançades. Entre elles, tenim la possibilitat d'implementar 
 sniffers a nivell d'aplicació per tal de poder capturar passwords, o el fet de poder utilitzar RAW sockets que
 ens permetran utilitzar diferents modes de comunicació (se'n comenta el disseny més endavant), per tal de 
@@ -211,42 +201,46 @@ saltar-se la majoria de configuracions de firewall. \\
 
 Per tots aquests motius, sempre que sigui possible ens interessarà utilitzar el rootkit en aquest mode. \\
 
-El funcionament del rootkit quan s'està executant en mode privilegiat, varia depenent el tipus de connexió
-que prefereix realitzar el client en aquell moment. Més endavant quan s'expliquen els modes de comunicació disponibles
-en aquest mode (figures \ref{fig:modePrivilegedServerREV} i \ref{fig:modePrivilegedServerREV}), es detalla el seu funcionament. \\
-
+El funcionament del rootkit quan s'està executant en un entorn privilegiat, varia depenent el tipus de connexió
+que prefereix realitzar el client en aquell moment. Tot seguit i utilitzant les figures \ref{fig:modePrivilegedServerREV} i 
+\ref{fig:modePrivilegedServerREV}), se'n detalla el seu funcionament tot comentant els principals avantatges
+i inconvenients que té utilitzar una o una altre. \\
 
 \subsubsection{REV}
 
-Aquest mode de comunicació, es pot utilitzar només en el cas d'haver llançat el launcher en mode privilegiat.
-El nom de REV, prové de la idea principal del mode de comunicació que és l'ús d'una comunicació reversa on 
-és el client qui (a través d'un port ja obert en la màquina), sol·licita que el rootkit es connecti cap a ell. \\
+La idea principal d'aquest mode de comunicació, és el fet de poder establir connexions amb el launcher però sent 
+aquestes establertes des de dintre, és a dir, sent el propi launcher l'inicialitzador de la connexió. A més, per a
+poder fer això, el launcher no ha de tenir cap socket escoltant a un port cosa que el deixa força ocult. \\
+
+El nom de REV, prové justament de la idea en què la comunicació es realitza a través d'una connexió reversa on 
+és el client qui rep la connexió del launcher. \\
 
 El protocol de comunicació és el següent: \\
 
 \begin{figure}[htp]
     \centering
-    \includegraphics[scale=1,keepaspectratio]{diagrames/solutionDesignPrivilegedServerModeREV.pdf} \\
+    \includegraphics[scale=1.2,keepaspectratio]{diagrames/solutionDesignPrivilegedServerModeREV.pdf} \\
     \caption{Esquema del mode de connexió revers}
     \label{fig:modePrivilegedServerREV}
 \end{figure}
 
 \begin{enumerate}
-    \item El client obre un servei que es queda escoltant a un port esperant la connexió del launcher.
-    \item El client llança un procés fill que es connecta a un port TCP qualsevol de la màquina on s'està 
+    \item El client obre un port i es queda esperant la connexió del launcher.
+    \item Alhora, el client llança un procés fill que es connecta a un port TCP qualsevol de la màquina on s'està 
         executant el rootkit. Aquest port ha d'haver estat obert per qualsevol altre servei del sistema (per 
         exemple el típic servei web).
-    \item El client envia un paquet autenticat través d'aquesta connexió. Aquest paquet serà probablement  
+    \item El client envia un paquet autenticat través d'aquesta connexió. Aquest paquet serà   
         descartat pel servei al no ser un paquet que compleixi el protocol del servei, però serà detectat per
-        part del rootkit.
-    \item El rootkit detectarà i comprovarà el paquet, i en cas de ser vàlid, establirà una connexió TCP cap 
+        part del rootkit. 
+    \item El rootkit detectarà i comprovarà el paquet. En cas de ser vàlid, establirà una connexió TCP cap 
         al client.
-    \item Un cop establerta la connexió amb el client, s'utilitzarà aquesta per tal d'efectuar l'operació 
-        demandada.
+    \item Un cop establerta a la connexió amb el client, aquest podrà fer ús de la funcionalitat demanada. 
+    \item En el moment que el client decideixi finalitzar la connexió, tant el client com el launcher finalitzaran el
+        fil d'execució destinat a manegar la connexió, però en el cas del launcher, el servei seguirà en execució
+        a l'espera de rebre un altre paquet vàlid.
 \end{enumerate}
 
-Els principals avantatges son: \\
-
+Els principals avantatges respecte el mode RAW son: \\
 \begin{itemize}
     \item La comunicació entre launcher i client és molt fiable i és provable que sobrepassi la majoria de 
         configuracions de xarxa d'una manera totalment vàlida.
@@ -254,7 +248,6 @@ Els principals avantatges son: \\
 \end{itemize}
 
 Els principals desavantatges són: \\
-
 \begin{itemize}
     \item El primer és que requerim que la màquina disposi d'alguna aplicació que escolti en algun port 
         TCP. Tot i que això no acostuma a ser difícil, hi han casos en què no és així.
@@ -263,20 +256,21 @@ Els principals desavantatges són: \\
         pot ser molt sospitós per a l'administrador.
 \end{itemize}
 
-Per tal d'utilitzar aquest mode de comunicació, cal que la màquina on s'executa el client, tingui almenys
-un port de la ip pública, assignat a ella, de manera que sigui possible lo comunicació directe des de fora
+Per tal d'utilitzar aquest mode de comunicació, cal que la màquina on s'executa el client tingui almenys
+un port de la ip pública, assignat a ella, de manera que sigui possible la comunicació directe des de fora
 la xarxa local. En configuracions personals com una línia ADSL amb router, caldria que el router de la màquina
-on l'executés el client, tingués un ``port obert'' (un port amb DNAT) per tal que el rootkit es pogués 
-connectar a ell. Aquest requisit també existeix en els següents modes de comunicació (RAW i LISTEN). \\
+on l'executés el client, tingués un ``port obert'' (un port amb un Source NAT configurat) per tal que el rootkit es pogués 
+connectar a ell. Aquest requisit també existeix en els modes de comunicació RAW i LISTEN. \\
 
 \subsubsection{RAW}
 
-Igual que en el cas anterior, aquest mode de comunicació només pot ser utilitzat en cas d'haver llançat el launcher
-en mode privilegiat. \\
+La idea d'aquest mode, és la de utilitzar un protocol propi per tal que el nucli del sistema operatiu on
+s'estigui executant el nostre rootkit, no l'entengui. Al complir aquest objectiu acabem tenint que totes les
+comunicacions realitzades amb aquest protocol, són invisibles sota l'ull de l'usuari administrador. \\
 
 Per tal d'implementar aquest mode de comunicació, s'ha hagut d'implementar un protocol de capa de transport 
 compatible amb el subset de paquets vàlids pel protocol TCP (documentat més endavant). D'aquesta manera s'ha 
-aconseguit poder transmetre per internet paquets TCP vàlids, que a nivell de sessió són aparentment invàlids. 
+aconseguit poder transmetre per internet paquets TCP vàlids, que a nivell de sessió i per el sistema operatiu són invàlids. 
 Com que tots aquests paquets són entregats a la màquina, el nostre rootkit és capaç d'interpretar-los i 
 respondre obtenint com a resultat un protocol de comunicació invisible per el nucli del sistema operatiu. \\
 
@@ -284,8 +278,17 @@ Fer tot això, ens aporta principalment dos avantatges: \\
 
 \begin{enumerate}
     \item Que les connexions establertes utilitzant aquest mode, són gairebé invisibles (caldria analitzar els
-        diferents paquets de xarxa per detectar una connexió d'aquest tipus)
-    \item Que no necessitem tenir cap aplicació escoltant a un port per tal de comunicar-nos amb el launcher.
+        diferents paquets de xarxa per detectar alguna cosa).
+    \item Que no necessitem tenir cap aplicació escoltant a un port per tal de comunicar-nos amb el launcher, només
+        necessitem que el trànsit arribi a la màquina.
+\end{enumerate}
+
+Els principals desavantatges: \\
+\begin{enumerate}
+    \item Com a desavantatge, comentar que el nostre protocol no implementa ni les principals característiques que té TCP
+        (com poden ser reenviament i confirmació de que un paquet), i per aquest motiu, una connexió RAW no serà tant
+        fiable ni tindrà el rendiment que pot tenir-ne una TCP. \\
+    \item Al ser necessari un raw socket a la banda del client, aquest ha de ser executat amb permisos d'administrador.
 \end{enumerate}
 
 El nom de mode de comunicació RAW, prové del tipus de socket que ens permet implementar tot això (RAW socket),
@@ -293,27 +296,29 @@ i el seu funcionament és el següent: \\
 
 \begin{figure}[htp]
     \centering
-    \includegraphics[scale=1,keepaspectratio]{diagrames/solutionDesignPrivilegedServerModeRAW.pdf} \\
+    \includegraphics[scale=1.2,keepaspectratio]{diagrames/solutionDesignPrivilegedServerModeRAW.pdf} \\
     \caption{Esquema del mode de connexió revers}
     \label{fig:modePrivilegedServerRAW}
 \end{figure}
 
 \begin{enumerate}
     \item Primer de tot, el client inicialitza un socket RAW per tal de comunicar-se amb el launcher.
-    \item El client crea un procés per tal d'enviar envia el paquet d'autenticació a la màquina i port escollits,
+    \item El client crea un procés per tal d'enviar el paquet d'autenticació a la màquina i port escollits,
         i espera que el launcher li respongui.
     \item Un cop el launcher rep el paquet, comprova si el paquet és d'alguna connexió existent, i si no
         ho és, crea un altre procés destinat als enviaments de paquets cap al client. Alhora, comença a
         processar l'acció que li ha sol·licitat el client, tot utilitzant els paràmetres rebuts per a la 
         comunicació.
-    \item En el moment que el client rep una resposta del launcher, comença a processar l'acció tenint
-        ja la connexió establerta.
+    \item En el moment que el client rep una resposta del launcher, la connexió RAW ha estat establerta, i 
+        per tant, el client pot començar a utilitzar l'acció que ha sol·licitat.
+    \item Quan el client finalitzi la connexió, el launcher finalitzarà també el procés assignat al client,
+        i quedarà només el procés del servei.
 \end{enumerate}
 
 L'objectiu de crear un protocol propi de comunicació, era aconseguir comunicar el client i el launcher per
 internet sense que les utilitats del sistema operatiu per visualitzar les connexions de xarxa establertes
-s'adonessin de les connexions entre launcher i client. En definitiva, l'objectiu és aconseguir passar més 
-desapercebuts. \\
+s'adonessin de les connexions entre launcher i client. En definitiva, un pas més per a l'objectiu de aconseguir 
+passar més desapercebuts. \\
 
 Per tal de poder aconseguir això i establir una comunicació a través d'internet, calia utilitzar un subset de 
 paquets IP vàlids per a tota l'electrònica de xarxa que hi ha a internet. Per aquest motiu, es va escollir
@@ -322,7 +327,7 @@ A més, per tal de afavorir que els paquets eren entregats, aquests eren enviats
 Aquesta peculiaritat fa que en alguns firewalls de baixa qualitat configurats amb una política de restricció de 
 tots els paquets entrants menys els paquets que formen part d'una connexió ja establerta, detectin que el paquet
 fa referència a una connexió ja establerta\footnote{Molts d'aquests firewalls, només afegeixen una regla denegant
-els paquets amb el flag SYN, ja que només intenten denegar el inici d'una connexió TCP.} i el deixin passar. \\
+els paquets amb el flag SYN, ja que només intenten denegar el inici d'una connexió TCP.} i els deixin passar. \\
 
 Cal dir que aquest protocol es podria millorar força tot afegint algoritmes de control i retransmissió. Actualment
 el nostre protocol de comunicació RAW, es podria dir que només ofereix les característiques del protocol UDP
@@ -341,7 +346,7 @@ Els paquets transmesos per la xarxa segueixen aquesta estructura: \\
 
 En definitiva són paquets TCP amb el flag RESET activat, i una estructura de dades que detallem a continuació.
 
-\subsection{Paquet de comunicació}
+\subsubsection{Paquet de comunicació}
 
 La següent estructura, s'utilitza en dos casos diferenciats:
 \begin{itemize}

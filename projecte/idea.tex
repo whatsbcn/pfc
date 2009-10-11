@@ -15,7 +15,7 @@ possibles. Els usuaris que disposen del màxim nivell de privilegis, s'anomenen 
 Aquests usuaris, acostumen a no tenir limitacions alhora de llançar accions a la màquina, és per aquest
 motiu, que l'usuari preferit per un atacant, és l'usuari administrador. \\
 
-\section{Mode no privilegiat}
+\section{Entorn no privilegiat}
 
 Aquestes són les funcionalitats que ens ofereix el rootkit quan s'executa com a \mbox{usuari no privilegiat}
 \footnote{Tot i que el títol de la secció s'anomena mode no privilegiat, aquest nom no fa referència al mode d'execució
@@ -102,7 +102,11 @@ màquines que tenim infectades, i si en algun moment, en perdem alguna d'elles.
 Per tal de tenir el mateix intèrpret de comandes independentment del sistema, i evitar algun sistema de loggeig que acostumen a 
 incorporar per defecte, ens interessa incorporar dintre el propi rootkit la shell.
 
-\section{Mode privilegiat}
+\subsection{Proxy socks}
+Una altre funcionalitat interessant, serà poder utilitzar el nostre launcher com a proxy de les nostres connexions. D'aquesta manera
+podrem fer servir una màquina amb el nostre rootkit, com a proxy de les nostres connexions que volguem que passin desapercebudes.
+
+\section{Entorn privilegiat}
 
 \subsection{Connexió inversa}
 De la mateixa manera que en la connexió directa, el rootkit ha de permetre establir una connexió al seu propietari per tal de connectar-se
