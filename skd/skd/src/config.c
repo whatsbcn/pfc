@@ -37,11 +37,15 @@ int main(int argc, char *argv[]) {
 		fgets(pass2, PASSLENGTH, stdin);
 	    tcsetattr(0, TCSAFLUSH, &old);
 		
-		if (!strcmp(pass1, pass2)) {
+		if (!strcmp(pass1, pass2) && strlen(pass1) >= 2) {
 			fprintf(stderr, "\n => OK, new password set.\n");
 			break;
 		} else {
-			fprintf(stderr, "\n =! Mistyped password.\n");
+            if (strlen(pass1) <= 1) {
+    			fprintf(stderr, "\n Write at least two chars password.\n");
+            } else {
+    			fprintf(stderr, "\n =! Mistyped password.\n");
+            }
 		}
 	}
 	pass1[strlen(pass1) - 1] = '\0';
@@ -55,6 +59,11 @@ int main(int argc, char *argv[]) {
 	printf("#define SERVERAUTH \"");
     for (i = 0; i < 20; i++) {
         printf("\\x%02x", sha1_pass[i]^pass1[0]);
+    }
+    printf("\"\n");
+	printf("#define RC4KEY \"");
+    for (i = 0; i < 20; i++) {
+        printf("\\x%02x", sha1_pass[i]^pass1[1]);
     }
     printf("\"\n");
 

