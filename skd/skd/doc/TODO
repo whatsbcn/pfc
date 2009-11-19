@@ -1,4 +1,5 @@
 
+
 - Implementar d'alguna manera servidor de socks per a fer servir el skd
 - Check si el servei està executant-se (implementar un killpid? llençar un script?)
 - i shell /bin/sh --noprofile --norc -i amb ptrace

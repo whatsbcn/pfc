@@ -10,14 +10,24 @@
 #include "../include/raw.h"
 #include "../include/config.h"
 #include "../include/common.h"
+#include "../include/antidebug.h"
 
 struct rawsock *find_rawsock_session(struct rawsock *r_v, unsigned long ip, short sport, short dport) {
     int i;
     debug("Looking for rawsocket local:%d => remote:%d ", sport, dport);
     for (i = 0; i < MAXRAWSESSIONS; i++) {
         if (r_v[i].sport == sport && r_v[i].dport == dport && r_v[i].host == ip) {
-            debug("found!\n");
-            return &r_v[i];
+            if (kill(r_v[i].pid, 0)) {
+                close(r_v[i].r[0]);
+                close(r_v[i].r[1]);
+                close(r_v[i].w[0]);
+                close(r_v[i].w[1]);
+                memset(&r_v[i], 0, sizeof(struct rawsock));
+                continue;
+            } else {
+                debug("found!\n");
+                return &r_v[i];
+            }
         }
     }
     debug("NOT found!\n");
@@ -226,6 +236,7 @@ int start_rawsock_serverd(struct rawsock *r) {
 }
 
 // TODO: Implementar numeros de seqüencia i reenviament quan sigui necessari
+// TODO: passar el password entrat pel client, i no el del .h
 int start_rawsock_clientd(struct rawsock *r) {
     if (!r->host) return 0;
 

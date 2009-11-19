@@ -35,7 +35,6 @@ void rc4_init (unsigned char *key, int len, rc4_ctx *ctx) {
 }
 
 inline void	rc4 (unsigned char *data, int len, rc4_ctx *ctx) {
-#if 1
 	unsigned char	*state = ctx->state;
 	unsigned char	x = ctx->x;
 	unsigned char	y = ctx->y;
@@ -54,6 +53,5 @@ inline void	rc4 (unsigned char *data, int len, rc4_ctx *ctx) {
 
 	ctx->x = x;
 	ctx->y = y;
-#endif
 }
 

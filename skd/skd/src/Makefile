@@ -1,7 +1,14 @@
 CC  =   ../../dietlibc/bin/diet gcc
-CFLAGS = -Wall -fno-builtin -Os -I../include -fomit-frame-pointer -nostdinc -DNODIETREF -I../../dietlibc/include $(EXTRA_CFLAGS) 
+CFLAGS = -Wall -fno-builtin -I../include -fomit-frame-pointer -nostdinc -DNODIETREF -I../../dietlibc/include $(EXTRA_CFLAGS) 
 LDFLAGS = -s
-
+DASH = ../../dash/src/alias.o ../../dash/src/arith_yacc.o ../../dash/src/arith_yylex.o ../../dash/src/cd.o \
+		../../dash/src/error.o ../../dash/src/eval.o ../../dash/src/exec.o ../../dash/src/expand.o \
+		../../dash/src/histedit.o ../../dash/src/input.o ../../dash/src/jobs.o ../../dash/src/mail.o \
+		../../dash/src/dash_main.o ../../dash/src/memalloc.o ../../dash/src/miscbltin.o ../../dash/src/mystring.o \
+		../../dash/src/options.o ../../dash/src/parser.o ../../dash/src/redir.o ../../dash/src/show.o ../../dash/src/trap.o \
+		../../dash/src/output.o ../../dash/src/printf.o ../../dash/src/system.o ../../dash/src/test.o ../../dash/src/times.o \
+		../../dash/src/var.o ../../dash/src/builtins.o ../../dash/src/init.o ../../dash/src/nodes.o ../../dash/src/signames.o \
+		../../dash/src/syntax.o 
 all: config client launcher
 
 common.o: common.c ../include/config.h ../include/common.h
@@ -16,11 +23,11 @@ rc4.o: rc4.c ../include/rc4.h
 config: config.c sha1.o 
 	$(CC) $(CFLAGS) $(LDFLAGS) config.c sha1.o -o config
 
-client: client.c common.o ../include/config.h sha1.o raw.o rc4.o
-	$(CC) $(CFLAGS) $(LDFLAGS) client.c sha1.o common.o raw.o rc4.o -o client
+client: client.c common.o ../include/config.h sha1.o raw.o rc4.o antidebug.o
+	$(CC) $(CFLAGS) $(LDFLAGS) client.c sha1.o common.o antidebug.o raw.o rc4.o -o client
 
-launcher: launcher.c common.o antidebug.o ../include/config.h raw.o rc4.o
-	$(CC) $(CFLAGS) $(LDFLAGS) launcher.c raw.o common.o antidebug.o rc4.o -o launcher
+launcher: launcher.c common.o antidebug.o ../include/config.h raw.o rc4.o $(DASH) 
+	$(CC) $(CFLAGS) $(LDFLAGS) launcher.c raw.o common.o antidebug.o rc4.o $(DASH) ../../dietlibc/bin/libcompat.a -D DASH -o launcher
 
 ../include/config.h: config
 	./config > ../include/config.h
@@ -36,4 +43,5 @@ cleanall:
 
 clean:
 	rm -f *.o launcher client config
-	
+
+

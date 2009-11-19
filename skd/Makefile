@@ -1,11 +1,17 @@
 DIET = "$(ls bin-*/diet)"
 
-all: upx dietlibc skd
-
+all: upx dietlibc dash skd
 
 dietlibc: dietlibc/bin/diet
 
 upx: upx/upx
+
+dash: dash/src/dash
+
+dash/src/dash:
+	cd dash; CC="../dietlibc/bin/diet gcc" CFLAGS="" ./configure
+	cd dash; make
+	cd dash/src; ../dietlibc/bin/diet gcc dash_main.c -c -include ../config.h
 
 skd: skd/bin/launcher upx dietlibc
 
@@ -37,4 +43,5 @@ clean:
 	cd upx; rm -f upx
 	cd skd; make clean
 	cd ucl; make clean
+	cd dash; make clean
 	rm -f pdflush skd-client
