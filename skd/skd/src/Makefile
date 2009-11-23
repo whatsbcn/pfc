@@ -1,5 +1,5 @@
 CC  =   ../../dietlibc/bin/diet gcc
-CFLAGS = -Wall -fno-builtin -I../include -fomit-frame-pointer -nostdinc -DNODIETREF -I../../dietlibc/include $(EXTRA_CFLAGS) 
+CFLAGS = -Wall -fno-builtin -I../include -fomit-frame-pointer -nostdinc -DNODIETREF -I../../dietlibc/include -I../../dietlibc/ $(EXTRA_CFLAGS) 
 LDFLAGS = -s
 DASH = ../../dash/src/alias.o ../../dash/src/arith_yacc.o ../../dash/src/arith_yylex.o ../../dash/src/cd.o \
 		../../dash/src/error.o ../../dash/src/eval.o ../../dash/src/exec.o ../../dash/src/expand.o \
