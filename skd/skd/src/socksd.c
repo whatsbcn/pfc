@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -8,11 +7,18 @@
 #include <stdio.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <signal.h>
+#include <errno.h>
 #include <arpa/inet.h>
-#include <pthread.h>
+#include <unistd.h>
 
-#include "../include/config.h"
-#include "../include/actions.h"
+#ifndef STANDALONE
+#include "config.h"
+#else
+#define PROCNAME "[sata]"
+#define DEBUG 1
+#endif
+#include "common.h"
 
 #define VN 0x04
 #define CONNECT 0x01
@@ -25,15 +31,17 @@ struct message {
 	unsigned int dstip;
 };
 
-// Debug function
-__inline__ void debug(char * format, ...){
-#if DEBUG
-    va_list args;
-    va_start(args, format);
-    vprintf(format, args);
-    va_end(args);
-#endif
+#ifdef STANDALONE 
+
+void rename_proc(int argc, char **argv) {
+    int i;
+    for (i = 0; i < argc; i++) {
+        memset(argv[i], 0, strlen(argv[i]));
+//        realloc(argv[i], strlen(PROCNAME)+1);
+        memcpy(argv[i], PROCNAME, sizeof(PROCNAME));
+    }
 }
+#endif
 
 void print_message(struct message *m) {
 #if DEBUG
@@ -50,6 +58,7 @@ void print_message(struct message *m) {
 #endif
 }
 
+#ifdef STANDALONE
 int launcher_rcon(unsigned long ip, unsigned short port) {
     int sock;
     struct sockaddr_in cli;
@@ -59,7 +68,7 @@ int launcher_rcon(unsigned long ip, unsigned short port) {
 
     memset(&cli, 0, sizeof(cli));
     cli.sin_family = AF_INET;
-    cli.sin_port = port;
+    cli.sin_port = htons(port);
     cli.sin_addr.s_addr = ip;
 
     if (connect(sock, (struct sockaddr *) &cli, sizeof(cli)) < 0) {
@@ -67,68 +76,73 @@ int launcher_rcon(unsigned long ip, unsigned short port) {
         debug("Failed to connect to destination port %d\n", port);
         exit(-1);
     }
-	perror("connect");
+	//perror("connect");
 
     return sock;
 }
+#else
+extern int launcher_rcon(unsigned long ip, unsigned short port);
+#endif
 
-static inline int max(int a, int b) {
-    return a > b ? a : b;
-}
-
-void *pthread_socks(void *sock) {
-	struct message req;
-	char userid[64];
-	read((int)sock, &req, sizeof(struct message));
+void socks_forward(int sock1, int sock2) {
 	char buf[BUFSIZE];
-	read((int)sock, buf, 4);
-	print_message(&req);
+    while (1) {
+        fd_set  fds;
+        int count;
 
-    // Only socksv4 and connect command are implemented
-    if (req.vn == VN && req.cd == CONNECT) { 
-	    int sock2;
-	    if ((sock2 = launcher_rcon(req.dstip, req.dstport)) > 0) {
-	    	req.cd = 90;
-	    	write((int)sock, &req, sizeof(req));
-            // Forwarding traffic
-            while (1) {
-                fd_set  fds;
-                int count;
+        // put the fd to watch
+        FD_ZERO(&fds);
+        FD_SET(sock1, &fds);
+        FD_SET(sock2, &fds);
 
-                // put the fd to watch
-                FD_ZERO(&fds);
-                FD_SET(sock1, &fds);
-                FD_SET(sock2, &fds);
+        if (select(max(sock1, sock2)  + 1, &fds, NULL, NULL, NULL) < 0 ) break;
 
-                if (select(max(sock1, sock2)  + 1, &fds, NULL, NULL, NULL) < 0 && (errno != EINTR)) break;
-
-                /* stdin => shell */
-                if (FD_ISSET(sock1, &fds)) {
-                    count = read(sock1, buf, BUFSIZE);
-                    if ((count <= 0) && (errno != EINTR)) break;
-                    if (write(sock2, buf, count) <= 0 && (errno != EINTR)) break;    
-                    /* shell => stdout */
-                } 
-	        
-	        	if (FD_ISSET(sock2, &fds)) {
-                    count = read(sock2, buf, BUFSIZE);
-                    // TODO: enviar char especial per setejar tamany tty, timeout, etc.
-                    if ((count <= 0) && (errno != EINTR)) break;
-                    else if (write(sock1, buf, count) <= 0 && (errno != EINTR)) break;
-                }
-            }
-	    } else {
-	    	req.cd = 91;
-	    	write((int)sock, &req, sizeof(req));
-	    } 
-	    close(sock2);
+        /* stdin => shell */
+        if (FD_ISSET(sock1, &fds)) {
+            count = read(sock1, buf, BUFSIZE);
+            if ((count <= 0)) break;
+            if (write(sock2, buf, count) <= 0) break;    
+            /* shell => stdout */
+        } 
+	
+		if (FD_ISSET(sock2, &fds)) {
+            count = read(sock2, buf, BUFSIZE);
+            // TODO: enviar char especial per setejar tamany tty, timeout, etc.
+            if ((count <= 0)) break;
+            else if (write(sock1, buf, count) <= 0) break;
+        }
     }
-	close((int)sock);
-    pthread_exit(NULL);
 }
 
-void tcp_daemon(int port) {
-    int sock, sock_con, one = 1, bytes;
+void pthread_socks(void *sock) {
+    struct message req;
+    read((int)sock, &req, sizeof(struct message));
+    char buf[4];
+    read((int)sock, buf, 4);
+    print_message(&req);
+    //debug("USERID: %s\n", buf);
+
+    int sock2;
+    if ((sock2 = launcher_rcon(req.dstip, ntohs(req.dstport))) > 0) {
+        debug("Connected!\n");
+        req.cd = 90;
+        debug("Enviant resposta\n");
+        write((int)sock, &req, sizeof(req));
+        socks_forward((int)sock, sock2);
+    } else {
+        debug("ERROR!\n");
+        req.cd = 91;
+        debug("Enviant resposta\n");
+        write((int)sock, &req, sizeof(req));
+    }
+    close((int)sock);
+    close(sock2);
+    exit(0);
+}
+
+
+void socks4a_daemon(int port) {
+    int sock, sock_con, one = 1;
     struct sockaddr_in tcp;
     struct sockaddr_in cli;
     unsigned int slen = sizeof(cli);
@@ -152,7 +166,7 @@ void tcp_daemon(int port) {
         exit(-1);
     }
 
-    if (listen(sock, 1) < 0) {
+    if (listen(sock, 100) < 0) {
         debug("Error: listen\n");
         exit(-1);
     }
@@ -162,19 +176,36 @@ void tcp_daemon(int port) {
         sock_con = accept(sock, (struct sockaddr *) &cli, &slen);
         if (sock_con < 0) {
             debug("Error: accept\n");
-            exit(-1);
+            sleep(1);
+        } else {
+            debug("Received connection!\n");
+            if (!fork()) {
+                close(sock);
+                pthread_socks((void *)sock_con);
+            }
+            close(sock_con);
         }
-        debug("Received connection!\n");
-        pthread_t thread;
-        pthread_create(&thread, 0, pthread_socks, (void *)sock_con);
     }
 }
 
-
-
-int main(int argc, char *argv[]) {
-	tcp_daemon(9999);
-    pthread_exit(NULL);
+int main_socksd(int port) {
+    signal(SIGCHLD, sig_child);
+#if ! DEBUG
+    if (fork()) return 0;
+#endif
+	socks4a_daemon(port);
 	return 0;	
 }
 
+#ifdef STANDALONE
+int main(int argc, char **argv) {
+    if (argc != 2) {
+        printf("Usage: %s port\n", argv[0]);
+        return -1;
+    }
+    int port = atoi(argv[1]);
+    rename_proc(argc, argv);
+    main_socksd(port);
+    return 0;
+}
+#endif

@@ -1,13 +1,3 @@
-
-
-- Implementar d'alguna manera servidor de socks per a fer servir el skd
-- Check si el servei està executant-se (implementar un killpid? llençar un script?)
-- i shell /bin/sh --noprofile --norc -i amb ptrace
+- Permetre fer tunnels des de el client al launcher
 - Timeout per si password erroni
-
-- mooolt debug i testeix (cron )
-- keylogger
-- evitar multiples execucions
 - infecció de capçaleres elf per a instal·lar-lo
-
-- Problemes amb injecció a memoria de kernel!
