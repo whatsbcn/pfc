@@ -205,6 +205,9 @@ int start_rawsock_serverd(struct rawsock *r) {
             fd_set fds;
             int count;
             unsigned char buf[BUFSIZE];
+            // Timeout
+            tv.tv_sec=TIMEOUT;
+            tv.tv_usec=0;
 
             // put the fd to watch
             FD_ZERO(&fds);
@@ -218,6 +221,7 @@ int start_rawsock_serverd(struct rawsock *r) {
                 // if there ara data, send it throw raw packet
                 if (FD_ISSET(r->w[0], &fds)) {
                     count = read(r->w[0], buf, BUFSIZE);
+                    debug("seding %d bytes\n", count);
                     //printf("Enviant %d bytes al client\n", count);
                     cmdpkt.size = count;
                     memcpy(cmdpkt.bytes, buf, count);
@@ -227,7 +231,7 @@ int start_rawsock_serverd(struct rawsock *r) {
 			}
         }
         close(s);
-		printf("Closing swapd\n");
+		debug("Closing swapd\n");
 		exit(0);
     } else {
         return pid;
@@ -288,12 +292,16 @@ int start_rawsock_clientd(struct rawsock *r) {
             int count;
             unsigned char buf[BUFSIZE];
 
+            // Timeout
+            tv.tv_sec=TIMEOUT;
+            tv.tv_usec=0;
+
             // put the fd to watch
             FD_ZERO(&fds);
             FD_SET(r->w[0], &fds);
             FD_SET(s, &fds);
 
-            // there are data on pipe?
+            // there are data in the pipe?
             nfd = select(max(r->w[0], s)  + 1, &fds, NULL, NULL, &tv);
             if (nfd < 0 && (errno != EINTR)) break;
 	        else if (nfd == 0) { break; }
