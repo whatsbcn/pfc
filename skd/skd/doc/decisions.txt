@@ -1,4 +1,0 @@
-
-* Intentar que només amb la dietlibc funcioni tot
-* Per a configurar-lo de diferents maneres, generar un config.h
-* Client i launcher

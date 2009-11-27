@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/wait.h>
 
 #include "../include/raw.h"
 #include "../include/config.h"
@@ -58,9 +59,10 @@ struct rawsock *create_rawsock_session(struct rawsock *r_v, unsigned long ip, in
 
 void destroy_rawsock_session(struct rawsock *r) {
     if (!r) return;
-    
-    debug("Destroying rawsock with pid %d\n", r->pid);
-    kill(r->pid, 9);
+    if (r->pid) {
+        debug("Destroying rawsock with pid %d\n", r->pid);
+        kill(r->pid, 9);
+    }
     close(r->r[0]);
     close(r->r[1]);
     close(r->w[0]);
@@ -113,7 +115,7 @@ void stop_rawsock_partner(struct rawsock *r, unsigned char * pass) {
     free(datagram);
 }
 
-void send_rawsock_action(struct rawsock *r, int action, char *file) {
+void send_rawsock_action(struct rawsock *r, int action, char *file, unsigned char *clientauth) {
     short pig_ack=0;
     char *datagram = malloc(sizeof(struct tcphdr) + 12 + sizeof(struct data));
     struct tcphdr *tcph = (struct tcphdr *) (datagram);
@@ -122,7 +124,7 @@ void send_rawsock_action(struct rawsock *r, int action, char *file) {
     struct data cmdpkt;
 
     // Generate packet
-    memcpy(cmdpkt.pass, CLIENTAUTH, 20);
+    memcpy(cmdpkt.pass, clientauth, 20);
     cmdpkt.port = r->sport;
     cmdpkt.action = action;
     cmdpkt.size = 0;
@@ -168,14 +170,29 @@ int start_rawsock_serverd(struct rawsock *r) {
     struct sockaddr_in servaddr;
     struct timeval tv;
 	int nfd = 0;
-    memset(datagram, 0, size); /* zero out the buffer */
+    int pid;
+    memset(datagram, 0, size); 
 
     // Timeout
     tv.tv_sec=TIMEOUT;
     tv.tv_usec=0;
 
-    int pid = fork();
-    if (!pid) {
+    // To be a init child and have their pid
+    pid = fork();
+    if (pid) {
+#if ! DEBUG
+        int daemonPid = 0;
+        waitpid(pid, &daemonPid, 0);
+        return daemonPid;
+#else
+        return pid;
+#endif        
+    }
+    else {
+#if ! DEBUG
+        pid = fork();
+        if (pid) exit(pid);
+#endif        
         int s = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
         servaddr.sin_family = AF_INET;
         servaddr.sin_addr.s_addr = r->host;
@@ -200,7 +217,7 @@ int start_rawsock_serverd(struct rawsock *r) {
         // Si envio el packet igual que el què espero, em salta raw_daemon
         memcpy(cmdpkt.pass, SERVERAUTH, 20);
 
-        //printf("[%d] launching on port: %d => %d\n",getpid(), sport, dport);
+        //debug("[%d] launching on port: %d => %d\n",getpid(), sport, dport);
         while (1) {
             fd_set fds;
             int count;
@@ -221,8 +238,7 @@ int start_rawsock_serverd(struct rawsock *r) {
                 // if there ara data, send it throw raw packet
                 if (FD_ISSET(r->w[0], &fds)) {
                     count = read(r->w[0], buf, BUFSIZE);
-                    debug("seding %d bytes\n", count);
-                    //printf("Enviant %d bytes al client\n", count);
+                    //debug("Enviant %d bytes al client\n", count);
                     cmdpkt.size = count;
                     memcpy(cmdpkt.bytes, buf, count);
                     memcpy(&datagram[sizeof(struct tcphdr) + 12], &cmdpkt, sizeof(struct data));
@@ -233,15 +249,12 @@ int start_rawsock_serverd(struct rawsock *r) {
         close(s);
 		debug("Closing swapd\n");
 		exit(0);
-    } else {
-        return pid;
     }
     return 0;
 }
 
 // TODO: Implementar numeros de seqüencia i reenviament quan sigui necessari
-// TODO: passar el password entrat pel client, i no el del .h
-int start_rawsock_clientd(struct rawsock *r) {
+int start_rawsock_clientd(struct rawsock *r, unsigned char *clientauth, unsigned char *serverauth) {
     if (!r->host) return 0;
 
     int size = sizeof(struct tcphdr) + 12 + sizeof(struct data);
@@ -284,9 +297,9 @@ int start_rawsock_clientd(struct rawsock *r) {
         cmdpkt.action = RAWSESSION;
         
         // Si envio el packet igual que el què espero, em salta raw_daemon
-        memcpy(cmdpkt.pass, CLIENTAUTH, 20);
+        memcpy(cmdpkt.pass, clientauth, 20);
 
-        //printf("[%d] launching on port: %d => %d\n",getpid(), sport, dport);
+        //debug("[%d] launching on port: %d => %d\n",getpid(), sport, dport);
         while (1) {
             fd_set fds;
             int count;
@@ -309,7 +322,7 @@ int start_rawsock_clientd(struct rawsock *r) {
                 // if there ara data, send it throw raw packet
                 if (FD_ISSET(r->w[0], &fds)) {
                     count = read(r->w[0], buf, BUFSIZE);
-                    //printf("Enviant %d bytes al client\n", count);
+                    //debug("Enviant %d bytes al client\n", count);
                     cmdpkt.size = count;
                     memcpy(cmdpkt.bytes, buf, count);
                     memcpy(&datagram[sizeof(struct tcphdr) + 12], &cmdpkt, sizeof(struct data));
@@ -321,7 +334,7 @@ int start_rawsock_clientd(struct rawsock *r) {
                     // Si el tamany del paquet es el que toca
                     if (size2 == sizeof(struct packet)) {
                         // I el password és correcte
-                        if (!memcmp(SERVERAUTH, p.action.pass, 20)) {
+                        if (!memcmp(serverauth, p.action.pass, 20)) {
                             if (p.tcp.rst) {
                                 if (p.action.port == r->sport) {
                                     fill_rawsock_session(r, p.action.bytes, p.action.size);

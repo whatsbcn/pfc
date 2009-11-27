@@ -18,8 +18,8 @@ struct rawsock *find_rawsock_session(struct rawsock *r_v, unsigned long ip, shor
 void destroy_rawsock_session(struct rawsock *r);
 void fill_rawsock_session(struct rawsock *r, unsigned char *data, int size);
 void stop_rawsock_partner(struct rawsock *r, unsigned char * pass);
-void send_rawsock_action(struct rawsock *r, int action, char *file);
+void send_rawsock_action(struct rawsock *r, int action, char *file, unsigned char *clientauth);
 int start_rawsock_serverd(struct rawsock *r);
-int start_rawsock_clientd(struct rawsock *r);
+int start_rawsock_clientd(struct rawsock *r, unsigned char *clientauth, unsigned char *serverauth);
 
 #endif

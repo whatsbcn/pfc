@@ -5,6 +5,7 @@ void antidebug_sigtrap_handler(int n);
 extern int antidebug_sigtrap_var;
 
 // Check that nobody is stoling our sigtraps
+#if ANTIDEBUG
 #define antidebug_sigtrap() \
     signal(SIGTRAP, antidebug_sigtrap_handler); \
     __asm__("int3"); \
@@ -14,9 +15,13 @@ extern int antidebug_sigtrap_var;
         int segfaultaddr = 0; \
         *(int *)segfaultaddr = 0xdeadfeef; \
     } \
-	else antidebug_sigtrap_var = 0; \
+	else antidebug_sigtrap_var = 0; 
+#else
+#define antidebug_sigtrap()
+#endif
 
 // Obfuscate analysis
+#if ANTIDEBUG
 #define antidebug_obfuscate_analysis(value) \
 __asm__("pushl %eax\n" \
         "jmp antidebug1" #value " + 2\n" \
@@ -33,4 +38,9 @@ __asm__("pushl %eax\n" \
         ".long 0\n" \
         "popl %eax\n" \
         );
+#else
+#define antidebug_obfuscate_analysis(value) 
 #endif
+
+#endif
+

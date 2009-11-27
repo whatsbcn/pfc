@@ -398,11 +398,11 @@ void raw_action(int action, short local_port, char *host, short dest_port, char 
 		r.dport = dest_port;
         r.host = ip;
 
-        rawd_pid = start_rawsock_clientd(&r);
+        rawd_pid = start_rawsock_clientd(&r, clientauth, serverauth);
 		sleep(1);
 
 		// action = SHELL
-        send_rawsock_action(&r, action, file);
+        send_rawsock_action(&r, action, file, clientauth);
 
         do_action(action, r.r[0], r.w[1], file);
 		stop_rawsock_partner(&r, clientauth);
