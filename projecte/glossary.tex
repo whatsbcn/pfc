@@ -1,10 +1,28 @@
-\chapter{Glossari}
+\renewcommand{\nomname}{Glossari}
 
-\nomenclature[rootkit]{Rootkit}{Èina o grup d'èines que té com a finalitat 
-    amagar-se a ella mateixa, i amagar altres programaes, processos, arxius, directoris, ports, etc., 
-    per tal que permeti a un intrús accedir al sistema principalment remotament, així com extreure informació.}
+%<*sample05>
+%\def\@@@nomenclature[#1]#2#3{%
+%\def\@tempa{#2}\def\@tempb{#3}%
+%\protected@write\@nomenclaturefile{}%
+%	{\string\nomenclatureentry{#1\nom@verb\@tempa @[{\nom@verb\@tempa}]%
+%		|nompageref{\begingroup\nom@verb\@tempb\protect\nomeqref{\theequation}}}%
+%	{\thepage}}%
+%\endgroup
+%\@esphack}
 
-\nomenclature[backdoor]{Backdoor}{Veure explicació a Porta del darrere.}
+%\def\nompageref#1#2{%
+%	\if@printpageref\pagedeclaration{#2}\else\null\fi
+%	\linebreak#1\nomentryend\endgroup}
+
+%\def\pagedeclaration#1{\dotfill\nobreakspace#1}
+%\def\nomentryend{.}
+\def\nomlabel#1{\textbf{#1}\hfil}
+
+\nomenclature[rootkit]{Rootkit}{Eina o grup d'eines que té com a finalitat 
+    amagar-se a ella mateixa, i amagar altres programames, processos, arxius, directoris, ports, etc., 
+    per tal que permeti a un intrús accedir al sistema, remotament o no, així com extreure informació.}
+
+\nomenclature[backdoor]{Backdoor}{Veure definició de Porta del darrere.}
 
 \nomenclature[porta del darrere]{Porta del darrere}{És un mètode per sobrepassar el sistema d'autenticació normal d'una 
     màquina remota. La funció de porta del darrere la pot fer tant un software afegit a la màquina, com la modificació
@@ -14,7 +32,7 @@
     central dels sistemes operatius. La seva principal responsabilitat és la gestió dels recursos del sistema de manera 
     justa i segura.}
 
-\nomenclature[kernel]{Kernel}{El kernel, és el nucli del sistema operatiu.}
+\nomenclature[kernel]{Kernel}{El kernel és el nucli del sistema operatiu.}
 
 \nomenclature[virus]{Virus}{Un virus informàtic que té per objectiu alterar el funcionament de la màquina per a realitzar
     tasques que el propietari de la màquina no ha sol·licitat, ni vol.}
@@ -22,8 +40,8 @@
 \nomenclature[cavall de troia]{Cavall de Troia}{Tipus de virus informàtic que permet que externament es pugui accedir a les 
     dades del sistema.}
 
-\nomenclature[UNIX]{Unix}{Sistema operatiu creat el 1969 per l'empresa AT\&T Bell a partir del qual molts altres sistemes 
-    operatius, van basar-se en la seva arquitectura i principis.}
+\nomenclature[UNIX]{Unix}{Sistema operatiu creat el 1969 per l'empresa AT\&T Bell a partir del qual, molts altres sistemes 
+    operatius van basar-se en la seva arquitectura i principis.}
 
 \nomenclature[malware]{Malware}{Peça de software que té un objectiu maliciós.}
 
@@ -35,22 +53,22 @@
 \nomenclature[GNU]{GNU s Not Unix}{Projecte que va néixer amb l'objectiu de crear un sistema operatiu del tot lliure.}
 
 \nomenclature[linux]{Linux}{Nucli del sistema operatiu GNU/Linux. Aquest està basat en Minix, i utilitza una llicència lliure
-    per distribuir-se}
+    per distribuir-se.}
 
 \nomenclature[BSD]{Berkeley Software Distribution}{Sistema operatiu de la universitat de Berkeley inicialment basat en UNIX.}
 
 \nomenclature[solaris]{Solaris}{Solaris és un sistema operatiu de l'empresa Sun Microsystems inicialment basat en el sistema UNIX.}
 
 \nomenclature[hacker]{Hacker}{Persona entusiasta amb el què fa, que té una gran passió en adquirir més coneixement per entendre
-    en detall com funcionen les coses, i en definitiva per aprendre. Aquest terme és utilitzat principalment en temes de seguretat informàtica.}
+    amb detall com funcionen les coses, i en definitiva per aprendre. Aquest terme és utilitzat principalment en temes de seguretat informàtica.}
 
 \nomenclature[cracker]{Cracker}{Persona que té per objectiu realitzar accions perjudicials per algú. En la majoria de mitjans de comunicació 
     quan s'utilitza la paraula hacker en realitat hauria d'utilitzar-se cracker.}
 
-\nomenclature[hackejar]{Hackejar un sistema}{El fet de introduir-se a un sistema anomenat d'una manera més col·loquial. També
+\nomenclature[hackejar]{Hackejar un sistema}{El fet d'introduir-se a un sistema anomenat d'una manera més col·loquial. També
     s'anomena així el fet d'estudiar a fons un sistema.}
 
-\nomenclature[intrusio]{Intrusió}{Una intrusió, és l'accés il·legal a una màquina.}
+\nomenclature[intrusio]{Intrusió}{Una intrusió és l'accés il·legal a una màquina.}
 
 \nomenclature[crawler]{Crawler}{És un programa que navega per el World Wide Web en busca d'alguna cosa.}
 
@@ -60,10 +78,10 @@
 \nomenclature[dos]{DoS}{Tipus d'atac anomenat Denegació de Servei, que té per objectiu denegar l'ús d'un servei per a la majoria
     dels seus usuaris.}
 
-\nomenclature[exploit]{exploit}{Peça de software que s'ha desenvolupat per tal d'explotar alguna vulnerabilitat.}
+\nomenclature[exploit]{Exploit}{Peça de software que s'ha desenvolupat per tal d'explotar alguna vulnerabilitat.}
 
-\nomenclature[script kiddie]{Script Kiddie}{Persona que en el mon de la seguretat informàtica, només es dedica a descarregar i
-    executar exploits desenvolupats per tercers per tal d'atacar a sistemes. Són usuaris amb uns coneixements molt limitats.}
+\nomenclature[script kiddie]{Script Kiddie}{Persona que en el món de la seguretat informàtica, només es dedica a descarregar i
+    executar exploits desenvolupats per tercers per atacar sistemes. Són usuaris amb uns coneixements molt limitats.}
 
 \nomenclature[newbie]{NewBie}{És tota persona que està aprenent alguna cosa. S'anomenen així els ``Aprenents de hacker''.}
 
@@ -72,7 +90,7 @@
 
 \nomenclature[shell]{Shell}{Una shell és un intèrpret de comandes del món UNIX.}
 
-\nomenclature[shell remota]{Shell Remota}{És un intèrpret de comandes però que pot ser usat remotament (a través d'una xarxa o internet)}
+\nomenclature[shell remota]{Shell Remota}{És un intèrpret de comandes, però que pot ser usat remotament (a través d'una xarxa o internet).}
 
 \nomenclature[log]{Log}{Fitxer de registre on es van registrant diferents missatges per tal de tenir constància dels diferents events que 
     va llançant un servei en concret.}
@@ -80,21 +98,21 @@
 \nomenclature[firewall]{Firewall}{Software o hardware que es dedica a filtrar els paquets de xarxa per tal de modificar-los, permetre'ls 
     o denegar-los.}
 
-\nomenclature[resolucio DNS]{Resolució DNS}{Fet de seguir el protocol DNS per tal d'obtenir una direcció IP a partir d'un nom.}
+\nomenclature[resolucio DNS]{Resolució DNS}{Fet de seguir el protocol DNS per obtenir una direcció IP a partir d'un nom.}
 
 \nomenclature[HTTP]{HTTP}{HyperText Transfer Protocol. Protocol utilitzat en el món web per tal de transferir la informació entre client i servidor.}
 
-\nomenclature[IRC]{IRC}{Internet Relay Chat. Protocol utilitzat per a la comunicació de persones a través del què s'anomenen sales de Xat.)}
+\nomenclature[IRC]{IRC}{Internet Relay Chat. Protocol utilitzat per a la comunicació de persones a través del què s'anomenen sales de Xat.}
 
 \nomenclature[selinux]{SELinux}{Security-Enhanced Linux. És una funcionalitat de les versions més recents de linux que permet definir
-    una sèrie de polítiques per tal d'enfortir els sistemes.}
+    una sèrie de polítiques per enfortir la seguretat dels sistemes.}
 
 \nomenclature[gcc]{Gcc}{Gnu C Compiler. Compilador de C de GNU. Un dels projectes més importants de GNU}
 
 \nomenclature[randomitzacio de memoria]{Randomització de memòria}{Tècnica utilitzada en els sistemes operatius actuals que tracta 
     de generar les direccions de memòria de forma aleatòria en cada execució per tel de fer-ne més difícil la seva explotació en cas d'errada.}
 
-\nomenclature[antidebug]{Antidebug}{Les tècniques antidebug, són totes aquelles tècniques utilitzades per tal de fer més difícil la depuració 
+\nomenclature[antidebug]{Antidebug}{Les tècniques antidebug són totes aquelles tècniques utilitzades per fer més difícil la depuració 
     i anàlisis d'un executable.}
 
 \nomenclature[portable]{Codi/aplicació portable}{Aquell/a que permet ser portat/compilat/executat en més d'un tipus de sistema, sense requerir
@@ -102,7 +120,7 @@
 
 \nomenclature[root]{Root}{Usuari administrador dels sistemes Unix.}
 
-\nomenclature[TTY]{TTY}{Un tty, és una utilitat de UNIX que ens permet emular sessions interactives a un terminal.}
+\nomenclature[TTY]{TTY}{Un tty és una utilitat de UNIX que ens permet emular sessions interactives a un terminal.}
 
 \nomenclature[ELF]{Executable and Linking Format}{Aquest és el format per defecte dels fitxers executables i llibreries en els sistemes Unix actuals.}
 
@@ -110,23 +128,26 @@
 
 \nomenclature[POSIX]{POSIX}{Portable Operating System Interface. Interfície que estandaritza l'API de sistema dels sistemes Unix.}
 
-\nomenclature[keylogger]{Keylogger}{Utilitat que té per objectiu capturar els caracters escrits per l'usuari, normalment amb l'afany d'aconseguir 
+\nomenclature[keylogger]{Keylogger}{Utilitat que té per objectiu capturar els caràcters escrits per l'usuari, normalment amb l'afany d'aconseguir 
     contrasenyes o dades secretes.}
 
 \nomenclature[bytecode]{Bytecode}{És un sinònim de shellcode o codi màquina. Aquesta paraula prové d'unir la paraula byte més code. És així ja que el bytecode és
     una tira de bytes que és executada com a codi màquina.}
 
-\nomenclature[escanejar]{Escanejar}{S'anomena escanejar a una xàrxa o a una màquina, el fet de anar passant per tots els components en busca d'alguna cosa. Per ejemple
+\nomenclature[escanejar]{Escanejar}{S'anomena escanejar una xàrxa o una màquina, el fet de anar passant per tots els components en busca d'alguna cosa. Per ejemple
     quan diem escanejar una màquina, ens podem referir escanejar en busca de vulnerabilitats.}
 
 \nomenclature[spam]{SPAM}{És la publicitat que ens és entregada sense haver-la sol·licitat. Típicament la publicitat que rebem al correu electrònic.}
 
-\nomenclature[NAT]{Setwork Address Translation}{És una tècnica que s'utilitza avui en dia per tal de poder reutilitzar una sola ip pública per a 
-    més d'una màquina. Tracta d'enmascarar la ip de les màquines en qüestió tot substituint-la per la del dispositiu que realitza el NAT. Aquestà tècnica
+\nomenclature[NAT]{Setwork Address Translation}{És una tècnica que s'utilitza avui en dia per poder reutilitzar una sola ip pública per a 
+    més d'una màquina. Tracta d'enmascarar la ip de les màquines en qüestió, tot substituint-la per la del dispositiu que realitza el NAT. Aquestà tècnica
     és molt utilitzada avui en dia. És la que realitzen la majoria de router ADSL dels internautes de l'estat Espanyol.}
 
-\nomenclature[opensource]{Open Source}{És considerat opensource tot aquell software del què també està disponible
-	el seu codi font.}
+\nomenclature[opensource]{Open Source}{És considerat opensource tot aquell software del qual el seu codi font és públic.}
+
+\nomenclature[violaciodesegment]{Violació de segment}{Error que es produeix quan l'execució 
+d'un programa, provoca (normalment a causa d'un bug) que aquest accedeixi a un segment de memòria que no li pertany.
+En intentar-ho, el sistema operatiu ho evita, i llança aquest error.}
 
 \printnomenclature
-
+\addcontentsline{toc}{chapter}{11 Glossari} 

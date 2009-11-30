@@ -522,13 +522,11 @@ void do_action(struct data *d, struct in_addr *ip, short sport,  int sock) {
             r = find_rawsock_session(rawsocks, ip->s_addr, sport, d->port);
             fill_rawsock_session(r, d->bytes, d->size);
             return;
-            break;
         case STOPRAWSESSION:
             debug("Client destroyed the rawsocksession\n");
             r = find_rawsock_session(rawsocks, ip->s_addr, sport, d->port);
 			destroy_rawsock_session(r);	
             return;
-            break;
         default:
             debug("Invalid option: %d\n", d->action);
             return;

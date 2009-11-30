@@ -15,61 +15,16 @@
 \usepackage[usenames,dvipsnames]{color}
 % Pel glossari
 \usepackage{nomencl} 
+\makenomenclature
+
 % Per afegir codi font
 \usepackage{fancyvrb}
+% Per el simbol d'euro
+\usepackage{eurosym}
 
 \include{pygmentize}
 % Que mostri la capçalera a tots els fulls
 %\pagestyle{headings}
-% Pel glossari
-\usepackage{nomencl}
-\makenomenclature
-
-%\definecolor{gray97}{gray}{.97}
-%% COLORS (Tango)
-%\definecolor{LightButter}{rgb}{0.98,0.91,0.31}
-%\definecolor{LightOrange}{rgb}{0.98,0.68,0.24}
-%\definecolor{LightChocolate}{rgb}{0.91,0.72,0.43}
-%\definecolor{LightChameleon}{rgb}{0.54,0.88,0.20}
-%\definecolor{LightSkyBlue}{rgb}{0.45,0.62,0.81}
-%\definecolor{LightPlum}{rgb}{0.68,0.50,0.66}
-%\definecolor{LightScarletRed}{rgb}{0.93,0.16,0.16}
-%\definecolor{Butter}{rgb}{0.93,0.86,0.25}
-%\definecolor{Orange}{rgb}{0.96,0.47,0.00}
-%\definecolor{Chocolate}{rgb}{0.75,0.49,0.07}
-%\definecolor{Chameleon}{rgb}{0.45,0.82,0.09}
-%\definecolor{SkyBlue}{rgb}{0.20,0.39,0.64}
-%\definecolor{Plum}{rgb}{0.46,0.31,0.48}
-%\definecolor{ScarletRed}{rgb}{0.80,0.00,0.00}
-%\definecolor{DarkButter}{rgb}{0.77,0.62,0.00}
-%\definecolor{DarkOrange}{rgb}{0.80,0.36,0.00}
-%\definecolor{DarkChocolate}{rgb}{0.56,0.35,0.01}
-%\definecolor{DarkChameleon}{rgb}{0.30,0.60,0.02}
-%\definecolor{DarkSkyBlue}{rgb}{0.12,0.29,0.53}
-%\definecolor{DarkPlum}{rgb}{0.36,0.21,0.40}
-%\definecolor{DarkScarletRed}{rgb}{0.64,0.00,0.00}
-%\definecolor{Aluminium1}{rgb}{0.93,0.93,0.92}
-%\definecolor{Aluminium2}{rgb}{0.82,0.84,0.81}
-%\definecolor{Aluminium3}{rgb}{0.73,0.74,0.71}
-%\definecolor{Aluminium4}{rgb}{0.53,0.54,0.52}
-%\definecolor{Aluminium5}{rgb}{0.33,0.34,0.32}
-%\definecolor{Aluminium6}{rgb}{0.18,0.20,0.21}
-
-%\lstset{
-%language=C,
-%backgroundcolor=\color{gray97},
-%rulesepcolor=\color{blue},
-%breaklines=true,
-%basicstyle=\footnotesize,
-%keywordstyle=[1]{\color{DarkSkyBlue}},
-%keywordstyle=[2]{\color{DarkScarletRed}},
-%keywordstyle=[3]{\bfseries},
-%keywordstyle=[4]{\color{DarkPlum}},
-%keywordstyle=[5]{\color{SkyBlue}},
-%%commentstyle={\color{Aluminium4}},
-%stringstyle={\color{Chocolate}}
-%}
-
 
 % Autor
 \author{Albert Sellarès Torra \texttt{<whats@wekk.net>}\\
@@ -83,7 +38,17 @@
 % Millora el pdf. Ha de ser l'últim del preàmbul
 \usepackage[pdftex,bookmarks,colorlinks,pdfnewwindow]{hyperref}
 % Descomentar-ho per imprimir sense colors
-%\hypersetup{linkcolor=black}
+\hypersetup{
+	hyperindex=true,
+	colorlinks=true,
+	linkcolor=blue,
+	anchorcolor=blue,
+	citecolor=blue,
+	filecolor=blue, 
+	menucolor=blue,
+	pagecolor=blue,
+	urlcolor=blue,
+	bookmarksnumbered=true}
 
 \begin{document}
 
@@ -128,18 +93,5 @@
 
 % Manual d'usuari
 \include{user_manual}
-
-\section{ACTA}
-
-- Caldrà informació extra de tema seguretat. Caldrà definir-ho tot abans
-(per exemple, `` comprometre un sistema'' ), ``permanencia'', \ldots
-
-- Propera reunió 7-04-09
-- Idea conceptual.
-- Disseny de la part client/servidor i una primera beta
-- I finalment, el capítol que explica el com s'ha fet.
-
-
-
 
 \end{document}

@@ -56,7 +56,7 @@
         <predecessor id="1" predecessor-id="7" type="SS"/>
       </predecessors>
     </task>
-    <task id="9" name="An&#xE0;lisi general" note="" work="201600" start="20091014T120000Z" end="20091023T120000Z" work-start="20091014T120000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+    <task id="9" name="An&#xE0;lisi general" note="" work="907200" start="20091014T120000Z" end="20091126T170000Z" work-start="20091014T120000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
       <predecessors>
         <predecessor id="1" predecessor-id="7" type="FS"/>
       </predecessors>

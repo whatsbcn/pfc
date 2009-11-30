@@ -110,23 +110,32 @@ void socks_forward(int sock1, int sock2) {
 
 void pthread_socks(void *sock) {
     struct message req;
+    struct in_addr in;
+
+    // read client packet
     read((int)sock, &req, sizeof(struct message));
     char buf[4];
     read((int)sock, buf, 4);
     print_message(&req);
-    //debug("USERID: %s\n", buf);
 
+    // if client is using socks4a
+    in.s_addr = req.dstip;
+    if (strstr(inet_ntoa(in), "0.0.0")) {
+		char dstip4a[1024];
+		read((int)sock, dstip4a, 1024);
+		req.dstip = resolve(dstip4a, 0);
+	}
+
+    // socks
     int sock2;
     if ((sock2 = launcher_rcon(req.dstip, ntohs(req.dstport))) > 0) {
         debug("Connected!\n");
         req.cd = 90;
-        debug("Enviant resposta\n");
         write((int)sock, &req, sizeof(req));
         socks_forward((int)sock, sock2);
     } else {
         debug("ERROR!\n");
         req.cd = 91;
-        debug("Enviant resposta\n");
         write((int)sock, &req, sizeof(req));
     }
     close((int)sock);

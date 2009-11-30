@@ -1,12 +1,71 @@
 \chapter{Conclusions}
-        - El capitol de conclussions, bàsicament fa una
-        recapitulació de tots els objectius que s'havien
-        marcat al capitol d'introducció/requeriments
-        enumerant quins s'han aconseguit, i quins no,
-        explicant el perquè, i les futures linies de treball.
-Tenim un
-        problema "volem comprometre sistemes UNIX", hem
-        pensat una possible sol.lució (l'idea conceptual),
-        tenim una idea més o menys clara del que cal fer i
-        com fer-ho. Per tant, és viable fer-ho, però cal
-        deixar-ho ben present a qui llegeixi la teva memòria.
+
+En aquest capítol, s'intentarà analitzar fins a quin punt s'han pogut complir els objectius que es varen 
+establir a l'inici del projecte. Es repassaran les diferents funcionalitats que es volien implementar 
+i es comentaran quines no han estat possibles d'implementar, i quines s'han afegit i perquè. Finalment
+s'exposen futures línies de treball per a millorar el rootkit i es conclou resumint com ha estat 
+l'experiència. \\
+
+\section{Objectius generals}
+
+A part de la creació en sí del propi rootkit, els objectius generals que ens havíem marcat eren els 
+d'aconseguir que el rootkit perdurés ocult, ens proporcionés un accés remot a la màquina, ens permetés 
+recuperar el nivell de privilegi, ens permetés administrar la màquina, que sobrevisqués a possibles 
+canvis d'estat de la màquina, com poden ser actualitzacions i reiniciades del sistema, així com que 
+ens ajudés a elevar privilegis i a consolidar els actuals. \\
+
+Considero que tots aquests objectius han estat complerts, ja que s'han desenvolupat funcionalitats 
+per cadascun d'ells.  \\
+
+\section{Funcionalitats}
+
+Pel què fa les funcionalitats no implementades, comentar que del plantejament inicial, només han quedat
+per implementar la funcionalitat d'injecció de codi en memòria del kernel, i que aquesta no ha pogut
+ser implementada per causes externes. \\
+
+Com s'ha comentat al seu punt, en les versions actuals del kernel de linux, ja no és possible llegir 
+ni escriure directament a la memòria a través d'un dispositiu. I com que un dels punts clau d'aquest 
+rootkit, era que fos per sistemes actuals, aquesta funcionalitat va acabar sent descartada. \\
+
+Pel què fa a les funcionalitats que es varen afegir per tal de suplir aquesta funcionalitat no implementada,
+varen ser: mode de comunicació raw i servei socks4 i socks4a. \\
+
+\section{Futures línies de treball}
+
+Per tal de millorar l'èina desenvolupada, penso que els principals camins a seguir partint de la 
+implementació actual, serien:
+
+\begin{description}
+	\item[Més serveis suportats pel keylogger] Més capacitat de capturar passwords. Ens interessa que el keylogger sigui capaç
+		de funcionar contra servidors web, de correu, imap, pop, etc.
+	\item[Reimplementació de la shell] Reimplementació des de zero de la shell interna del rootkit. D'aquesta manera obtindríem
+		una shell més petita que a més, només tindria les funcionalitats necessàries.  
+	\item[Túnels] Implementació de túnels entre el client i el launcher. Això podria permetre coses com que el 
+		servidor de socks fos accessible des d'un túnel establert pel client.
+	\item[Infecció de binaris] Implementació d'alguna tècnica per a infectar binàris. D'aquesta manera no caldria afegir cap 
+		fitxer al sistema, sinó que afegint alguns bytes en algun executable de l'arranc, seria suficient
+		per a que el rootkit perdurés entre reiniciades.
+	\item[Neteja del rastre] Implementació d'un mòdul per a la neteja de logs i el possible rastre que s'hagi pogut deixar
+		alhora de realitzar la intrusió.
+\end{description}
+
+Espero poder arribar a implementar totes aquests funcionalitats en un futur no molt llunyà.
+
+\section{Opinió personal}
+
+Personalment estic molt content de com ha anat tot el projecte. Des de la relació que he tingut amb el
+meu tutor, passant per l'ús d'èines com el \LaTeX  o la innovació i recerca que he agut de realitzar amb aquest 
+projecte, fins a l'assoliment dels objectius plantejats. \\
+
+També penso que hi han punts d'aquest projecte que seran difícilment puntuats o tinguts en compte com 
+són l'estabilitat i l'usabilitat que se li ha arribat a donar al rootkit. Dic que és difícil de puntuar, 
+perquè en un projecte com aquest, són molts els detalls tècnics que no s'han pogut acabar comentant, i
+que per part del jurat és difícil entrar-hi tant a fons com per a poder-los valorar. \\
+
+Considero que aquest projecte engloba almenys tres parts que per si soles són força importants
+tant la seva component de innovació i recerca, com per la complexitat que
+tenen. Aquestes tres parts que han estat desenvolupades en el marc del projecte són: la part de la 
+comunicació RAW, el keylogger per OpenSSH i la utilitat skpd. \\
+
+En resum, considero que el projecte ha estat un èxit.
+

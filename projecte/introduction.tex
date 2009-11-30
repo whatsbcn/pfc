@@ -10,7 +10,7 @@ poder accedir i controlar un sistema, i que a més, s'amaga per a no ser descobe
 
 És sabut que existeixen programes fets amb aquesta finalitat, però la majoria d'ells són
 per sistemes Windows, no estan públics a la xarxa, estan desfasats i ja no poden ser
-usats en els sistemes operatius actuals. A més, els nuclis de sistemes operatius actuals, implementen cada vegada més
+usats en els sistemes operatius actuals. A més, els nuclis de sistemes operatius actuals implementen cada vegada més
 proteccions per tal d'evitar que programes com aquests els controlin.
 
 \section{Motivació del projecte}
@@ -19,7 +19,7 @@ Avui en dia ens veiem immersos en la societat de la informació, un moment en qu
 majoria de les empreses i persones intentem adaptar-nos a les noves tecnologies,
 moment en què s'intenta digitalitzar tot el què es pot. Qui més qui menys veu que en uns anys tot es veurà gestionat a través de sistemes
 d'informació, tot estarà interconnectat entre sí, i s'ha de poder garantir que tots aquests
-sistemes, comptin amb un mínim de seguretat.\\
+sistemes comptin amb un mínim de seguretat.\\
 
 
 Les implicacions que té estar infectat per un virus estan canviant. Els virus (i en particular
@@ -29,25 +29,25 @@ controlar la nostre màquina podent fer qualsevol cosa en ella com per exemple, 
 se de la nostra compta bancària.\\
 Parem-nos a pensar per un moment què passaria si en comptes de què l'infecció estigués
 a la nostre màquina, aquesta estigués als servidors on es fan les nostres nòmines, als dels
-nostre banc, o a les de qualsevol pàgina de venta d'articles per internet. El perill i la
-criticitat, es disparen exponencialment.\\
+nostres bancs, o a les de qualsevol pàgina de venta d'articles per internet. El perill i la
+criticitat es disparen exponencialment.\\
 
 
-Des de els inicis de la història els sistemes operatius UNIX han estat al capdavant en els
+Des dels inicis de la història els sistemes operatius UNIX han estat al capdavant en els
 entorns de servidors, i des de llavors que les grans empreses els utilitzen per a confiar-hi
-les seves dades. Avui, i gràcies al boom que ha fet el GNU/Linux i en general el programari lliure(tothom qui més qui
+les seves dades. Avui, i gràcies al boom que ha fet el GNU/Linux i en general el programari lliure (tothom qui més qui
 menys té una idea del què és), administradors de sistemes no experimentats acaben
 utilitzant sistemes basats en UNIX en el seu lloc de treball. \\
-El fet és que actualment moltes empreses utilitzen aquests sistemes operatius (com poden ser
+El fet és, que actualment moltes empreses utilitzen aquests sistemes operatius (com poden ser
 GNU/Linux, BSD, Solaris, etc) per als seus servidors, i són moltes les què s'acaben despreocupant
 de la seguretat dels servidors donant com a excusa que un sistema basat amb UNIX és
 més segur, i que a més, no hi han virus. A la practica, molta gent que es dedica a
 administrar aquestes màquines, no està qualificada, o no compta amb el temps necessari
-per a fer-ho del tot bé, i com que les coses aparentment funcionen, es segueix així.
-Aquest és el punt on vull arribar. Avui, una persona amb suficients ganes, temps i
-coneixements, pot guanyar accés a la majoria de servidors, on un cop accedit, la seva
-preocupació principal, és mantenir-ne l'accés.\\
+per a fer-ho del tot bé, i com que les coses aparentment funcionen, es segueix així. \\
 
+I aquest és el punt on vull arribar. Avui, una persona amb suficients ganes, temps i
+coneixements, pot guanyar accés a la majoria de servidors, on un cop dintre, la seva
+preocupació principal és mantenir-ne l'accés.\\
 
 Amb aquest projecte, intento posar de manifest creant una prova del concepte, lo difícil
 que pot arribar a ser per un administrador de sistemes adonar-se que ha estat infectat per
@@ -56,12 +56,12 @@ intrús pot tenir-ho molt fàcil per a controlar el nostre servidor.
 
 \section{Objectiu}
 
-L'objectiu del projecte, és implementar un rootkit per a sistemes basats en UNIX. Tot seguit
+L'objectiu del projecte és implementar un rootkit per a sistemes basats en UNIX. Tot seguit
 es descriu en forma de resum, les característiques en un caire general que el rootkit ha de potenciar. 
 
 \begin{description}
     \item[Ocultació] Ha de passar el màxim desapercebut en el sistema on estigui
-    instal·lat. Per un administrador, ha de ser molt difícil d'adonar-se que el
+    instal·lat. Per un administrador, ha de ser molt difícil adonar-se que el
     sistema ha estat compromès. El rootkit ha d'intentar ocultar al màxim les tasques
     que executa.
 
@@ -78,7 +78,7 @@ es descriu en forma de resum, les característiques en un caire general que el r
     \item[Permanència] Les màquines s'actualitzen, es paren i s'engeguen. El rootkit ha
     d'intentar no veure's afectat per aquests canvis.
 
-    \item[Augment de privilegis] Ha de ajudar tant com pugui, a la obtenció de nous
+    \item[Augment de privilegis] Ha d'ajudar tant com pugui, a l'obtenció de nous
     privilegis. Altres comptes d'usuari, comptes d'altres màquines, comptes de bases de dades, etc.
 \end{description}
 
