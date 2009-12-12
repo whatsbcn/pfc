@@ -19,16 +19,44 @@ per cadascun d'ells.  \\
 
 \section{Funcionalitats}
 
-Pel què fa les funcionalitats no implementades, comentar que del plantejament inicial, només han quedat
-per implementar la funcionalitat d'injecció de codi en memòria del kernel, i que aquesta no ha pogut
-ser implementada per causes externes. \\
+Pel què fa a les funcionalitats, s'han acabat implementant les següents:
+
+\begin{itemize}
+	\item Executable ELF estàtic
+	\item Multiplataforma i multiarquitectura
+	\item Connexió directa
+	\item Obtenció d'una shell i un TTY
+	\item Mode comanda / Mode servei
+	\item Transferència de fitxers
+	\item Comunicació xifrada
+	\item Autenticació per contrasenya
+	\item Detecció del rootkit
+	\item Proteccions de l'executable
+	\item Supervivència del rootkit
+	\item Tasques programades
+	\item Ocultació
+	\item Heartbeat
+	\item Independència de la shell
+	\item Proxy socks
+	\item Connexió inversa
+	\item Tècniques per evitar firewalls i filtres
+	\item Keylogger
+	\item Injecció de codi en memòria del nucli
+\end{itemize}
+
+En definitiva s'han implementat totes les funcionalitats del plantejament inicial menys d'injecció de codi 
+en memòria del kernel, que no ha pogut ser implementada per causes externes. \\
 
 Com s'ha comentat al seu punt, en les versions actuals del kernel de linux, ja no és possible llegir 
 ni escriure directament a la memòria a través d'un dispositiu. I com que un dels punts clau d'aquest 
 rootkit, era que fos per sistemes actuals, aquesta funcionalitat va acabar sent descartada. \\
 
 Pel què fa a les funcionalitats que es varen afegir per tal de suplir aquesta funcionalitat no implementada,
-varen ser: mode de comunicació raw i servei socks4 i socks4a. \\
+varen ser: 
+\begin{itemize}
+	\item Mode de comunicació RAW
+	\item Servei socks4 i socks4a
+\end{itemize}
 
 \section{Futures línies de treball}
 
@@ -54,7 +82,7 @@ Espero poder arribar a implementar totes aquests funcionalitats en un futur no m
 \section{Opinió personal}
 
 Personalment estic molt content de com ha anat tot el projecte. Des de la relació que he tingut amb el
-meu tutor, passant per l'ús d'èines com el \LaTeX  o la innovació i recerca que he agut de realitzar amb aquest 
+meu tutor, passant per l'ús d'èines com el \LaTeX  o la innovació i recerca que he hagut de realitzar amb aquest 
 projecte, fins a l'assoliment dels objectius plantejats. \\
 
 També penso que hi han punts d'aquest projecte que seran difícilment puntuats o tinguts en compte com 
@@ -64,8 +92,13 @@ que per part del jurat és difícil entrar-hi tant a fons com per a poder-los va
 
 Considero que aquest projecte engloba almenys tres parts que per si soles són força importants
 tant la seva component de innovació i recerca, com per la complexitat que
-tenen. Aquestes tres parts que han estat desenvolupades en el marc del projecte són: la part de la 
-comunicació RAW, el keylogger per OpenSSH i la utilitat skpd. \\
+tenen. \\
+Aquestes tres parts que han estat desenvolupades en el marc del projecte són:
+\begin{itemize}
+	\item El protocol de comunicació RAW
+	\item El keylogger per OpenSSH
+	\item La utilitat skpd 
+\end{itemize}
 
 En resum, considero que el projecte ha estat un èxit.
 

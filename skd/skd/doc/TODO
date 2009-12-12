@@ -5,7 +5,7 @@ GENERAL
 - Afegir capçaleres dient llicència i nom
 CLIENT
 ======
-- Timeout per si password erroni
+- Utilitzar el timeout per si password erroni
 DASH
 ====
 - que el dash permeti els tabs

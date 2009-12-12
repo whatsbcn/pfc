@@ -13,6 +13,7 @@
 \usepackage{graphicx}
 % Per utilitzar colors
 \usepackage[usenames,dvipsnames]{color}
+\usepackage[table]{xcolor}
 % Pel glossari
 \usepackage{nomencl} 
 \makenomenclature
@@ -25,6 +26,13 @@
 \include{pygmentize}
 % Que mostri la capçalera a tots els fulls
 %\pagestyle{headings}
+\usepackage{longtable} 
+% Incloure pàgines amb format pdf
+\usepackage{pdfpages}
+
+
+% Interliniat de 1.5
+\renewcommand{\baselinestretch}{1.5}
 
 % Autor
 \author{Albert Sellarès Torra \texttt{<whats@wekk.net>}\\
@@ -52,6 +60,7 @@
 
 \begin{document}
 
+\large
 % Portada
 \include{portada}
 
@@ -61,14 +70,14 @@
 % Introducció
 \include{introduction}
 
-% Planificació
-\include{planning}
-
 % Definició del problema o requeriments
 \include{definition}
 
 % Idea conceptual per solventar el problema
 \include{idea}
+
+% Planificació
+\include{planning}
 
 % Disseny de la sol.lució
 \include{solution_design}
