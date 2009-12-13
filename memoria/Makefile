@@ -8,8 +8,8 @@ projecte.pdf: *tex
 	ps2pdf skd-launcher.ps
 	groff -man -Dutf8 -Tps -rS12 skd-config.7 > skd-config.ps 
 	ps2pdf skd-config.ps
-	groff -man -Dutf8 -Tps -rS12 skd-config.7 > skd-config.ps 
-	ps2pdf skd-config.ps
+	groff -man -Dutf8 -Tps -rS12 skd-client.1 > skd-client.ps 
+	ps2pdf skd-client.ps
 	pdflatex projecte.tex 	
 	makeindex projecte.nlo -s nomencl.ist -o projecte.nls
 	pdflatex projecte.tex 	

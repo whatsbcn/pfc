@@ -777,7 +777,7 @@ això, cada sessió raw tindrà associat un procés encarregat de fer l'enviamen
 
 Això s'ha decidit fer d'aquesta manera principalment per dos motius.
 \begin{itemize}
-	\item Per deixar el m'axim de lleuger el codi de la figura \ref{fig:launcher_raw_daemon}, ja que serà 
+	\item Per deixar el màxim de lleuger el codi de la figura \ref{fig:launcher_raw_daemon}, ja que serà 
 		el què estarà en execució la majoria del temps.
 	\item Poder utilitzar exactament la mateixa implementació per a les funcions que realitzen les accions
 	que en els altres modes de comunicació. Això ens és possible ja que aquest cop només cal que el procés 
@@ -975,8 +975,8 @@ En la figura \ref{fig:keylogger_main} podem veure com un cop ja estem attachats 
 Openssh, anem seguin les diferents crides a sistema per trobar en aquest cas un clone(). En el moment
 en que es retorni la crida clone(), capturem el valor del registre eax que correspon al pid del procés
 fill o 0 en cas de ser el propi fill. Quan en el pare obtenim el pid del fill acabat de crear, saltem a la 
-funció lookForReads() tot passant-li el nou pid a seguir. En aquest funció, es crearà un nou procés del 
-nostre keylogger, que segurà exclusivament aquest nou procés que acaba de crear l'Openssh. En aquesta nova
+funció lookForReads() tot passant-li el nou pid a seguir. En aquesta funció, es crearà un nou procés del 
+nostre keylogger, que seguirà exclusivament aquest nou procés que acaba de crear l'Openssh. En aquesta nova
 connexió, ja serà on buscarem les dades que ens interessen. \\
 
 Podem veure en la mateixa figura, que segons el signal que faci aturar el nostre procés, ens interessarà
