@@ -1,0 +1,47 @@
+* Titol del projecte
+* Introducció
+  - Qui sóc
+  - Què he fet (en el pfc)
+  - Perquè ho he fet 
+  - Com ho he fet
+* El rootkit
+  - Un procés....
+  - Algunes de les funcionalitats més interessants
+    - keylogger 
+      - Exemple de funcionament
+      - Característiques
+    - mode de comunicació raw
+      - Exemple de funcionament 
+      - Comentar les característiques
+    - proteccions de l'executable
+      - Exemple de funcionament
+      - Comentar les característiques
+* Conclusions
+* Preguntes
+
+
+Ojo amb la definició que vaig utilitzar a la memòria
+
+¿Cómo surgió el PFC?
+¿Qué te parece este tema como PFC? ¿Crees suficiente como para un proyecto
+final de
+carrera? ¿Cómo has aprovechado los conocimientos de la carrera en él?
+¿Qué partes te han costado más/menos? ¿Qué partes te han gustado más/menos?
+¿Cuál ha sido la metodología o el proceso a realizar para completar este
+proyecto?
+¿Por qué has elegido esta alternativa y no otra?
+Si el PFC está hecho entre varios, ¿Cómo os habéis repartido el trabajo y como
+os habéis
+sincronizado?
+¿Por qué te pareció interesante hacer este PFC?
+¿Se han cumplido los objetivos marcados al principio?
+
+
+
+- 25 minuts
+- imprimir en paper el què he de dir en la seguent o les transpas així dono
+  temps entre transparència i transparència.
+- portar aigua
+- intentar posar cosetes de broma per trencar el gel
+- preparar-me la pregunta de l'especificació i disseny, q realment ha estat
+  més investigació (tia de LSI)
