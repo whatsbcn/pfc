@@ -21,7 +21,17 @@
      id="metadata18909"><rdf:RDF><cc:Work
          rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
-     id="defs18907"><pattern
+     id="defs18907"><marker
+   inkscape:stockid="EmptyDiamondL"
+   orient="auto"
+   refY="0.0"
+   refX="0.0"
+   id="EmptyDiamondL"
+   style="overflow:visible"><path
+     id="path3379"
+     d="M 0,-7.0710768 L -7.0710894,0 L 0,7.0710589 L 7.0710462,0 L 0,-7.0710768 z "
+     style="fill-rule:evenodd;fill:#FFFFFF;stroke:#000000;stroke-width:1.0pt;marker-start:none"
+     transform="scale(0.8)" /></marker><pattern
    inkscape:collect="always"
    xlink:href="#pattern19117"
    id="pattern19788"
@@ -223,7 +233,7 @@
      id="base"
      showgrid="false"
      inkscape:zoom="2.045875"
-     inkscape:cx="258.6384"
+     inkscape:cx="163.56905"
      inkscape:cy="168.23803"
      inkscape:window-x="0"
      inkscape:window-y="0"
@@ -257,12 +267,14 @@
 
 
 
+
+
 <path
    id="path18927"
    style="fill:none;stroke:#000000;stroke-width:0.80000001;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
    d="M -153.301,214.125 C -153.301,213.937 -153.301,213.75 -153.301,214.125 z" /><path
    id="path18929"
-   style="fill:none;stroke:#000000;stroke-width:0.73460704;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+   style="fill:none;stroke:#000000;stroke-width:0.7344;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#EmptyDiamondL)"
    d="M 19.025535,146.29443 L 19.025535,29.435451" /><g
    transform="matrix(0.7693097,0,0,-0.7645831,205.38411,192.6436)"
    id="g3086"><path
@@ -353,17 +365,9 @@
 
 
 
+
+
 <g
-   id="g16027"
-   transform="matrix(0.8,0,0,-0.8,-32.849903,113.66671)"><path
-     id="path13899"
-     d="M 55.1641,99.325438 L 74.91454,110.68276"
-     style="opacity:0.6;color:#000000;fill:#ff0300;fill-opacity:1;fill-rule:evenodd;stroke:#ff0000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:2, 2;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" /><path
-     inkscape:transform-center-y="-2.8284271"
-     inkscape:transform-center-x="-10.362094"
-     id="path13901"
-     d="M 55.3192,110.59078 L 74.75943,98.710308"
-     style="opacity:0.6;color:#000000;fill:#ff0300;fill-opacity:1;fill-rule:evenodd;stroke:#ff0000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:2, 2;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" /></g><g
    id="g19793"
    transform="matrix(0.8,0,0,-0.8,226.93212,113.86223)"><path
      id="path19795"
@@ -386,17 +390,21 @@
      y="-149.12865">rootkit</tspan></text>
 
 
+
+
 <text
    xml:space="preserve"
    style="font-size:7.19999981px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Sans;-inkscape-font-specification:Sans"
-   x="265.99344"
-   y="-151.79877"
+   x="264.42932"
+   y="-149.06154"
    id="text3919"
    transform="scale(1,-1)"><tspan
      sodipodi:role="line"
      id="tspan3921"
-     x="265.99344"
-     y="-151.79877">client</tspan></text>
+     x="264.42932"
+     y="-149.06154">client</tspan></text>
+
+
 
 
 <text
@@ -410,6 +418,8 @@
      id="tspan3113"
      x="201.62521"
      y="101.04573" /></text>
+
+
 <text
    xml:space="preserve"
    style="font-size:12px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Arial;-inkscape-font-specification:Arial Bold Italic"
@@ -421,4 +431,6 @@
      id="tspan3117"
      x="201.86961"
      y="95.913445" /></text>
+
+
 </g></svg>
