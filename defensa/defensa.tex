@@ -10,8 +10,6 @@
 \usepackage[catalan]{babel}
 % Per afegir imatges
 \usepackage{graphicx}
-% Per afegir codi font
-\include{pygmentize}
 
 \mode<presentation>
 
@@ -64,11 +62,11 @@
 	\frametitle{Definició de ``rootkit''}
 	\begin{block}{Principals característiques:}
 		\begin{itemize}
-			\item<1-> S'amaga i oculta el seu funcionament.
-			\item<2-> Permet l'accés al seu propietari.
-			\item<3-> Permet administrar la màquina.
-			\item<4-> Perdura instal·lat el màxim de temps possible.
-			\item<5-> Facilita l'obtenció d'informació sensible.
+			\item S'amaga i oculta el seu funcionament.
+			\item Permet l'accés al seu propietari.
+			\item Permet administrar la màquina.
+			\item Perdura instal·lat el màxim de temps possible.
+			\item Facilita l'obtenció d'informació sensible.
 		\end{itemize}
 	\end{block}
 	\begin{block}{Antivirus}
@@ -104,8 +102,8 @@
 			\item<1-> Passió per la seguretat informàtica.
 			\item<2-> Devoció per el programari lliure i GNU/Linux.
 			\item<3-> Utilitat que necessitava.
-			\item<4-> Per aprendre.
-			\item<5-> Per investigar.
+			\item<4-> Per investigar.
+			\item<5-> Per aprendre.
 			\item<6-> Per diversió.
 %			\item<7-> $<$broma$>$Vendre'l al mercat negre i fer-me ric.$<$/broma$>$
 		\end{itemize}
@@ -145,76 +143,15 @@
     \frametitle{El rootkit}
 \end{frame}
 
-\subsection{Funcionalitats}
+\subsection{Arquitectura}
 
 \begin{frame}
     \frametitle{El rootkit}
 	\begin{block}{El nostre rootkit:}
 		\begin{itemize}
-			\item \alert{Funcionalitats.}
-			\item Arquitectura.
-			\item Heartbeat.
-			\item keylogger.
-		\end{itemize}
-	\end{block}
-\end{frame}
-
-\begin{frame}
-	\frametitle{El rootkit}
-	\begin{block}{Implementació}
-		\begin{itemize}
-			\item Executable sense dependències i autocontingut.
-			\item Multiplataforma i compatible amb les variants de UNIX.
-		\end{itemize}
-	\end{block}
-	\begin{block}{Comunicació}
-		\begin{itemize}
-			\item Autenticació per contrasenya.
-			\item Comunicació xifrada.
-			\item Connexió directa.
-			\item Connexió inversa.
-			\item Protocol raw.
-		\end{itemize}
-	\end{block}
-\end{frame}
-\begin{frame}
-	\frametitle{El rootkit}
-	\begin{block}{Funcionalitats bàsiques}
-		\begin{itemize}
-			\item Tasques programades.
-			\item Heartbeat.
-			\item Ocultació.
-			\item Detecció del rootkit.
-			\item Supervivència del rootkit.
-			\item Obtenció d'una shell i un TTY.
-			\item Transferència de Fitxers.
-			\item Mode comanda / Mode servei.
-		\end{itemize}
-	\end{block}
-\end{frame}
-\begin{frame}
-	\frametitle{El rootkit}
-	\begin{block}{Funcionalitats avançades}
-		\begin{itemize}
-			\item Proxy SOCKS.
-			\item Independència de la shell.
-			\item Tècniques per evitar firewalls i filtres.
-			\item Keylogger.
-		\end{itemize}
-	\end{block}
-\end{frame}
-
- 
-\subsection{Arquitectura client servidor}
-
-\begin{frame}
-    \frametitle{El rootkit}
-	\begin{block}{El nostre rootkit:}
-		\begin{itemize}
-			\item Funcionalitats.
 			\item \alert{Arquitectura.}
-			\item Heartbeat.
-			\item keylogger.
+			\item Funcionalitats.
+			\item Keylogger.
 		\end{itemize}
 	\end{block}
 \end{frame}
@@ -229,36 +166,104 @@
 	\includegraphics[scale=0.8,keepaspectratio]{arquitectura2.pdf}
 \end{frame}
 
-\subsection{Heartbeat}
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.8,keepaspectratio]{arquitectura3.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.8,keepaspectratio]{arquitectura4.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.8,keepaspectratio]{arquitectura5.pdf}
+\end{frame}
+
+\subsection{Funcionalitats}
 
 \begin{frame}
     \frametitle{El rootkit}
 	\begin{block}{El nostre rootkit:}
 		\begin{itemize}
-			\item Funcionalitats.
 			\item Arquitectura.
-			\item \alert{Heartbeat.}
-			\item keylogger.
+			\item \alert{Funcionalitats.}
+			\item Keylogger.
 		\end{itemize}
 	\end{block}
 \end{frame}
 
 \begin{frame}
-    \frametitle{El rootkit}
-      - Exemple de funcionament amb gràfics/esquemes i tal\ldots \\
-      - Comentar les característiques
+	\frametitle{El rootkit}
+	\begin{block}{Implementació}
+		\begin{itemize}
+			\item Executable sense dependències i autocontingut.
+				\pause
+			\item Multiarquitectura i compatible amb les variants de UNIX.
+				\pause
+		\end{itemize}
+	\end{block}
+	\begin{block}{Comunicació}
+		\begin{itemize}
+			\item Autenticació per contrasenya.
+				\pause
+			\item Comunicació xifrada.
+				\pause
+			\item Connexió directa.
+				\pause
+			\item Connexió inversa.
+				\pause
+			\item Protocol raw.
+		\end{itemize}
+	\end{block}
+\end{frame}
+\begin{frame}
+	\frametitle{El rootkit}
+	\begin{block}{Funcionalitats bàsiques}
+		\begin{itemize}
+			\item Tasques programades.
+				\pause
+			\item Heartbeat.
+				\pause
+			\item Ocultació.
+				\pause
+			\item Detecció del rootkit.
+				\pause
+			\item Supervivència del rootkit.
+				\pause
+			\item Obtenció d'una shell i un TTY.
+				\pause
+			\item Transferència de Fitxers.
+				\pause
+			\item Mode comanda / Mode servei.
+		\end{itemize}
+	\end{block}
+\end{frame}
+\begin{frame}
+	\frametitle{El rootkit}
+	\begin{block}{Funcionalitats avançades}
+		\begin{itemize}
+			\item Proxy SOCKS.
+				\pause
+			\item Independència de la shell.
+				\pause
+			\item Tècniques per evitar firewalls i filtres.
+				\pause
+			\item Keylogger.
+		\end{itemize}
+	\end{block}
 \end{frame}
 
-\subsection{Keylogger}
+\subsection{Funcionalitat en detall: Keylogger}
 
 \begin{frame}
     \frametitle{El rootkit}
 	\begin{block}{El nostre rootkit:}
 		\begin{itemize}
-			\item Funcionalitats.
 			\item Arquitectura.
-			\item Heartbeat.
-			\item \alert{keylogger.}
+			\item Funcionalitats.
+			\item \alert{Keylogger.}
 		\end{itemize}
 	\end{block}
 \end{frame}
@@ -279,7 +284,82 @@
 \subsection*{Keylogger: Exemple de funcionament}
 \begin{frame}
 	\frametitle{El rootkit}
+	\includegraphics[scale=0.65,keepaspectratio]{sshd_1.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.65,keepaspectratio]{sshd_3.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.65,keepaspectratio]{sshd_4.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.65,keepaspectratio]{sshd_5.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.65,keepaspectratio]{sshd_6.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
 	\includegraphics[scale=0.65,keepaspectratio]{sshd.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.65,keepaspectratio]{sshd_keylogger_1.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.65,keepaspectratio]{sshd_keylogger_2.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.65,keepaspectratio]{sshd_keylogger_3.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.65,keepaspectratio]{sshd_keylogger_4.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.65,keepaspectratio]{sshd_keylogger_5.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.65,keepaspectratio]{sshd_keylogger_6.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.65,keepaspectratio]{sshd_keylogger_7.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.65,keepaspectratio]{sshd_keylogger_8.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.65,keepaspectratio]{sshd_keylogger_9.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.65,keepaspectratio]{sshd_keylogger_10.pdf}
 \end{frame}
 
 \begin{frame}
@@ -313,7 +393,7 @@
 	\begin{block}{Característiques}
 		\begin{itemize}
 			\item Funcionalitat de injecció no implementada.
-			\item Funcionalitats avançades || a canvi.
+			\item Més funcionalitats avançades a canvi.
 			\item Periode d'examens i vacances no tingut en compte.
 			\item Anàlisi general i conciliació ha portat molta més feina.
 		\end{itemize}
@@ -322,13 +402,17 @@
 \section{Conclusions}
 \begin{frame}
 	\frametitle{Conclusions}
+\end{frame}
 
-	\begin{block}{Funcionalitats inicials}
-	Injecció de codi en memòria de kernel reemplaçada per motius aliens.
-	\end{block}
+\begin{frame}
+	\frametitle{Conclusions}
 
-	\begin{block}{Objectius i motivació}
-	Complerts amb escreix.
+	\begin{block}{Motivació i objectius}
+		\begin{itemize}
+			\item Motivació complerta.
+			\item Objectius complerts.
+			\item L'única funcionalitat no complerta per motius aliens ha estat reemplaçada per altres funcionalitats.
+		\end{itemize}
 	\end{block}
 	% He aprés i m'ho he passat bé
 	% A més, donsidero que ha quedat un molt bon producte.

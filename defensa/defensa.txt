@@ -1,0 +1,359 @@
+Hola bon dia,
+
+el meu nom és Albert Sellarès i tot seguit un presentaré el meu PFC que s'anomena
+SKD: Rootkit per a sistemes operatius UNIX.
+
+########
+
+Començaré definint què és un rootkit per a tenir una idea clara de què és el què es vol fer.
+Seguiré per el motiu pel qual vaig voler fer aquest projecte i comentaré quin n'era l'objectiu.
+En el punt 4 entrarem en el rootkit en sí, i veurem quines van ser les funcionalitats amb 
+què varem dividir la recerca i el desenvolupament. Un cop comentades una mica
+per sobre, entrarem en detall en dues funcionalitats per tal d'agafar una mica la idea de 
+què s'ha arribat a fer. 
+En el d'evolució comentaré el camí que ha seguit el projecte partint de la planificació 
+que es va fer durant primers dies, fins a la planificació real que ha seguit.
+Per acabar us mostraré les conclusions que en trec un cop realitzat el pfc.
+
+########
+
+El primer que hem de tenir clar, és ``què és un rootkit?''. Un rootkit és una eina o 
+conjunt d'eines que té com a finalitat ocultar-se i permetre que un tercer administri
+la màquina on està instal·lat. 
+
+En definitiva es pot veure com un programa en execució a la nostre màquina. 
+
+Tot rootkit per a poder portar a terme millor la seva tasca, ha de ocultar-se per intentar
+passar el màxim desapercebut possible. Alhora ha de permetre que el seu propietari es connecti
+a la màquina on està corrent, i l'administri (que pugui gestionar el sistema de fitxers, executar
+programes, etc).
+Cal dir que els antivirus consideren els rootkits com a un tipus de virus.
+Una característica que els rootkits comparteixen amb els virus, és la de intentar perdurar el màxim 
+de temps possible instal·lat i funcionant. Que actualitzacions del sistema o reinicis de la màquina, 
+no evitin que el rootkit deixi de ser executat.
+Finalment i com a molts virus, ens interessa que el rootkit ens ajudi a obtenir informació sensible 
+de la màquina on està instal·lat com els passwords dels usuaris o fitxers del sistema que en una 
+situació concreta ens poden permetre augmentar els nostres privilegis.
+Com es pot deduir de tot això, a ningú li agradaria tenir un rootkit en la seva màquina.
+
+########
+
+Un cop vist què és un rootkit, anem a veure el perquè he escollit fer aquest projecte.
+El primer motiu és què estic molt posat en temes de seguretat informàtica i el tema 
+m'apassiona igual que el programari lliure en sí.
+Un altre motiu és que jo necessitava una utilitat així, es pot dir que sempre és útil
+tenir un bon rootkit sota la màniga.
+I finalment i relacionat amb els punts anteriors, per aprendre, per investigar, i en
+definitiva per diversió.
+
+########
+
+Tal i com es pot haver deduït del títol, l'objectiu del projecte és justament el de crear
+un rootkit, però un rootkit multiarquitectura per a sistemes banats en UNIX que exploti 
+al màxim aquestes característiques que comentava abans que ha de tenir tot bon rootkit.
+És a dir, l'objectiu és crear un bon rootkit.
+Per a poder concretar més el nostre objectiu en el moment del plantejament del projecte,
+varem definir una sèrie de funcionalitats que creiem que havia d'oferir aquest rootkit
+per les quals varem regir tota la planificació desenvolupament i disseny.
+
+A nem a veure aquestes funcionalitats.
+
+########
+
+L'arquitectura del rootkit és la de client servidor.
+Això vol dir que el rootkit està format per dues parts. La part que corre en
+el servidor, i la part que l'atacant utilitza per connectar-se a la part del
+servidor i executar les tasques pertinents.
+
+########
+
+Primer de tot les funcionalitats relacionades amb la implementació.
+
+La primera funcionalitat és la de aconseguir que el rootkit no depengués de
+res als sistemes on s'ha d'executar per tal que aquest pugui funcionar sempre.
+És a dir, que no depengui ni de la libc ni de cap altre. 
+
+La segona funcionalitat relacionada amb l'implementació, era el fet de fer el
+rootkit multiplataforma i compatible amb la majoria de variants de UNIX. La
+idea aquí era que el rootkit es pogues compilar per 32 o 64 bits, així com per
+linux, freebsd o solaris. 
+
+Pel què fa a la comunicació...
+
+cal tenir en compte que el rootkit ha estat dissenyat utilitzant l'arquitectura de client 
+servidor. Això vol dir que hi han dues parts de software que s'han de comunicar. Per tal que 
+el nostre rootkit sigui segur i que només permeti que el seu propietari pugui administrar-lo,
+al rootkit se li configura una contrasenya. D'aquesta manera, la part client 
+del rootkit, ens demanarà quina contrasenya volem utilitzar per a
+connectar-nos a la part servidor per així autenticar-nos.
+
+A l'hora de comunicar-se client i servidor, i per tal de que aquesta connexió
+sigui segura, les dues parts establiran una connexió xifrada. D'aquesta manera
+un tercer usuari que analitzi la xarxa no podrà saber què passa per allà.
+
+També relacionat amb la comunicació es varen definir diferents modes de
+per establir una connexió entre la part client i la part servidor. Aquests
+modes han estat creats per a facilitar l'ús del rootkit en xarxes
+restrictives. La connexió directa sería la típica connexió entre client
+servidor. La inversa, sería una connexió client servidor, però que en aquest
+cas, és el servidor qui inicia la connexió. Finalment el protocol raw, és un
+protocol de comunicació que vaig crear pel projecte que utilitza paquets TCP
+valids, però que a nivell de sessió de TCP són invalids. D'aquesta manera el 
+rootkit és capaç de comunicar-se a través de internet, però el sistema
+operatiu no té constància de la connexió i per tant, aquesta resta oculta.
+
+El següent grup de funcionalitats són les funcionalitats més bàsiques:
+
+Una d'aquestes funcionalitats tractava de implementar una mena de servidor
+cron que cada hora, dia i mes, l'atacant pogués executar tasques programades.
+D'aquesta manera el rootkit comproba cada dia per l'existència d'un d'un fitxer
+ocult anomenat daily, en cas de ser-hi, l'executa, i així amb cada
+periodicitat.
+
+La següent funcionalitat és la de hertbeat. Aquesta funcionalitat ens serveix
+principalment en cas de tenir més d'un rootkit instal·lat. Es tracta en què
+el rootkit mensualment faci una petició a una pàgina web de manera que aquesta
+web registri la petició. En el moment en què el rootkit deixi de fer la
+petició, sabrem que per algun motiu el rootkit ja no està viu.
+
+La funcionalitat d'ocultació engloba moltes petites tècniques per fer que el
+rootkit estigui el màxim d'ocult possible. Igual que tots els altres punts, 
+podeu trobar en detall què es fa exactament en la memòria.
+
+La següent funcionalitat ens permet detectar si a una màquina hi ha el nostre 
+rootkit instal·lat. Hem dit abans que tenim una contrasenya per a
+autenticar-nos i poder utilitzar les funcionalitats del rootkit. Doncs aquesta
+funcionalitat ens permet detectar si el nostre rootkit està en execució tot i 
+no saber la contrasenya. La mateixa funcionalitat permet al rootkit evitar la 
+multiple execució detectant que ja s'està executant.
+
+Una altre funcionalitat necessària era que molt facilment el rootkit pogués
+ser executat de nou tot i que el sistema hagués canviat.
+
+La funcionalitat d'obtenció d'una shell lligada a un TTY la comentaré en
+detall just d'aquí uns moments, però per a fer-se una idea, és la
+funcionalitat que permet accedir al sistema.
+
+Una altre funcionalitat és la de transferència de fitxers (ja sigui pujar un
+fitxer o descarregar-lo)
+
+i finalment el mode d'execució del rootkit ja sigui mode comanda o mode
+servei. Com indica el seu nom, el mode servei significa que el rootkit queda
+executant-se a la màquina com un servei més de sistema. El mode comanda en
+canvi, és per a utilitzar una funcionalitat del rootkit sense voler que quedi
+un servei en execució, és a dir, si vols transferir un fitxer només un cop, no
+et cal llançar el rootkit com a servei sinó que en fer-ho com a comanda és
+suficient.
+
+Per acabar les funciopnalitats avançades són aquelles que donen una volta més
+a el què ens pot oferir el rootkit.
+
+Per exemple el proxy SOCKS. SOCKS és un protocol pensat per a fer de proxy de
+qualsevol tipus de protocol TCP. Imagine'm-nos que el nostre rootkit pugui
+arrancar un servei de SOCKS. Al fer-ho, el propietari del rootkit pot passar a
+fer servir la màquina on hi ha el rootkit com a passarela per altres atacs o
+altre connexions per a que així no se'l pugui rel·lacionar amb l'autoria dels
+fets i en definitiva, quedar a l'anonimat.
+
+La independència de la shell, tracta en intentar reduir encara una mica més
+les dependències per a utilizar el rootkit. En aquest cas la idea és afegir
+tot el codi de la shell a l'interior del rootkit per eliminar la única
+dependència que teniem fins ara que era la necessitat d'una shell al sistema.
+
+La penúltima funcionalitat és la de implementar tècniques per evitar firewalls
+i filtres de xarxa, 
+
+i la última una que també explicaré més en detall que és el keylogger pensat
+per aconseguir el password dels diferents usuaris del sistema.
+
+########
+
+Un exemple simplificat del funcionament seria el següent:
+
+En aquest esquema es mostra com tenim en el servidor el rootkit ja en
+funcionament. En un moment donat, l'atacant decideix llançar el client que
+envia algun paquet al servidor. Això fa que s'estableixi una connexió ja sigui
+iniciada pel servidor o pel client. Per tal de gestionar aquesta connexió, la
+part servidor del rootkit, crea un nou procés encarregat només d'aquesta
+connexió. Això permet que puguem establir diverses connexions al mateix
+rootkit. 
+Un cop aquesta connexió està establerta, el atacant pot llançar les ordres que
+vulgui ja sigui transferir un fitxer, navegar pel disc dur, etc.
+Un cop l'atacant ja ha realitzat la tasca que volia, aquest finalitza la
+connexió i així acaba el procés client i el procés encarregat de la connexió.
+
+########
+
+Ara anem a veure la primera de les funcionalitats que explicaré en una mica de
+detall.
+
+Aquesta funcionalitat és la de l'obtenció d'una shell lligada a un tty.
+Aquesta funcionalitat és la més utilitzada en el rootkit ja que és la que en
+proveeix de l'accés a la màquina remota. La idea d'aquesta funcionalitat és la
+de demanar a la part servidor que ens ofereixi un interpret de comandes per
+tal de moure'ns per a la màquina remota. En definitiva la funcionalitat que
+ens ofereix és similar a la del servei ssh que ens permet accedir a una shell
+de sistema remotament i de forma segura. El fet de lligar la shell a un tty,
+ens permet poder utilitzar editors avançats com el vim o l'emacs o poder
+enviar signals com el Ctr + C a través de la conneixó.
+
+########
+
+La segona funcionalitat avançada que explicaré és la del keylogger.
+
+L'objectiu d'aquesta funcionalitat és el de aconseguir passwords dels usuaris
+de sistema, sobretot el de l'usuari administrador. 
+Per tal de complir amb els altres requisits i ser una funcionalitat portable i
+que segueixi funcionant tot hi haver-se modificat el sistema s'ha utilitzat la
+interficie de debug que ens ofereix posix. D'aquesta manera tot el procés es
+porta a terme a nivell d'usuari.
+Una altre característica important és el fet de que volem capturar passwords
+entrats en diferents serveis. El què més ens interessa és el servei de ssh,
+però també n'hi hauran altres que ens interessaran com pot ser un servei de
+bases de dades, un servei web, etc.
+
+########
+
+Anem a veure el funcionament normal del servei de openssh. Aquest servei
+s'anomena Secure SHell i el seu objectiu principal és el de oferir-nos una
+shell remota al sistema de forma segura.
+
+El funcionament és el següent:
+Primer de tot tenim el servei d'ssh executant-se a la màquina servidor. 
+Des de una màquina client qualsevol, es vol iniciar una connexió ssh cap al
+servidor, llavors es llança el client ssh que estableix una connexió TCP amb
+el servidor. Tant bon punt el servidor detecta aquesta conneixió, crea un
+procés fill que serà encarregat d'aquesta nova connexió. 
+
+Aquest nou procés acaba d'establir completament la connexió TCP amb el client. 
+Tant bon punt es disposa de la connexió TCP, el client i el servidor negocien 
+la connexió ssh tot intercanviant les claus de xifratge i negociant les
+versions de protocols i algoritmes. Un cop s'han posat d'acord i la conneixó
+és segura, el client pot intentar autenticar l'usuari i password. 
+En cas que l'autenticació sigui correcta, el servidor ofereix la shell remota
+al client que l'utilitza com si fos una shell local. Tant bon punt el client
+acaba, el servidor finalitza el procés assignat.
+
+########
+
+Anem a veure que passa si en aquesta màquina hi tenim el nostre roorkit.
+
+En un moment donat arranquem el keylogger. Aquest detecta que hi ha el servei
+de l'openssh i comença a debugar-lo. Llavors quan algú vol autenticar-se al
+servei ssh i inicia la connexió, en el momen que l'ssh crea un nou procés, el
+keylogger se n'adona i també crea un altre procés per a què debugui al nou
+procés de l'ssh. En aquest moment el nou procés del keylogger sap que ha de
+capturar l'usuari i password que el servidor ssh intenti autenticar. 
+
+Per fer-ho , el keylogger intercepta totes els crides que faci aquest
+nou procés on intenti fer un read(). En cada una d'aquestes crides, el procés
+del keylogger comprobarà si les dades llegides contenen l'estrucutra
+utilitzada per a autenticar-se. En cas de ser-ho, se la guardarà i deixarà de
+debugar aquest procés inmediatament.
+
+D'aquesta manera el keylogger haurà aconseguit capturar el password de
+l'usuari que s'ha autenticat, i ni el servei ssh ni el client s'hauràn donat
+compte que això ha passat.
+
+########
+
+Per tal de parlar de la evolució que ha seguit el pfc, us mostraré la
+planificació que varem fer inicialment i la que ha acabat sent tot analitzant
+el motiu pel què no es va complir.
+
+Aquí podem veure la planificació en mode compacta que varem fer al primer
+moment. Alguns comentaris a fer sobre aquesta planificació són
+que la documentació del treball es va intentar no deixar pel final sinó
+anar-la fent a mesura s'anava abançant.
+Una altre cosa que es pot apreciar amb el nom de les tasques, és que es diuen:
+"funcionalitats bàsiques" i "funcionalitats avançades". Això va ser així
+perquè tal i com hem vist abans, els objectius del rootkit es varen definir
+tot separant-los amb diferents funcionalitats.
+També podem veureu que la primer tasca que tracta del disseny del rootkit,
+dura molt poc temps. Això és perquè aquest disseny és només del core del
+rootkit necessari per a poder anar integrant les diferents funcionalitats que
+s'havien planejat, però com que cada funcionalitat afegia restriccions de
+disseny que no sabiem abans de treballar-hi, es va decidir afegir una última
+tasca de anàlisi general en què es fes una conciliació de totes les
+funcionalitats per a que quedés un projecte de software homogeni. 
+També cal dir que la tasca aquesta de injecció de codi en memòria del kernel,
+al final no es va poder realitzar per causes alienes ja que la tècnica que es
+volia utilitzar va ser parchejada poc abans de començar la tasca quedant així
+impossible la seva realització.
+
+########
+
+Aquesta és la planificació que ha acabat sent. La primera diferencia que surt
+a la vista és el canvi entre la funcionalitat de injecció en memòria de
+kernel, per a una tercera tasca d'implementació de funcionalitats. A part
+d'aquest canvi obligat, hi han hagut dues altres variacions a la planificació.
+La primera és que la planificació passava per un periòde de vacances i examens
+finals cosa que no va ser tinguda en compte en un primer moment. La segona
+variació, és que la feina de conciliació va ser molt més gran del què s'havia
+contat en un inici, i per tant va fer allargar encara una mica més tota la
+planificació.
+
+########
+
+Les conclusions que entrec del projecte són
+que a nivell de motivació i objectius han estat complerts. De totes les
+funcionalitats que es varen plantejar com a objecius del projecte, només n'hi
+ha una que no ha pogut ser implementada i ha estat per causes externes ja que
+quan encara no s'havia començat a treballar, resulta que la gent del kernel de
+Linux va aplicar un patch que evitava la tècnica amb què es basava la
+funcionalitat. Tot i això i per no baixar el pes del projecte, es varen
+realitazar altres funcionalitats que inicialment no estaven dintre el llistat.
+
+També com a conclusions, dir que el projecte està format per dues parts de
+molt de pes les dues tot i que potser no es veu a simple vista. Aquestes parts
+són la investigació i recerca necessàris per a realitzar aquestes
+funcionalitats, i la segona és la implementació en sí dintre el rootkit de
+manera homogènia.
+
+Finalment comentar que crec que el projecte conta amb una certa dificultat ja
+que cal tenir en compte que tant els desenvolupadors dels sistemes operatius
+com grans empreses estan darrere intentar que coses com les què fa el rootkit
+no siguin possibles de fer. Per això aquestes funcionalitats tenen el seu
+mèrit ja que és el què poso aquí, nedar contra corrent, sempre és més dificil.
+
+En definitiva dir que crec que m'he complicat la vida, però que ha valgut la
+pena.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Ojo amb la definició que vaig utilitzar a la memòria
+
+¿Cómo surgió el PFC?
+¿Qué te parece este tema como PFC? ¿Crees suficiente como para un proyecto
+final de
+carrera? ¿Cómo has aprovechado los conocimientos de la carrera en él?
+¿Qué partes te han costado más/menos? ¿Qué partes te han gustado más/menos?
+¿Cuál ha sido la metodología o el proceso a realizar para completar este
+proyecto?
+¿Por qué has elegido esta alternativa y no otra?
+Si el PFC está hecho entre varios, ¿Cómo os habéis repartido el trabajo y como
+os habéis
+sincronizado?
+¿Por qué te pareció interesante hacer este PFC?
+¿Se han cumplido los objetivos marcados al principio?
+
+
+
+- 25 minuts
+- imprimir en paper el què he de dir en la seguent o les transpas així dono
+  temps entre transparència i transparència.
+- portar aigua
+- intentar posar cosetes de broma per trencar el gel
+- preparar-me la pregunta de l'especificació i disseny, q realment ha estat
+  més investigació (tia de LSI)
