@@ -181,6 +181,10 @@
 	\includegraphics[scale=0.8,keepaspectratio]{arquitectura5.pdf}
 \end{frame}
 
+\begin{frame}
+	\frametitle{El rootkit}
+	\includegraphics[scale=0.7,keepaspectratio]{arquitectura_moduls.pdf}
+\end{frame}
 \subsection{Funcionalitats}
 
 \begin{frame}
@@ -202,6 +206,8 @@
 				\pause
 			\item Multiarquitectura i compatible amb les variants de UNIX.
 				\pause
+			\item Protegit contra enginyeria inversa i depuració.
+				\pause
 		\end{itemize}
 	\end{block}
 	\begin{block}{Comunicació}
@@ -210,9 +216,7 @@
 				\pause
 			\item Comunicació xifrada.
 				\pause
-			\item Connexió directa.
-				\pause
-			\item Connexió inversa.
+			\item Protocol TCP: Connexió directa / Connexió inversa.
 				\pause
 			\item Protocol raw.
 		\end{itemize}
@@ -222,11 +226,11 @@
 	\frametitle{El rootkit}
 	\begin{block}{Funcionalitats bàsiques}
 		\begin{itemize}
+			\item Ocultació.
+				\pause
 			\item Tasques programades.
 				\pause
 			\item Heartbeat.
-				\pause
-			\item Ocultació.
 				\pause
 			\item Detecció del rootkit.
 				\pause
